@@ -1,0 +1,112 @@
+body {
+  padding-bottom: 20vh;
+}
+.text-center {
+  text-align: center;
+}
+
+#date-header {
+  display: flex;
+  justify-content: space-between;
+}
+.ref {
+  font-weight: bold;
+}
+.verse-text {
+  margin-left: 1rem;
+}
+#done {
+  margin: 7px auto;
+  width: 50%;
+}
+#done button {
+  width: 100%;
+  padding: 2rem;
+}
+#navigation-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;;
+}
+#navigation {
+  display: flex;
+  justify-content: space-around;
+  flex-grow: 1;
+}
+#logo {
+  width: 10%;
+  cursor: pointer;
+}
+#message {
+  display: flex;
+  align-items: center;
+}
+.icon {
+  width: 1.2rem;
+}
+
+
+th, td {
+  text-align: center;
+}
+.finished-day {
+  text-decoration: line-through;
+}
+.schedule-item {
+  margin: 0.5rem 0;
+}
+.disabled {
+  pointer-events: none;
+  filter: saturate(0);
+}
+
+.done {
+  color: var(--color-success);
+}
+.underline {
+  text-decoration: underline;
+}
+.active-page {
+  border-bottom: 2px solid var(--color-blossom);
+}
+.active { 
+  background: var(--color-success) !important;
+}
+.reading-day {
+  width: 102px;
+  height: 90px;
+  vertical-align: top;
+  box-sizing: border-box;
+}
+.inactive {
+  pointer-events: none;
+}
+.inactive .date {
+  display: none;
+}
+.today {
+  border: 2px solid var(--color-text);
+}
+.reading-day.start {
+  border-left: 2px solid var(--color-text);
+  border-top: 2px solid var(--color-text);
+}
+.reading-day.end {
+  border-right: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+}
+
+#auth-wrap {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  min-height: 100vh;
+}
+#auth-wrap > div {
+  margin: 3rem;
+}
+.center {
+  display: flex;
+  justify-content: center;
+
+}
