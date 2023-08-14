@@ -3,8 +3,7 @@
 	function db($alt_db = null) {
 		static $db;
 		if (!$db) {
-			// $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."../brc.db");
-			$db = new SQLite3('/home/bible-reading-challenge/brc.db');
+			$db = new SQLite3($_SERVER['DOCUMENT_ROOT']."../brc.db");
 		}
 		return $alt_db ?: $db;
 	}
