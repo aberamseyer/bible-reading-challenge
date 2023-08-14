@@ -18,7 +18,7 @@ class MySessionHandler implements SessionHandlerInterface
       return true;
     }
 
-    public function read($id)
+    public function read($id): string|false
     {
       $data = col("
         SELECT data
@@ -44,7 +44,7 @@ class MySessionHandler implements SessionHandlerInterface
       return true;
     }
 
-    public function gc($maxlifetime)
+    public function gc($maxlifetime): int|false
     {
       // keep 'em logged in forever:
       // query("DELETE FROM sessions WHERE last_udpated < ".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime), $this->s_db);

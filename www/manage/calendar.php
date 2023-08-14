@@ -40,7 +40,7 @@
     }
   }
 
-  if ($_REQUEST['fill_dates'] && $_REQUEST['rate'] && $_REQUEST['start_book'] && $_REQUEST['start_chp']) {
+  if ($_REQUEST['fill_dates'] && $_REQUEST['rate'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
     // generate a schedule to fill in on the client side
     try {
       $start_date = date_create_from_format('Y-m-d H:i:s', $_REQUEST['fill_dates']." 00:00:00");
@@ -59,7 +59,10 @@
       $days = [];
       // this array generates a slot for every day that we will return to the client
       foreach($period as $date) {
-        $days[] = $date->format('Y-m-d');
+        // if this day-of-week is in our list of days we want to read
+        if (in_array($date->format('N'), $_REQUEST['days'])) {
+          $days[] = $date->format('Y-m-d');
+        }
       }
       // the id to start AFTER
       $starting_id = col("
@@ -174,6 +177,15 @@
     <div>
       <button type='button' id='fill' disabled>Fill after selected</button>&nbsp;
       <small><input type='number' id='chps-per-day' min='1' max='10' style='width: 50px; padding: 0.5rem;' value='1'> chps/day</small><br>
+      <div style='display: flex; justify-content: space-between; align-items: center; padding: 0 7px;'>
+        <label><input type='checkbox' name='days[]' value='7' checked> S</label>
+        <label><input type='checkbox' name='days[]' value='1' checked> M</label>
+        <label><input type='checkbox' name='days[]' value='2' checked> T</label>
+        <label><input type='checkbox' name='days[]' value='3' checked> W</label>
+        <label><input type='checkbox' name='days[]' value='4' checked> T</label>
+        <label><input type='checkbox' name='days[]' value='5' checked> F</label>
+        <label><input type='checkbox' name='days[]' value='6' checked> S</label>
+      </div>
       <button type='button' id='clear' disabled>Clear after selected</button>
     </div>
   </div>";

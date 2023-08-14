@@ -6,6 +6,9 @@
   const fillBtn = document.getElementById('fill')
   // fill each subsequent day with the next chapter in the bible
   fillBtn.onclick = () => {
+    const days = Array.from(
+      document.querySelectorAll('[name="days[]"]:checked')
+    ).map(x => `days[]=${x.value}`).join('&')
     const activeDay = document.querySelector('.reading-day.active')
     const currentPassage = activeDay.querySelector('input[data-passage]').value
     let book, chp
@@ -22,7 +25,7 @@
     }
     const fillAfter = activeDay.getAttribute('data-date')
     const chpsPerDay = +document.getElementById('chps-per-day').value || 1
-    fetch(`?id=${SCHEDULE_ID}&fill_dates=${fillAfter}&rate=${chpsPerDay}&start_book=${book}&start_chp=${chp}`)
+    fetch(`?id=${SCHEDULE_ID}&fill_dates=${fillAfter}&rate=${chpsPerDay}&start_book=${book}&start_chp=${chp}&${days}`)
     .then(rsp => rsp.json())
     .then(data => {
       calendarDays.forEach(cd => {
