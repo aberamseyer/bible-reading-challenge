@@ -4,11 +4,7 @@
 		static $db;
 		if (!$db) {
 			// $db = new SQLite3($_SERVER['DOCUMENT_ROOT']."../brc.db");
-			$db = new SQLite3(
-				$_SERVER['REQUEST_SCHEME'] === 'http'
-					? '/Users/user/Developer/bible-reading-challenge/brc.db'
-					: '/home/bible-reading-challenge/brc.db'
-			);
+			$db = new SQLite3('/home/bible-reading-challenge/brc.db');
 		}
 		return $alt_db ?: $db;
 	}
