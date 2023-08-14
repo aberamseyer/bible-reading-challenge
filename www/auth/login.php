@@ -56,10 +56,10 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="383061482305-67gl9pa9r0c5qlhnlqrlqfde6pbma2jh.apps.googleusercontent.com"
+        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
         data-context="signin"
         data-ux_mode="popup"
-        data-login_uri="https://brc.ramseyer.dev/auth/oauth"
+        data-login_uri="https://<?= $_SERVER['SERVER_NAME'] ?>/auth/oauth"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"

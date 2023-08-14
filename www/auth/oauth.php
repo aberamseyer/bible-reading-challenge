@@ -1,7 +1,6 @@
 <?php
 
 require_once $_SERVER['DOCUMENT_ROOT']."../vendor/autoload.php";
-define('CLIENT_ID', '383061482305-67gl9pa9r0c5qlhnlqrlqfde6pbma2jh.apps.googleusercontent.com');
 
 $insecure = true;
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
@@ -10,7 +9,7 @@ if (!$_POST['g_csrf_token'] || $_POST['g_csrf_token'] != $_COOKIE['g_csrf_token'
   $_SESSION['error'] = "Invalid CSRF token";
 }
 else {
-  $client = new Google_Client(['client_id' => CLIENT_ID]);
+  $client = new Google_Client(['client_id' => GOOGLE_CLIENT_ID]);
   $payload = $client->verifyIdToken($_POST['credential']);
   if (!$payload) {
     $_SESSION['error'] = "Problem with Google Sign in";
