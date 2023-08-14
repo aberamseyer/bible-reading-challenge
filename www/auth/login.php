@@ -59,7 +59,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-client_id="<?= GOOGLE_CLIENT_ID ?>"
         data-context="signin"
         data-ux_mode="popup"
-        data-login_uri="https://<?= $_SERVER['SERVER_NAME'] ?>/auth/oauth"
+        data-login_uri="https://brc.uoficoc.com/auth/oauth"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"
