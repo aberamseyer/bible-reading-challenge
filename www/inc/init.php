@@ -1,19 +1,7 @@
 <?php
 
-error_reporting(E_ALL^E_NOTICE^E_WARNING^E_DEPRECATED);
-
-$time = microtime(true);
-define('PROD', $_SERVER['DOCUMENT_ROOT'] === '/home/bible-reading-challenge/www/');
-
-// read environment variables
-foreach (explode("\n", file_get_contents($_SERVER['DOCUMENT_ROOT']."../.env")) as $line) {
-  if (!preg_match("/^\/\/.*$/", trim($line))) { // line doesn't begin with a comment
-    list($key, $val) = explode("=", $line);
-    define($key, $val);
-  }
-}
-
-require $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
+require_once "env.php";
+require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 
 // phpinfo();
 // die;

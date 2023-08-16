@@ -19,7 +19,8 @@
     // finished reading
     insert("read_dates", [
       'user_id' => $my_id,
-      'schedule_date_id' => $scheduled_reading['id']
+      'schedule_date_id' => $scheduled_reading['id'],
+      'timestamp' => $time
     ]);
     $today_completed = true;
   }
