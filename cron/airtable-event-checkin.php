@@ -5,8 +5,8 @@
 define('AIRTABLE_BASE_ID', 'applo2kFjtcUpWa6v'); // "Christians on Campus Contact Form"
 define('AIRTABLE_TABLE_ID', 'tblblB2PnTP9ytbB7'); // "Event Check-in Table"
 
-require __DIR__."/../inc/env.php";
-require __DIR__."/../inc/functions.php";
+require __DIR__."/../www/inc/env.php";
+require __DIR__."/../www/inc/functions.php";
 
 $db = new SQLite3(DB_PATH);
 
