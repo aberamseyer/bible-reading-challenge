@@ -4,7 +4,7 @@ require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 // uofichristiansoncampus@gmail.com account
 define('GCAL_PRIVATE_URL', 'https://calendar.google.com/calendar/ical/e0dd0c868a6d98e5035e72123b34966ed8ae6c3181f9f2dac1d6c7c9892800d3%40group.calendar.google.com/private-eefcc905d5d5ba392c231e8bcb41316f/basic.ics');
-define('ICAL_FILENAME', __DIR__."/../../cron/uofichristiansoncampus_event_calendar.ical");
+define('ICAL_FILENAME', "/tmp/uofichristiansoncampus_event_calendar.ical");
 
 require_once __DIR__."/../../vendor/autoload.php";
 use Sabre\VObject;
