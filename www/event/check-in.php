@@ -5,10 +5,6 @@ require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 $page_title = "Event Check-in";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
-debug(SENDGRID_API_KEY_ID, SENDGRID_API_KEY, GOOGLE_CLIENT_ID,
-GOOGLE_CLIENT_SECRET,
-AIRTABLE_ACESS_TOKEN);
-
 $past = $time - 60 * 60;
 $future = $time + 60 * 60;
 
