@@ -3,7 +3,7 @@
 	function db($alt_db = null) {
 		static $db;
 		if (!$db) {
-			$db = new SQLite3($_SERVER['DOCUMENT_ROOT']."../brc.db");
+			$db = new SQLite3(DB_PATH);
 		}
 		return $alt_db ?: $db;
 	}
