@@ -24,7 +24,8 @@ foreach($unposted_rows as $row) {
   $records[] = [
     "fields" => [
       "Name" => $row['name'],
-      "Time" => $datetime->format('Y-m-d H:i:s')
+      "Time" => $datetime->format('Y-m-d H:i:s'),
+      "Event Details" => $row['event_details']
     ]
   ];
 }

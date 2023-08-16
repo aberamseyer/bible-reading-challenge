@@ -3,3 +3,4 @@ brc.db
 .DS_Store
 
 .env
+*.ical

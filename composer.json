@@ -1,5 +1,7 @@
 {
     "require": {
-        "google/apiclient": "^2.15"
+        "google/apiclient": "^2.15",
+        "sabre/vobject": "^4.5.3",
+        "rlanvin/php-rrule": "^2.4"
     }
 }
