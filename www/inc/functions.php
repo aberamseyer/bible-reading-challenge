@@ -567,8 +567,11 @@
 function log_user_in($id) {
 	global $me;
 	$_SESSION['my_id'] = $id;
-	if ($_REQUEST['thru'])
-		redirect($_REQUEST['thru']);
-	else
+	if ($_SESSION['login_redirect']) {
+		redirect($_SESSION['login_redirect']);
+		$_SESSION['login_redirect'] = null;
+	}
+	else {
 		redirect("/");
+	}
 }

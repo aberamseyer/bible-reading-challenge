@@ -33,7 +33,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
   }
 }
 
-$check_in = $_GET['thru'] && $_GET['thru'] === '/event/check-in';
+$check_in = $_SERVER['login_redirect'] && $_SESSION['login_redirect'] === '/event/check-in';
 
 $page_title = "Log in";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";

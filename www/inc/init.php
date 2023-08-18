@@ -23,5 +23,6 @@ $staff = $me['staff'];
 $schedule = row("SELECT * FROM schedules WHERE active = 1");
 
 if (!$insecure && !$me) {
-	redirect('/auth/login?thru='.urlencode($_SERVER['REQUEST_URI']));
+  $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];
+	redirect('/auth/login');
 }
