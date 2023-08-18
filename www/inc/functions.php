@@ -325,7 +325,8 @@
 
 		foreach([
 			['/schedule', 'My schedule'],
-			['/', 'Today'], 
+			['/', 'Today'],
+			['/event/check-in', 'Check-in'],
 			['/auth/logout', 'Log out']
 		] as list($link, $title)) {
 			$nav .= "<a class='".$active_navigation_class($link)."' href='$link'>$title</a>";
