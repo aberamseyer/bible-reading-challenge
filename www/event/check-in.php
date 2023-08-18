@@ -58,7 +58,7 @@ foreach ($vcalendar->VEVENT as $event) {
 
 // If there's an ongoing event, register it
 if (!$ongoing_event) {
-  echo "<p>There's nothing going on right now.</p>";
+  echo "<p>There are currently no ongoing events.</p>";
 }
 else {
   $past = $time - 60 * 60;
