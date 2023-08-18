@@ -33,6 +33,8 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
   }
 }
 
+$check_in = $_GET['thru'] && $_GET['thru'] === '/event/check-in';
+
 $page_title = "Log in";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
@@ -40,12 +42,17 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
     #title { display: none; }
   </style>
   <div id='auth-wrap'>
+<?php if (!$check_in): ?>
     <div>
       <img src='/img/login-page.svg' style='width: 280px'>
     </div>
     <div>
       <img src='/img/start-reading.svg' style='width: 240px'>
-      <p>Or <a href='register'>register here</a></p>
+<?php else: ?>
+    <div style='margin: auto;'>
+      <img src='/img/coc-logo.svg' style='max-width: 300px;'>
+<?php endif; ?>
+      <p></p>
       <form action='' method='post'>
         <input type='hidden' name='csrf' value='<?= $csrf ?>'>
         <p>
@@ -53,6 +60,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
           <input name='password' type='password' placeholder="Password">
         </p>
         <p><button type="submit">Log in</button> <a href='forgot'>Forgot password</a></p>
+        <p>Or <a href='register'>register here</a></p>
       </form>
       <hr>
       <div id="g_id_onload"
