@@ -55,7 +55,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 if ($_GET['user_id'] &&
   $user = row("
     SELECT * FROM users
-    WHERE id = ".(int)$_GET['user_id']." AND last_seen >= ".strtotime('-1 year')."
+    WHERE id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
   echo "<h5>Edit ".html($user['name'])."</h5>";
@@ -152,7 +152,10 @@ else {
       </tr>
       </thead>
     <tbody>";
-  foreach(select("SELECT * FROM users ORDER BY staff DESC, name ASC") as $user) {
+  foreach(select("
+    SELECT * FROM users
+    WHERE last_seen ".($_GET['stale'] ? "<" : ">=")." '".strtotime('-1 year')."'
+    ORDER BY staff DESC, name ASC") as $user) {
     $days_read_this_week = cols("
       SELECT DATE(sd.date) d
       FROM read_dates rd
@@ -165,7 +168,7 @@ else {
     <tr>
     <td><small><a href='?user_id=$user[id]'>".html($user['name'])." (".html($user['email']).")</a></small></td>
     <td>
-    <canvas data-graph='".json_encode($trend = cols("
+      <canvas data-graph='".json_encode($trend = cols("
       SELECT COALESCE(count, 0) count
       FROM (
         SELECT strftime('%Y-%W', sd.date) AS week
@@ -191,14 +194,14 @@ else {
       .($day[0]->format("Y-m-d") == date('Y-m-d') ? ' underline' : '')."'>$day[1]</span>"; // underline the current day
     }
     echo " </td>
-    <td>
-    <form method='post'>
-    <input type='hidden' name='user_id' value='$user[id]'>
-    <small><button type='submit' name='staff' value='1' ".($user['staff'] ? 'disabled' : '').">Make staff</button>
-    <button type='submit' name='staff' value='0' ".($user['id'] == $my_id || !$user['staff'] ? 'disabled' : '')." ".
-    ($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "").">Make student</button></small>
-    </form>
-    </td>
+      <td>
+        <form method='post'>
+          <input type='hidden' name='user_id' value='$user[id]'>
+          <small><button type='submit' name='staff' value='1' ".($user['staff'] ? 'disabled' : '').">Make staff</button>
+          <button type='submit' name='staff' value='0' ".($user['id'] == $my_id || !$user['staff'] ? 'disabled' : '')." ".
+          ($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "").">Make student</button></small>
+        </form>
+      </td>
     </tr>";
     
   }
@@ -242,7 +245,13 @@ else {
       ctx.stroke();
     })
     </script>";
-  echo "<small>Only those who have been active in the past year are shown.</small>";
+
+  if (!$_GET['stale']) {
+    echo "<small>Only those who have been active in the past year are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";
+  }
+  else {
+    echo "<small>Only those who have <b>not</b> been active in the past year are shown. <a href='?'>Click here to see active users</a>.</small>";
+  }
 }
     
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
