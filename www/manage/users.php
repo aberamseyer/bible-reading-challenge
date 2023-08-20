@@ -60,8 +60,8 @@ if ($_GET['user_id'] &&
 ) {
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
-  echo "Created: <b>".date('F j, Y', $user['date_created'])."</b><br>";
-  echo "Last seen: <b>".date('F j, Y', $user['last_seen'])."</b></p>";
+  echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
+  echo "Last seen: <b>".date('F j, Y \a\t g:ia', $user['last_seen'])."</b></p>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
     <input type='text' name='change_name' minlength='1' value='".html($user['name'])."'><br>
@@ -132,8 +132,16 @@ else {
   }
       
       
+  $all_users = select("
+    SELECT id, name, email, staff, last_seen FROM users
+    WHERE last_seen ".($_GET['stale'] ? "<" : ">=")." '".strtotime('-9 months')."'
+    ORDER BY staff DESC, name ASC");
+  $count = count(
+    array_filter($all_users, fn($row) => $row['staff'] == 0)
+  );
+  
   echo "<h5>All users</h5>";
-  echo "<p>Click a user to see more details</p>";
+  echo "<p><b>$count</b> student".xs($count).". Click a user to see more details</p>";
 
   // table of users
   echo "<table>
@@ -152,10 +160,7 @@ else {
       </tr>
       </thead>
     <tbody>";
-  foreach(select("
-    SELECT * FROM users
-    WHERE last_seen ".($_GET['stale'] ? "<" : ">=")." '".strtotime('-1 year')."'
-    ORDER BY staff DESC, name ASC") as $user) {
+  foreach($all_users as $user) {
     $days_read_this_week = cols("
       SELECT DATE(sd.date) d
       FROM read_dates rd
@@ -166,7 +171,7 @@ else {
       AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
     echo "
     <tr>
-    <td><small><a href='?user_id=$user[id]'>".html($user['name'])." (".html($user['email']).")</a></small></td>
+    <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])." (".html($user['email']).")</a></small></td>
     <td>
       <canvas data-graph='".json_encode($trend = cols("
       SELECT COALESCE(count, 0) count
@@ -247,10 +252,10 @@ else {
     </script>";
 
   if (!$_GET['stale']) {
-    echo "<small>Only those who have been active in the past year are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";
+    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";
   }
   else {
-    echo "<small>Only those who have <b>not</b> been active in the past year are shown. <a href='?'>Click here to see active users</a>.</small>";
+    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
   }
 }
     

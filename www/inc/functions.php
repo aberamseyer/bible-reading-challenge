@@ -575,3 +575,8 @@ function log_user_in($id) {
 		redirect("/");
 	}
 }
+
+function xs($num) {
+	if ($num == 1) return '';
+	else return 's';
+}
