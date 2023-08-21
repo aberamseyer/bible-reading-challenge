@@ -24,7 +24,7 @@ if ($_POST['email']) {
         'forgot_password_token' => $reset_token,
         'forgot_password_expires' => time() + 60 * 60 * 2 // expires in two hours
       ], "id = ".$user_row['id']);
-      send_forgot_password_email($user_row['email'], "https://brc.ramseyer.dev/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
+      send_forgot_password_email($user_row['email'], "https://".DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
       $_SESSION['error'] = "Email sent!";
     }
     else {
