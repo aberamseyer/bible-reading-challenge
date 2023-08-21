@@ -513,6 +513,11 @@
 	 * ]
 	 */
 	function get_schedule_days($schedule_id) {
+		static $schedules = [];
+		if ($schedules[$schedule_id]) {
+			return $schedules[$schedule_id];
+		}
+
 		$schedule_dates = select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
 		$days = [];
 		foreach ($schedule_dates as $sd) {
@@ -561,7 +566,8 @@
 				'passages' => $chps
 			];
 		}
-		return $days;
+		$schedules[$schedule_id] = $days;
+		return get_schedule_days($schedule_id);
 	}
 
 function log_user_in($id) {

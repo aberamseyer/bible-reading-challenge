@@ -45,6 +45,7 @@
   if ($today_completed) {
     echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the reading for today!</blockquote>";
   }
+  // header with translation selector
   echo "<div id='date-header'>
     <h5>".$today->format("l, F j")."</h5>
     <form style='display: flex;'>
@@ -77,6 +78,17 @@
   }
   else {
     echo "<p>Nothing to read today!</p>";
+
+    // look for the next time to read in the schedule.
+    $days = get_schedule_days($schedule['id']);
+    $today = new Datetime();
+    foreach($days as $day) {
+      $dt = new Datetime($day['date']);
+      if ($today < $dt) {
+        echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
+        break;
+      }
+    }
   }
 
 
