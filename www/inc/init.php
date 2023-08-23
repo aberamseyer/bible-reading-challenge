@@ -16,11 +16,11 @@ $my_id = $_SESSION['my_id'] ?: 0;
 $me = row("SELECT * FROM users WHERE id = ".(int) $my_id);
 if ($me) {
   update("users", [
-    'last_seen' => time()
+    'last_seen' => $time
   ], 'id = '.$my_id);
 }
 $staff = $me['staff'];
-$schedule = row("SELECT * FROM schedules WHERE active = 1");
+$schedule = get_active_schedule();
 
 if (!$insecure && !$me) {
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];

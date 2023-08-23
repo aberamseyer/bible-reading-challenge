@@ -4,13 +4,19 @@ body {
 .text-center {
   text-align: center;
 }
+.center {
+  display: flex;
+  justify-content: center;
+}
 
+/* read page */
 #date-header {
   display: flex;
   justify-content: space-between;
 }
 .ref {
   font-weight: bold;
+  user-select: none;
 }
 .verse-text {
   margin-left: 1rem;
@@ -23,6 +29,8 @@ body {
   width: 100%;
   padding: 2rem;
 }
+
+/* navigation */
 #navigation-wrap {
   display: flex;
   justify-content: space-between;
@@ -37,6 +45,8 @@ body {
   width: 10%;
   cursor: pointer;
 }
+
+/* session messages */
 #message {
   display: flex;
   align-items: center;
@@ -45,7 +55,7 @@ body {
   width: 1.2rem;
 }
 
-
+/* calendars */
 th, td {
   text-align: center;
 }
@@ -59,7 +69,6 @@ th, td {
   pointer-events: none;
   filter: saturate(0);
 }
-
 .done {
   color: var(--color-success);
 }
@@ -96,6 +105,7 @@ th, td {
   border-bottom: 2px solid var(--color-text);
 }
 
+/* auth pages */
 #auth-wrap {
   display: flex;
   flex-flow: row wrap;
@@ -104,9 +114,4 @@ th, td {
 }
 #auth-wrap > div {
   margin: 3rem;
-}
-.center {
-  display: flex;
-  justify-content: center;
-
 }

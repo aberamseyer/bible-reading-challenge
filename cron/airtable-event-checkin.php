@@ -1,9 +1,9 @@
 <?php
 
-// crontab entry: */2 * * * * /home/bible-reading-challenge/cron/airtable-event-checkin.php
+// crontab entry: */2 * * * * php /home/bible-reading-challenge/cron/airtable-event-checkin.php
 
-define('AIRTABLE_BASE_ID', 'applo2kFjtcUpWa6v'); // "Christians on Campus Contact Form"
-define('AIRTABLE_TABLE_ID', 'tblblB2PnTP9ytbB7'); // "Event Check-in Table"
+define('AIRTABLE_BASE_ID', 'appTjcF4S0vp2ij2C'); // "Attendance"
+define('AIRTABLE_TABLE_ID', 'tblV9GoT02I6G5FYg'); // "F23 Event Check-in"
 
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";

@@ -24,7 +24,7 @@ else {
         'password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), // assign random password until the user changes it himself
         'email_verified' => 1,
         'trans_pref' => 'esv',
-        'date_created' => time(),
+        'date_created' => $time,
         'email_verify_token' => uniqid("", true).uniqid("", true)
       ]);
     }

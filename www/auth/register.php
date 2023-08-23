@@ -45,10 +45,10 @@ else if ($_POST['email']) {
       'email' => $_POST['email'],
       'password' => $hash,
       'trans_pref' => 'esv',
-      'date_created' => time(),
+      'date_created' => $time,
       'email_verify_token' => $verify_token
     ]);
-    send_register_email($_POST['email'], "https://".DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
+    send_register_email($_POST['email'], SCHEME."://".DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
     $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!";
   }
 }

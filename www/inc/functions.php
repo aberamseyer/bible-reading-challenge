@@ -334,6 +334,30 @@
 		return $nav."</div>";
 	}
 
+	function get_active_schedule() {
+		return row("SELECT * FROM schedules WHERE active = 1");
+	}
+
+	function send_daily_verse_email($email, $name, $content) {
+		$body = [
+			"from" => [
+				"email" => "uofichristiansoncampus@gmail.com",
+				"name" => "U of I Christians on Campus"
+			],
+			"template_id" => "d-302fcd68c8e94bf29decb61ae6e470a7",
+			"personalizations" => [
+				[
+					"to" => [[ "email" => $email ]],
+					"dynamic_template_data" => [
+						"name" => $name,
+						"html" => $content
+					]
+				]
+			]
+		];
+		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body);
+	}
+
   function send_register_email($to, $link) {		
 		$body = [
 			"from" => [
@@ -568,6 +592,64 @@
 		}
 		$schedules[$schedule_id] = $days;
 		return get_schedule_days($schedule_id);
+	}
+
+	// the parameter expected is the return value of get_reading
+	// returns the html of all the verses we are reading
+	function html_for_scheduled_reading($scheduled_reading, $trans, $email=false) {
+		global $schedule;
+		ob_start();
+		if ($scheduled_reading) {
+			$style = "";
+			if ($email) {
+				$style = "style='text-align: center; font-size: 1.4rem;'";
+			}
+			echo "<h4 class='text-center' $style>$scheduled_reading[reference]</h4>";
+			foreach($scheduled_reading['passages'] as $passage) {
+				$book = $passage['book'];
+				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
+	
+				$book_abbrevs = json_decode($passage['book']['abbreviations'], true);
+				$ref = ucwords($book_abbrevs[0]).". ".$passage['chapter']['number'].":";
+	
+				$ref_style = "";
+				$verse_style = "";
+				if ($email) {
+					$ref_style = "style='font-weight: bold;'";
+					$verse_style="style='margin-left: 1rem;'";
+				}
+				foreach($verses as $verse_row) {
+					echo "
+						<div class='verse'><span class='ref' $ref_style>".$ref.$verse_row['number']."</span><span class='verse-text' $verse_style>".$verse_row[$trans]."</span></div>";
+				}
+			}
+			$btn_style = "";
+			$form_style = "";
+			if ($email) {
+				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
+				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
+			}
+			echo "
+			<form action='".SCHEME."://".DOMAIN."/?today=$scheduled_reading[date]' method='post' id='done' class='center' $form_style>
+				<button type='submit' name='done' value='1' $btn_style>Done!</button>
+			</form>";
+		}
+		else {
+			echo "<p>Nothing to read today!</p>";
+	
+			// look for the next time to read in the schedule.
+			$days = get_schedule_days($schedule['id']);
+			$today = new Datetime();
+			foreach($days as $day) {
+				$dt = new Datetime($day['date']);
+				if ($today < $dt) {
+					echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
+					break;
+				}
+			}
+		}
+
+		return ob_get_clean();
 	}
 
 function log_user_in($id) {

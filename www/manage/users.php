@@ -131,17 +131,24 @@ else {
     echo "<p>No one has read every day this week.</p>";
   }
       
-      
+  $nine_mo = strtotime('-9 months');
+  if ($_GET['stale']) {
+    $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
+  }
+  else {
+    // all users
+    $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
+  }
   $all_users = select("
     SELECT id, name, email, staff, last_seen FROM users
-    WHERE last_seen ".($_GET['stale'] ? "<" : ">=")." '".strtotime('-9 months')."'
+    WHERE $where
     ORDER BY staff DESC, name ASC");
-  $count = count(
+  $student_count = count(
     array_filter($all_users, fn($row) => $row['staff'] == 0)
   );
   
   echo "<h5>All users</h5>";
-  echo "<p><b>$count</b> student".xs($count).". Click a user to see more details</p>";
+  echo "<p><b>$student_count</b> student".xs($student_count).". Click a user to see more details</p>";
 
   // table of users
   echo "<table>

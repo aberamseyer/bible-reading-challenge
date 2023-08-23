@@ -15,7 +15,7 @@ if ($_POST['email']) {
   }
   else {
     $user_row = row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."'");
-    if ($user_row['forgot_password_expires'] && time() <= date('U', $user_row['forgot_password_expires'])) {
+    if ($user_row['forgot_password_expires'] && $time <= date('U', $user_row['forgot_password_expires'])) {
       $_SESSION['error'] = "Email already sent.";
     }
     else if ($user_row) {
@@ -24,11 +24,12 @@ if ($_POST['email']) {
         'forgot_password_token' => $reset_token,
         'forgot_password_expires' => time() + 60 * 60 * 2 // expires in two hours
       ], "id = ".$user_row['id']);
-      send_forgot_password_email($user_row['email'], "https://".DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
-      $_SESSION['error'] = "Email sent!";
+      send_forgot_password_email($user_row['email'], SCHEME."://".DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
+      $_SESSION['info'] = "Email sent!";
     }
     else {
-      $_SESSION['error'] = "If ".html($_POST['email'])." email has been registered with us, an email with instructions has been sent to it.";
+      // ambiguous message given to people trying to game the system
+      $_SESSION['info'] = "If ".html($_POST['email'])." email has been registered with us, an email with instructions has been sent to it.";
     }
   }
 }
@@ -47,7 +48,7 @@ else if ($_REQUEST['reset']) {
       else if (strlen($_POST['password']) < 8) {
         $_SESSION['error'] = "Password too short.";
       }
-      else if (time() > date('U', $user_row['forgot_password_expires'])) {
+      else if ($time > date('U', $user_row['forgot_password_expires'])) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
@@ -56,11 +57,11 @@ else if ($_REQUEST['reset']) {
           'forgot_password_token' => '',
           'forgot_password_expires' => ''
         ], "id = ".$user_row['id']);
-        redirect('login');
+        log_user_in($user_row['id']);
       }
     }
     else {
-      if (time() > date('U', $user_row['forgot_password_expires'])) {
+      if ($time > date('U', $user_row['forgot_password_expires'])) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
