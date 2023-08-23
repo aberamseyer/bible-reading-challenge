@@ -1,6 +1,6 @@
 <?php
 
-// crontab entry: 0 8 * * * php /home/bible-reading-challenge/cron/daily-verse-email.php
+// crontab entry: 45 7 * * * php /home/bible-reading-challenge/cron/daily-verse-email.php
 
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
