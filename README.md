@@ -8,5 +8,15 @@ create SQLite database file named "brc.db" in root of project
 
 ## API Keys
 create a '.env' file in the project root. required keys:
+
+### Emails
 - SENDGRID_API_KEY_ID
 - SENDGRID_API_KEY
+
+### Google Sign-in button
+also requires configuring OAuth consent screen
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+
+### Airtable sync
+- AIRTABLE_ACESS_TOKEN
