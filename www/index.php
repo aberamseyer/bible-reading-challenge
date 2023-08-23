@@ -2,29 +2,6 @@
 
   require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
-  $today = new Datetime();
-  if (strtotime($_GET['today'])) {
-    $override_date = new Datetime($_GET['today']);
-    $today = allowed_schedule_date($override_date)
-      ? $override_date
-      : $today;
-  }
-  $scheduled_reading = get_reading($today);
-  $today_completed = num_rows("
-    SELECT id
-    FROM read_dates
-    WHERE schedule_date_id = ".($scheduled_reading['id'] ?: 0)."
-      AND user_id = ".$my_id);
-  if ($_POST['done'] && !$today_completed && $scheduled_reading) {
-    // finished reading
-    insert("read_dates", [
-      'user_id' => $my_id,
-      'schedule_date_id' => $scheduled_reading['id'],
-      'timestamp' => $time
-    ]);
-    $today_completed = true;
-  }
-  
   // set translation, update it if the select box changed
   $tranlsations = ['kjv', 'esv', 'asv', 'niv', 'nlt'];
   if ($_REQUEST['change_trans']) {
@@ -39,6 +16,47 @@
   }
   $trans = $me['trans_pref'];
 
+  // figure out what today is (if overridden)
+  $today = new Datetime();
+  if (strtotime($_GET['today'])) {
+    $override_date = new Datetime($_GET['today']);
+    $today = allowed_schedule_date($override_date)
+      ? $override_date
+      : $today;
+  }
+  $scheduled_reading = get_reading($today);
+  
+  // determine if today's reading has been completed
+  $today_completed = num_rows("
+    SELECT id
+    FROM read_dates
+    WHERE schedule_date_id = ".($scheduled_reading['id'] ?: 0)."
+      AND user_id = ".$my_id);
+  if ($_POST['done'] && !$today_completed && $scheduled_reading) {
+  // make sure they didn't read too fast 🤔
+    $scheduled_reading_chapter_ids = array_map(fn($passage) => $passage['chapter']['id'], $scheduled_reading['passages']);
+    // count the characters in today's reading
+    $char_length = col("SELECT SUM(LENGTH($trans)) chapter_length FROM verses WHERE  chapter_id IN(".implode(',', $scheduled_reading_chapter_ids).")");
+    if (
+      ($time - $_SESSION['last_page_load_time']) / 60
+      < $char_length / 1000
+    ) { // https://en.wikipedia.org/wiki/Words_per_minute
+      // "the number of characters per minute tends to be around 1000 for all the tested languages"
+      $_SESSION['error'] = "You read faster than a reasonable speed of what humans can comprehend.";
+    }
+    else {
+      // finished reading
+      insert("read_dates", [
+        'user_id' => $my_id,
+        'schedule_date_id' => $scheduled_reading['id'],
+        'timestamp' => $time
+      ]);
+      $today_completed = true;
+    }
+
+  }
+
+  $_SESSION['last_page_load_time'] = $time;
   $page_title = "Read";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
@@ -58,12 +76,13 @@
     </form>
   </div>";
 
+  // generates html for verses
   $html = "";
   if ($scheduled_reading) {
     echo "<h4 class='text-center'>$scheduled_reading[reference]</h4>";
     foreach($scheduled_reading['passages'] as $passage) {
       $book = $passage['book'];
-      $verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['book']['id']);
+      $verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
 
       $book_abbrevs = json_decode($passage['book']['abbreviations'], true);
       $ref = ucwords($book_abbrevs[0]).". ".$passage['chapter']['number'].":";

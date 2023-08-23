@@ -47,7 +47,7 @@ if ($_POST['user_id']) {
     }
   }
 }
-    
+
 $page_title = "Manage Users";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
     
