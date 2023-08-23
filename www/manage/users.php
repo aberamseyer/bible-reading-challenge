@@ -142,7 +142,7 @@ else {
   $all_users = select("
     SELECT id, name, email, staff, last_seen FROM users
     WHERE $where
-    ORDER BY staff DESC, name ASC");
+    ORDER BY staff DESC, LOWER(name) ASC");
   $student_count = count(
     array_filter($all_users, fn($row) => $row['staff'] == 0)
   );
