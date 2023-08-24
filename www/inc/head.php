@@ -19,7 +19,7 @@
     <?php endif; ?>
     <h1 id='title'><?= $page_title ?></h1>
     <?php
-      if ($_SESSION['error'] || $_SESSION['success']) {
+      if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['info']) {
         echo "
           <blockquote id='message'>";
         if ($_SESSION['error']) {

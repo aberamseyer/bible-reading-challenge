@@ -18,13 +18,6 @@ if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
       WHERE schedule_id = $schedule[id]"));
 }
     
-// change user from student/staff
-if (isset($_POST['staff'])) {
-  update("users", [
-    'staff' => $_POST['staff'] ? 1 : 0
-  ], "id = ".(int)$_POST['user_id']);
-}
-    
 // edit/delete user
 if ($_POST['user_id']) {
   $to_change = row("SELECT * FROM users WHERE id = ".(int)$_POST['user_id']);
@@ -34,16 +27,18 @@ if ($_POST['user_id']) {
         $_SESSION['error'] = "Can't delete a staff member. Make them a student first.";
       }
       else {
-        query("DELETE FROM users WHERE id = ".$to_change['id']);
         query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
+        query("DELETE FROM users WHERE id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
-    else if ($_POST['change_name']) {
+    else {
       update("users", [
-        'name' => $_POST['change_name']
+        'name' => $_POST['name'],
+        'email_verses' => array_key_exists('email_verses', $_POST) ? 1 : 0,
+        'staff' => intval($_POST['staff']) ? 1 :0
       ], "id = $to_change[id]");
-      $_SESSION['success'] = "Updated name";
+      $_SESSION['success'] = "Updated user";
     }
   }
 }
@@ -58,16 +53,27 @@ if ($_GET['user_id'] &&
     WHERE id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
+  echo "<p><a href='/manage/users'>&lt;&lt; Back to users</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
-  echo "Last seen: <b>".date('F j, Y \a\t g:ia', $user['last_seen'])."</b></p>";
+  echo "Last seen: <b>".date('F j, Y \a\t g:ia', $user['last_seen'])."</b><br>";
+  $last_read_ts = col("SELECT timestamp FROM read_dates WHERE user_id = $user[id]");
+  echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b></p>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
-    <input type='text' name='change_name' minlength='1' value='".html($user['name'])."'><br>
+    <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
+    <div>
+      <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
+    </div>
+    <div>
+      <legend>Account Type</legend>
+      <label><input type='radio' name='staff' ".($user['staff'] ? 'checked' : '')." value='1'".($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "")."> Staff</label>
+      <label><input type='radio' name='staff' ".($user['staff'] ? '' : 'checked')." value='0'".($user['id'] == $my_id ? "title='Cant mark yourself as a student' disabled" : "")."> Student</label>
+    </div>
     <button type='submit'>Save</button>
     <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $user[name]? This can NEVER be recovered.`)'>Delete user</button>
-    </form>";
+  </form> ";
   echo "<h5>Progress</h5>";
   echo generate_schedule_calendar($schedule);
   echo "<script>
@@ -140,7 +146,9 @@ else {
     $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
   }
   $all_users = select("
-    SELECT id, name, email, staff, last_seen FROM users
+    SELECT u.id, u.name, u.email, u.staff, u.last_seen, rd.timestamp last_read, u.email_verses
+    FROM users u
+    LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
     ORDER BY staff DESC, LOWER(name) ASC");
   $student_count = count(
@@ -152,18 +160,13 @@ else {
 
   // table of users
   echo "<table>
-    <colgroup>
-      <col>
-      <col style='width: 200px;'>
-      <col>
-      <col>
-    </colgroup>
     <thead>
       <tr>
-        <th>Email</th>
+        <th>User</th>
+        <th>Last Read</th>
+        <th>Emails</th>
         <th title='This is irrespective of what reading schedule is selected'>4-week trend</th>
         <th>Read this week</th>
-        <th>Actions</th>
       </tr>
       </thead>
     <tbody>";
@@ -178,41 +181,44 @@ else {
       AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
     echo "
     <tr>
-    <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])." (".html($user['email']).")</a></small></td>
-    <td>
-      <canvas data-graph='".json_encode($trend = cols("
-      SELECT COALESCE(count, 0) count
-      FROM (
-        SELECT strftime('%Y-%W', sd.date) AS week
-        FROM schedule_dates sd
-        WHERE sd.schedule_id = $schedule[id]
-        GROUP BY week
-      ) sd
-      LEFT JOIN (
-        SELECT strftime('%Y-%W', sd.date) AS week, COUNT(rd.user_id) count
-        FROM read_dates rd
-        JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-        WHERE user_id = $user[id]
-        GROUP BY week
-      ) rd ON rd.week = sd.week
-      WHERE sd.week >= strftime('%Y-%W', DATE('now', '-28 days', 'localtime') ) 
-      LIMIT 4;"))."'></canvas>
-    </td>
-    <td class='week'>";
+      <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])."</a></small></td>
+      <td><small>".($user['last_read'] ? date('F j') : 'N/A')."</small></td>
+      <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
+      <td>
+        <canvas data-graph='".json_encode($trend = cols("
+        SELECT COALESCE(count, 0) count
+        FROM (
+          -- generates last 4 weeks to join what we read to
+          WITH RECURSIVE week_sequence AS (
+            SELECT
+              date('now', 'localtime') AS cdate
+            UNION ALL
+            SELECT date(cdate, '-7 days')
+            FROM week_sequence
+            LIMIT 4
+          )
+          SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
+        ) sd
+        LEFT JOIN (
+          -- gives the number of days we have read each week
+          SELECT strftime('%Y-%W', sd.date) AS week, COUNT(rd.user_id) count
+          FROM read_dates rd
+          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+          WHERE user_id = $user[id]
+          GROUP BY week
+        ) rd ON rd.week = sd.week
+        WHERE sd.week >= strftime('%Y-%W', DATE('now', '-28 days', 'localtime'))
+        ORDER BY sd.week ASC
+        LIMIT 4"))."'></canvas>
+      </td>
+      <td class='week'>";
     foreach($this_week as $day) {
       echo "
       <span class='"
       .(in_array($day[0]->format("Y-m-d"), $days_read_this_week) ? 'done' : '') // mark done if this day is in the list of read days for this user
       .($day[0]->format("Y-m-d") == date('Y-m-d') ? ' underline' : '')."'>$day[1]</span>"; // underline the current day
     }
-    echo " </td>
-      <td>
-        <form method='post'>
-          <input type='hidden' name='user_id' value='$user[id]'>
-          <small><button type='submit' name='staff' value='1' ".($user['staff'] ? 'disabled' : '').">Make staff</button>
-          <button type='submit' name='staff' value='0' ".($user['id'] == $my_id || !$user['staff'] ? 'disabled' : '')." ".
-          ($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "").">Make student</button></small>
-        </form>
+    echo "
       </td>
     </tr>";
     
@@ -231,7 +237,7 @@ else {
       c.height = 40;
       
       // Calculate the scale factors
-      const maxDataValue = Math.max(...data);
+      const maxDataValue = 7;
       const scaleFactor = c.height / maxDataValue;
       
       // Draw the sparkline
@@ -265,5 +271,5 @@ else {
     echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
   }
 }
-    
+
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
