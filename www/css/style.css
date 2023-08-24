@@ -69,9 +69,6 @@ th, td {
   pointer-events: none;
   filter: saturate(0);
 }
-.done {
-  color: var(--color-success);
-}
 .underline {
   text-decoration: underline;
 }

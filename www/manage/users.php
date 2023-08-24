@@ -99,18 +99,18 @@ else {
   $last_saturday = new Datetime('last saturday');
   $last_friday = new Datetime('last friday');
   $this_week = [
+    [ $last_friday, 'F' ],
+    [ $last_saturday, 'S' ],
     [ date_modify(clone($last_saturday), '+1 day'),  'S' ],
     [ date_modify(clone($last_saturday), '+2 days'), 'M' ],
     [ date_modify(clone($last_saturday), '+3 days'), 'T' ],
     [ date_modify(clone($last_saturday), '+4 days'), 'W' ],
-    [ date_modify(clone($last_saturday), '+5 days'), 'T' ],
-    [ date_modify(clone($last_saturday), '+6 days'), 'F' ],
-    [ date_modify(clone($last_saturday), '+7 days'), 'S' ]
+    [ date_modify(clone($last_saturday), '+5 days'), 'T' ]
   ];
       
-  echo "<h5>Fully Equipped</h5>";
+  echo "<h5 title='Note that this chart doesnt refer to the current week until Sunday'>Fully Equipped</h5>";
   $where = "WHERE sd.schedule_id = $schedule[id] 
-    AND sd.date >= '".$last_friday->format('Y-m-d')."' AND sd.date <= '".$this_week[4][0]->format('Y-m-d')."'"; // last friday through this thursday
+    AND sd.date >= '".$last_friday->format('Y-m-d')."' AND sd.date <= '".(date('N') < 4 ? date('Y-m-d') : $this_week[4][0]->format('Y-m-d'))."'"; // last friday through this thursday, but only if we've reached thursday
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
@@ -134,7 +134,7 @@ else {
     </ol>"; 
   }
   else {
-    echo "<p>No one has read every day this week.</p>";
+    echo "<p><small>No one has read every day this period.</small></p>";
   }
       
   $nine_mo = strtotime('-9 months');
@@ -211,12 +211,27 @@ else {
         ORDER BY sd.week ASC
         LIMIT 4"))."'></canvas>
       </td>
+      <style>
+          .week {
+            display: flex;
+            justify-content: center;
+          }
+          .day {
+            border-left: 1px solid var(--color-text);
+            border-top: 1px solid var(--color-text);
+            border-bottom: 1px solid var(--color-text);
+            width: 25px;
+          }
+          .day:last-child {
+            border-right: 1px solid var(--color-text);
+          }
+      </style>
       <td class='week'>";
     foreach($this_week as $day) {
       echo "
-      <span class='"
-      .(in_array($day[0]->format("Y-m-d"), $days_read_this_week) ? 'done' : '') // mark done if this day is in the list of read days for this user
-      .($day[0]->format("Y-m-d") == date('Y-m-d') ? ' underline' : '')."'>$day[1]</span>"; // underline the current day
+      <div class='day "
+      .(in_array($day[0]->format("Y-m-d"), $days_read_this_week) ? 'active' : '') // mark done if this day is in the list of read days for this user
+      ."'>$day[1]</div>"; // underline the current day
     }
     echo "
       </td>
