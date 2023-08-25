@@ -16,7 +16,7 @@ $recently->modify('-1 month');
 $scheduled_reading = get_reading($today);
 
 if ($scheduled_reading) {
-  foreach(select("SELECT name, email, trans_pref, last_seen FROM users WHERE email_verses = 1") as $user) {
+  foreach(select("SELECT id, name, email, trans_pref, last_seen FROM users WHERE email_verses = 1") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
     $last_seen_date = new Datetime('@'.$user['last_seen']);
     if ($recently <= $last_seen_date) {
@@ -27,7 +27,11 @@ if ($scheduled_reading) {
         $name = implode(' ', $name_arr);
       }
 
-      $html = html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], true);
+      $email_verses_key = bin2hex(random_bytes(16));
+      update('users', [
+        'email_verses_key' => $email_verses_key
+      ], "id = ".$user['id']);
+      $html = html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $email_verses_key);
       send_daily_verse_email($user['email'], $name, $html);
     }
   }

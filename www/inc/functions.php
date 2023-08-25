@@ -596,12 +596,12 @@
 
 	// the parameter expected is the return value of get_reading
 	// returns the html of all the verses we are reading
-	function html_for_scheduled_reading($scheduled_reading, $trans, $email=false) {
+	function html_for_scheduled_reading($scheduled_reading, $trans, $email_verses_key=false) {
 		global $schedule;
 		ob_start();
 		if ($scheduled_reading) {
 			$style = "";
-			if ($email) {
+			if ($email_verses_key) {
 				$style = "style='text-align: center; font-size: 1.4rem;'";
 			}
 			echo "<h4 class='text-center' $style>$scheduled_reading[reference]</h4>";
@@ -614,7 +614,7 @@
 	
 				$ref_style = "";
 				$verse_style = "";
-				if ($email) {
+				if ($email_verses_key) {
 					$ref_style = "style='font-weight: bold;'";
 					$verse_style="style='margin-left: 1rem;'";
 				}
@@ -625,12 +625,12 @@
 			}
 			$btn_style = "";
 			$form_style = "";
-			if ($email) {
+			if ($email_verses_key) {
 				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
 			}
 			echo "
-			<form action='".SCHEME."://".DOMAIN."/?today=$scheduled_reading[date]' method='post' id='done' class='center' $form_style>
+			<form action='".SCHEME."://".DOMAIN."/?today=$scheduled_reading[date]&key=$email_verses_key' method='get' id='done' class='center' $form_style>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>
 			</form>";
 		}
