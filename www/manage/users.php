@@ -148,6 +148,7 @@ else {
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
+    GROUP BY u.id
     ORDER BY staff DESC, LOWER(name) ASC");
   $student_count = count(
     array_filter($all_users, fn($row) => $row['staff'] == 0)
