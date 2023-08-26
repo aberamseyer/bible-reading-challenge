@@ -47,7 +47,7 @@ if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
     )
   );
   if (
-    $_REQUEST['key'] != $me['email_verses_key'] || // if it's from an email, ignore time restriction
+    ($_REQUEST['key'] && $_REQUEST['key'] != $me['email_verses_key']) || // if it's from an email, ignore time restriction
     (
       ($time - $_SESSION['started_reading']) / 60 // how many minutes we've been on the page
       < $word_length / 275           // how many words we can read each minute (avg is 250)
