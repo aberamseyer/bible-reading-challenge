@@ -45,14 +45,14 @@ if ($_POST['user_id']) {
 
 $page_title = "Manage Users";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
-    
-// specific user's stats
+  
 if ($_GET['user_id'] &&
   $user = row("
     SELECT * FROM users
     WHERE id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
+  // specific user's stats
   echo "<p><a href='/manage/users'>&lt;&lt; Back to users</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
@@ -95,17 +95,15 @@ if ($_GET['user_id'] &&
 }
 else {
   // regular landing
-  
-  $last_saturday = new Datetime('last saturday');
   $last_friday = new Datetime('last friday');
   $this_week = [
-    [ $last_friday, 'F' ],
-    [ $last_saturday, 'S' ],
-    [ date_modify(clone($last_saturday), '+1 day'),  'S' ],
-    [ date_modify(clone($last_saturday), '+2 days'), 'M' ],
-    [ date_modify(clone($last_saturday), '+3 days'), 'T' ],
-    [ date_modify(clone($last_saturday), '+4 days'), 'W' ],
-    [ date_modify(clone($last_saturday), '+5 days'), 'T' ]
+    [ $last_friday,                                'F' ],
+    [ date_modify(clone($last_friday), '+1 day'),  'S' ],
+    [ date_modify(clone($last_friday), '+2 day'),  'S' ],
+    [ date_modify(clone($last_friday), '+3 days'), 'M' ],
+    [ date_modify(clone($last_friday), '+4 days'), 'T' ],
+    [ date_modify(clone($last_friday), '+5 days'), 'W' ],
+    [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
   echo "<h5 title='Note that this chart doesnt refer to the current week until Sunday'>Fully Equipped</h5>";
@@ -120,7 +118,7 @@ else {
     FROM read_dates rd
     LEFT JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
     LEFT JOIN users u ON u.id = rd.user_id
-    $where
+    $where AND u.staff != 1
     GROUP BY rd.user_id
     HAVING COUNT(rd.id) >= $schedule_days_this_week");
       
@@ -159,14 +157,30 @@ else {
   echo "<p><b>$student_count</b> student".xs($student_count).". Click a user to see more details</p>";
 
   // table of users
-  echo "<table>
+  echo "
+  <style>
+    .week {
+      display: flex;
+      justify-content: center;
+    }
+    .day {
+      border-left: 1px solid var(--color-text);
+      border-top: 1px solid var(--color-text);
+      border-bottom: 1px solid var(--color-text);
+      width: 25px;
+    }
+    .day:last-child {
+      border-right: 1px solid var(--color-text);
+    }
+  </style>
+  <table>
     <thead>
       <tr>
         <th>User</th>
-        <th>Last Read</th>
+        <th>Last read</th>
         <th>Emails</th>
         <th title='This is irrespective of what reading schedule is selected'>4-week trend</th>
-        <th>Read this week</th>
+        <th>Read this period</th>
       </tr>
       </thead>
     <tbody>";
@@ -185,47 +199,8 @@ else {
       <td><small>".($user['last_read'] ? date('F j') : 'N/A')."</small></td>
       <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
       <td>
-        <canvas data-graph='".json_encode($trend = cols("
-        SELECT COALESCE(count, 0) count
-        FROM (
-          -- generates last 4 weeks to join what we read to
-          WITH RECURSIVE week_sequence AS (
-            SELECT
-              date('now', 'localtime') AS cdate
-            UNION ALL
-            SELECT date(cdate, '-7 days')
-            FROM week_sequence
-            LIMIT 4
-          )
-          SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
-        ) sd
-        LEFT JOIN (
-          -- gives the number of days we have read each week
-          SELECT strftime('%Y-%W', sd.date) AS week, COUNT(rd.user_id) count
-          FROM read_dates rd
-          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-          WHERE user_id = $user[id]
-          GROUP BY week
-        ) rd ON rd.week = sd.week
-        WHERE sd.week >= strftime('%Y-%W', DATE('now', '-28 days', 'localtime'))
-        ORDER BY sd.week ASC
-        LIMIT 4"))."'></canvas>
+        ".four_week_trend_canvas($user['id'])."
       </td>
-      <style>
-          .week {
-            display: flex;
-            justify-content: center;
-          }
-          .day {
-            border-left: 1px solid var(--color-text);
-            border-top: 1px solid var(--color-text);
-            border-bottom: 1px solid var(--color-text);
-            width: 25px;
-          }
-          .day:last-child {
-            border-right: 1px solid var(--color-text);
-          }
-      </style>
       <td class='week'>";
     foreach($this_week as $day) {
       echo "
@@ -241,43 +216,7 @@ else {
   echo "
     </tbody>
   </table>";
-  echo "<script>
-    const canvas = document.querySelectorAll('canvas');
-    canvas.forEach(c => {
-      const data = JSON.parse(c.getAttribute('data-graph'));
-      const ctx = c.getContext('2d');
-      
-      // Set the canvas dimensions
-      c.width = 100;
-      c.height = 40;
-      
-      // Calculate the scale factors
-      const maxDataValue = 7;
-      const scaleFactor = c.height / maxDataValue;
-      
-      // Draw the sparkline
-      ctx.beginPath();
-      ctx.moveTo(0, c.height - data[0] * scaleFactor);
-      for (let i = 1; i < data.length; i++) {
-        const x = (c.width / (data.length - 1)) * i;
-        const y = c.height - data[i] * scaleFactor;
-        const prevX = (c.width / (data.length - 1)) * (i - 1);
-        const prevY = c.height - data[i - 1] * scaleFactor;
-        const cpx = (prevX + x) / 2;
-        const cpy = (prevY + y) / 2;
-        
-        ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
-      }
-      
-      let gradient = ctx.createLinearGradient(0, 0, 200, 0);
-      gradient.addColorStop(0, 'rgb(63, 70, 143)');
-      gradient.addColorStop(1, 'rgb(219, 184, 100)');
-      ctx.strokeStyle = gradient;
-      
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    })
-    </script>";
+  echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
     echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";

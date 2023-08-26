@@ -1,6 +1,7 @@
 <?php
 
-// crontab entry: */2 * * * * php /home/bible-reading-challenge/cron/airtable-event-checkin.php
+// crontab entry: 4 * * * * php /home/bible-reading-challenge/cron/airtable-event-checkin.php
+// free airtable plan currently limits to 1000 calls/month
 
 define('AIRTABLE_BASE_ID', 'appTjcF4S0vp2ij2C'); // "Attendance"
 define('AIRTABLE_TABLE_ID', 'tblV9GoT02I6G5FYg'); // "F23 Event Check-in"

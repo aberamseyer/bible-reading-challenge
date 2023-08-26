@@ -668,3 +668,74 @@ function xs($num) {
 	if ($num == 1) return '';
 	else return 's';
 }
+
+function four_week_trend_canvas($user_id) {
+	return "<canvas data-graph='".json_encode(four_week_trend_data($user_id))."'></canvas>";
+}
+
+function four_week_trend_data($user_id) {
+	return cols("
+		SELECT COALESCE(count, 0) count
+		FROM (
+			-- generates last 4 weeks to join what we read to
+			WITH RECURSIVE week_sequence AS (
+				SELECT
+					date('now', 'localtime') AS cdate
+				UNION ALL
+				SELECT date(cdate, '-7 days')
+				FROM week_sequence
+				LIMIT 4
+			)
+			SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
+		) sd
+		LEFT JOIN (
+			-- gives the number of days we have read each week
+			SELECT strftime('%Y-%W', sd.date) AS week, COUNT(rd.user_id) count
+			FROM read_dates rd
+			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+			WHERE user_id = $user_id
+			GROUP BY week
+		) rd ON rd.week = sd.week
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-28 days', 'localtime'))
+		ORDER BY sd.week ASC
+		LIMIT 4");
+}
+
+function four_week_trend_js($width, $height) {
+	return "
+	const canvas = document.querySelectorAll('canvas');
+	canvas.forEach(c => {
+		const data = JSON.parse(c.getAttribute('data-graph'));
+		const ctx = c.getContext('2d');
+		
+		// Set the canvas dimensions
+		c.width = $width;
+		c.height = $height;
+		
+		// Calculate the scale factors
+		const maxDataValue = 7;
+		const scaleFactor = c.height / maxDataValue;
+		
+		// Draw the sparkline
+		ctx.beginPath();
+		ctx.moveTo(0, c.height - data[0] * scaleFactor);
+		for (let i = 1; i < data.length; i++) {
+			const x = (c.width / (data.length - 1)) * i;
+			const y = c.height - data[i] * scaleFactor;
+			const prevX = (c.width / (data.length - 1)) * (i - 1);
+			const prevY = c.height - data[i - 1] * scaleFactor;
+			const cpx = (prevX + x) / 2;
+			const cpy = (prevY + y) / 2;
+			
+			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
+		}
+		
+		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
+		gradient.addColorStop(0, 'rgb(63, 70, 143)');
+		gradient.addColorStop(1, 'rgb(219, 184, 100)');
+		ctx.strokeStyle = gradient;
+		
+		ctx.lineWidth = 1;
+		ctx.stroke();
+	})";
+}
