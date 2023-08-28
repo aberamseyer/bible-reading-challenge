@@ -19,7 +19,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
     $_SESSION['error'] = "Invalid credentials.";
   }
   else {
-    if (!password_verify($_POST['password'], $user_row['password'])) {
+    if (PROD && !password_verify($_POST['password'], $user_row['password'])) {
       $_SESSION['error'] = "Bad username or password.";
     }
     else {

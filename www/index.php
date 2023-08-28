@@ -36,34 +36,20 @@ $today_completed = num_rows("
     AND user_id = ".$my_id);
 
 // make sure they didn't read too fast 🤔
-if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
-  // count the words in today's reading
-  $scheduled_reading_chapter_ids = array_map(fn($passage) => $passage['chapter']['id'], $scheduled_reading['passages']);
-  $word_length = count(
-    explode(' ', 
-      implode(' ', 
-        cols("SELECT $trans FROM verses WHERE chapter_id IN(".implode(',', $scheduled_reading_chapter_ids).")")
-      )
-    )
-  );
-  if (
-    ($_REQUEST['key'] && $_REQUEST['key'] != $me['email_verses_key']) || // if it's from an email, ignore time restriction
-    (
-      ($time - $_SESSION['started_reading']) / 60 // how many minutes we've been on the page
-      < $word_length / 275           // how many words we can read each minute (avg is 250)
-    )
-  ) {
-    $_SESSION['error'] = "You read a little too fast there. Take the time to enjoy the passage!";
-  }
-  else {
-    // finished reading
-    insert("read_dates", [
-      'user_id' => $my_id,
-      'schedule_date_id' => $scheduled_reading['id'],
-      'timestamp' => $time
-    ]);
-    $today_completed = true;
-  }
+if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
+  $_REQUEST['complete_key'] == $me['complete_key']) {
+  insert("read_dates", [
+    'user_id' => $my_id,
+    'schedule_date_id' => $scheduled_reading['id'],
+    'timestamp' => $time
+  ]);
+  $today_completed = true;
+
+  // rotate the key used for verifying the reading was completed
+  $me['complete_key'] = bin2hex(random_bytes(16));
+  update('users', [
+    'complete_key' => $me['complete_key']
+  ], "id = ".$my_id);
 }
 else {
   // reset the timer for when we started reading only if we did not try to submit too soon
@@ -93,7 +79,7 @@ echo "<div id='date-header'>
   </form>
 </div>";
 
-echo html_for_scheduled_reading($scheduled_reading, $trans);
+echo html_for_scheduled_reading($scheduled_reading, $trans, $me['complete_key']);
 
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
