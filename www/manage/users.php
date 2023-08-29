@@ -95,7 +95,7 @@ if ($_GET['user_id'] &&
 }
 else {
   // regular landing
-  $last_friday = new Datetime('last friday');
+  $last_friday = new Datetime('last friday'); // this will always refer to the last period (Fri-Thu) until Saturday, so if someone reads on Friday, that will not be reflected in the Fully Equipped related charts until Saturday
   $this_week = [
     [ $last_friday,                                'F' ],
     [ date_modify(clone($last_friday), '+1 day'),  'S' ],
@@ -106,9 +106,9 @@ else {
     [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
-  echo "<h5 title='Note that this chart doesnt refer to the current week until Sunday'>Fully Equipped</h5>";
+  echo "<h5>Fully Equipped ".help("This chart doesnt refer to the current period until Saturday")."</h5>";
   $where = "WHERE sd.schedule_id = $schedule[id] 
-    AND sd.date >= '".$last_friday->format('Y-m-d')."' AND sd.date <= '".(date('N') < 4 ? date('Y-m-d') : $this_week[4][0]->format('Y-m-d'))."'"; // last friday through this thursday, but only if we've reached thursday
+    AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".(date('N') < 4 ? date('Y-m-d') : $this_week[4][0]->format('Y-m-d'))."'"; // last friday through this thursday, but only if we've reached thursday
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
@@ -120,7 +120,7 @@ else {
     LEFT JOIN users u ON u.id = rd.user_id
     $where AND u.staff != 1
     GROUP BY rd.user_id
-    HAVING COUNT(rd.id) >= $schedule_days_this_week");
+    HAVING COUNT(rd.id) = $schedule_days_this_week");
       
   if ($consistent_readers) {
     echo "
@@ -155,7 +155,7 @@ else {
   );
   
   echo "<h5>All users</h5>";
-  echo "<p><b>$student_count</b> student".xs($student_count).". Click a user to see more details</p>";
+  echo "<p><b>$student_count</b> student".xs($student_count).". Click a user's name to see more details</p>";
 
   // table of users
   echo "
@@ -180,8 +180,8 @@ else {
         <th>User</th>
         <th>Last read</th>
         <th>Emails</th>
-        <th title='This is irrespective of what reading schedule is selected'>4-week trend</th>
-        <th>Read this period</th>
+        <th>4-week trend ".help("This is irrespective of what reading schedule is selected, and is based on Sun-Sat reading")."</th>
+        <th>Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."</th>
       </tr>
       </thead>
     <tbody>";

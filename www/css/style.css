@@ -8,6 +8,9 @@ body {
   display: flex;
   justify-content: center;
 }
+.help {
+  cursor: pointer;
+}
 
 /* read page */
 #date-header {

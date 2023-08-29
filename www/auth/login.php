@@ -33,8 +33,6 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
   }
 }
 
-$check_in = $_SESSION['login_redirect'] && $_SESSION['login_redirect'] === '/event/check-in';
-
 $page_title = "Log in";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
@@ -42,16 +40,11 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
     #title { display: none; }
   </style>
   <div id='auth-wrap'>
-<?php if (!$check_in): ?>
     <div>
       <img src='/img/login-page.svg' style='width: 280px'>
     </div>
     <div>
       <img src='/img/start-reading.svg' style='width: 240px'>
-<?php else: ?>
-    <div style='margin: auto;'>
-      <img src='/img/coc-logo.svg' style='max-width: 300px;'>
-<?php endif; ?>
       <p></p>
       <form action='' method='post'>
         <input type='hidden' name='csrf' value='<?= $csrf ?>'>

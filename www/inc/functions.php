@@ -326,7 +326,6 @@
 		foreach([
 			['/schedule', 'My schedule'],
 			['/', 'Today'],
-			['/event/check-in', 'Check-in'],
 			['/auth/logout', 'Log out']
 		] as list($link, $title)) {
 			$nav .= "<a class='".$active_navigation_class($link)."' href='$link'>$title</a>";
@@ -669,6 +668,10 @@ function log_user_in($id) {
 function xs($num) {
 	if ($num == 1) return '';
 	else return 's';
+}
+
+function help($tip) {
+	return "<span class='help' title='$tip'>?&#x20DD;</span>";
 }
 
 function four_week_trend_canvas($user_id) {
