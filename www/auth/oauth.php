@@ -14,13 +14,14 @@ else {
   if (!$payload) {
     $_SESSION['error'] = "Problem with Google Sign in";
   } else {
-    $user_row = row("SELECT * FROM users WHERE email = '".db_esc(strtolower($payload['email']))."'");
+    $payload['email'] = strtolower($payload['email']);
+    $user_row = row("SELECT * FROM users WHERE email = '".db_esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
       $id = insert("users", [ 
         'uuid' => uniqid(),
         'name' => $payload['name'],
-        'email' => strtolower($payload['email']),
+        'email' => $payload['email'],
         'password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), // assign random password until the user changes it himself
         'email_verified' => 1,
         'trans_pref' => 'esv',
@@ -37,7 +38,6 @@ else {
         ], 'id = '.$user_row['id']);
       }
     }
-
 
     log_user_in($id);
   }

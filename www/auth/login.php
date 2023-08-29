@@ -14,6 +14,7 @@ if (!$csrf) {
 }
 
 if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
+  $_POST['email'] = strtolower($_POST['email']);
   $user_row = row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."' AND email_verified = 1");
   if (!$user_row) {
     $_SESSION['error'] = "Invalid credentials.";

@@ -9,6 +9,7 @@ if ($me) {
 }
 
 if ($_POST['email']) {
+  $_POST['email'] = strtolower($_POST['email']);
   // send forgot password email
   if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
     $_SESSION['error'] = "Invalid email.";

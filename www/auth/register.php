@@ -22,6 +22,7 @@ if ($_REQUEST['confirm']) {
   }
 }
 else if ($_POST['email']) {
+  $_POST['email'] = strtolower($_POST['email']);
   // register user
   if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
     $_SESSION['error'] = "Invalid email.";
