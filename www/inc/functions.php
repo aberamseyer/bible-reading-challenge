@@ -628,7 +628,9 @@
 				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
 			}
+			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
 			echo "
+			<div style='text-align: center;'><small><i>".$copyright_text[$trans]."</i></small></div>
 			<form action='".SCHEME."://".DOMAIN."/' method='get' id='done' class='center' $form_style>
 				<input type='hidden' name='complete_key' value='$complete_key'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>

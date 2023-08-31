@@ -45,7 +45,7 @@ else if ($_POST['email']) {
       'name' => $_POST['name'],
       'email' => $_POST['email'],
       'password' => $hash,
-      'trans_pref' => 'esv',
+      'trans_pref' => 'rcv',
       'date_created' => $time,
       'email_verify_token' => $verify_token
     ]);
