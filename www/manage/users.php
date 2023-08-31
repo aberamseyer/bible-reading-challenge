@@ -106,14 +106,14 @@ else {
     [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
-  echo "<h5>Fully Equipped ".help("This chart doesnt refer to the current period until Saturday")."</h5>";
-  $where = "WHERE sd.schedule_id = $schedule[id] 
-    AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".(date('N') < 4 ? date('Y-m-d') : $this_week[4][0]->format('Y-m-d'))."'"; // last friday through this thursday, but only if we've reached thursday
+  echo "<h5>Fully Equipped ".help("This list doesnt refer to the current period until Saturday")."</h5>";
+  $where = "WHERE sd.schedule_id = $schedule[id] ".                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".(date('N') == 5 ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
     $where");
-  $consistent_readers = cols("
+  $fully_equipped = cols("
     SELECT u.name
     FROM read_dates rd
     LEFT JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
@@ -122,10 +122,10 @@ else {
     GROUP BY rd.user_id
     HAVING COUNT(rd.id) = $schedule_days_this_week");
       
-  if ($consistent_readers) {
+  if ($fully_equipped) {
     echo "
     <ol>";
-    foreach($consistent_readers as $name) {
+    foreach($fully_equipped as $name) {
       echo "<li>".html($name)."</li>";
     }
     echo "
@@ -197,7 +197,7 @@ else {
     echo "
     <tr>
       <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])."</a></small></td>
-      <td><small>".($user['last_read'] ? date('F j') : 'N/A')."</small></td>
+      <td><small>".($user['last_read'] ? date('M j') : 'N/A')."</small></td>
       <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
       <td>
         ".four_week_trend_canvas($user['id'])."
