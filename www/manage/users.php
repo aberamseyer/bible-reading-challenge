@@ -144,7 +144,7 @@ else {
     $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
   }
   $all_users = select("
-    SELECT u.id, u.name, u.email, u.staff, u.last_seen, rd.timestamp last_read, u.email_verses
+    SELECT u.id, u.name, u.email, u.staff, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
@@ -180,7 +180,7 @@ else {
         <th>User</th>
         <th>Last read</th>
         <th>Emails</th>
-        <th>4-week trend ".help("This is irrespective of what reading schedule is selected, and is based on Sun-Sat reading")."</th>
+        <th>4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."</th>
         <th>Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."</th>
       </tr>
       </thead>
@@ -197,7 +197,7 @@ else {
     echo "
     <tr>
       <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])."</a></small></td>
-      <td><small>".($user['last_read'] ? date('M j') : 'N/A')."</small></td>
+      <td><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
       <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
       <td>
         ".four_week_trend_canvas($user['id'])."

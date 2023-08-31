@@ -47,7 +47,8 @@ class MySessionHandler implements SessionHandlerInterface
     public function gc($maxlifetime): int|false
     {
       // keep 'em logged in forever:
-      // query("DELETE FROM sessions WHERE last_udpated < ".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime), $this->s_db);
+      $rows_deleted = query("DELETE FROM sessions WHERE last_udpated < ".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime), "num_rows", $this->s_db);
+      error_log('Cleaned up '.$rows_deleted.' sessions.');
       return true;
     }
 }

@@ -65,7 +65,7 @@ if ($today_completed) {
 // header with translation selector and email pref
 echo "<div id='date-header'>
   <h5>".$today->format("l, F j")."</h5>
-  <form style='display: flex; width: 20rem; justify-content: space-between; align-items: center;'>
+  <form style='display: flex; width: 20rem; justify-content: space-between; align-items: flex-end;'>
     <label>
       Email me &nbsp;&nbsp;
       <input type='checkbox' name='change_email_me' value='1' ".($me['email_verses'] ? 'checked' : '')." onchange='this.form.submit()'>

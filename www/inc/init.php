@@ -9,8 +9,8 @@ require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 require_once "session.php";
 session_set_save_handler(new MySessionHandler(), true);
 session_name("brc-sessid");
+session_set_cookie_params(60*60*24*30, "/", DOMAIN, PROD, true); // 30-day session
 session_start();
-
 // GLOBAL VARIABLES
 $my_id = $_SESSION['my_id'] ?: 0;
 $me = row("SELECT * FROM users WHERE id = ".(int) $my_id);
