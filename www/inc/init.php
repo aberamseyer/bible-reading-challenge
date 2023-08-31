@@ -7,10 +7,14 @@ require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 // die;
 
 require_once "session.php";
-session_set_save_handler(new MySessionHandler(), true);
 session_name("brc-sessid");
-session_set_cookie_params(60*60*24*30, "/", DOMAIN, PROD, true); // 30-day session
+ini_set('session.gc_probability', 1);
+ini_set('session.gc_divisor', 100);
+ini_set('session.gc_maxlifetime', SESSION_LENGTH);
+session_set_cookie_params(SESSION_LENGTH, "/", DOMAIN, PROD, true);
+session_set_save_handler(new MySessionHandler(), true);
 session_start();
+
 // GLOBAL VARIABLES
 $my_id = $_SESSION['my_id'] ?: 0;
 $me = row("SELECT * FROM users WHERE id = ".(int) $my_id);

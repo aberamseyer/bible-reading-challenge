@@ -9,6 +9,7 @@ define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 define('DB_PATH', __DIR__."/../../brc.db");
 define('DOMAIN', PROD ? 'app.uoficoc.com' : 'uoficoc.local');
 define('SCHEME', PROD ? 'https' : 'http');
+define('SESSION_LENGTH', 60*60*24*30); // 30-day sessions
 
 // read environment variables
 foreach (explode("\n", file_get_contents(__DIR__."/../../.env")) as $line) {
