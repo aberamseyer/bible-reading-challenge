@@ -1,7 +1,7 @@
 ## Dependencies
 Written with php 8.2.3 and apache 2.4.38
 
-Install [composer](https://getcomposer.org/) dependencies in root of project
+Install [composer](https://getcomposer.org/) dependencies in root of project with `composer install`
 
 ## Database
 create SQLite database file named "brc.db" in root of project
@@ -17,6 +17,3 @@ create a '.env' file in the project root. required keys:
 also requires configuring OAuth consent screen
 - GOOGLE_CLIENT_ID
 - GOOGLE_CLIENT_SECRET
-
-### Airtable sync
-- AIRTABLE_ACESS_TOKEN
