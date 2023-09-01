@@ -18,6 +18,11 @@
     <hr>
     <?php endif; ?>
     <h1 id='title'><?= $page_title ?></h1>
+    <?php if($insecure): ?>
+      <style>
+        #title { display: none; }
+      </style>
+    <?php endif; ?>
     <?php
       if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['info']) {
         echo "

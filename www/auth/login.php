@@ -1,7 +1,6 @@
 <?php
 
 $insecure = true;
-
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 if ($me) {
@@ -37,9 +36,6 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
 $page_title = "Log in";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
-  <style>
-    #title { display: none; }
-  </style>
   <div id='auth-wrap'>
     <div>
       <img src='/img/login-page.svg' style='width: 280px'>

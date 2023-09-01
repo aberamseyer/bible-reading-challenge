@@ -1,7 +1,10 @@
 <?php
   
-  $page_title = "Privacy Policy";
-  require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+$insecure = true;
+require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
+
+$page_title = "Privacy Policy";
+require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 ?>
 
