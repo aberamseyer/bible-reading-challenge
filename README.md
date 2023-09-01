@@ -6,6 +6,9 @@ Install [composer](https://getcomposer.org/) dependencies in root of project wit
 ## Database
 create SQLite database file named "brc.db" in root of project
 
+### Schema
+to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > schema.sql`
+
 ## API Keys
 create a '.env' file in the project root. required keys:
 

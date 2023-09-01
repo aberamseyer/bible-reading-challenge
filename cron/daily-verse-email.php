@@ -27,7 +27,13 @@ if ($scheduled_reading) {
         $name = implode(' ', $name_arr);
       }
 
+      // the banner image at the top of the email is part of the email template in Sendgrid
+
+      // chapter contents
       $html = html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $user['complete_key'], true);
+      // unsubscribe
+      $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
+      
       send_daily_verse_email($user['email'], $name, $html);
     }
   }

@@ -593,8 +593,13 @@
 		return get_schedule_days($schedule_id);
 	}
 
-	// the parameter expected is the return value of get_reading
-	// returns the html of all the verses we are reading
+	/*
+	 * @param scheduled_reading array the return value of get_reading()
+	 * @param trans string one of the translations
+	 * @param complete_key string the key to complete the reading from a row in the user's table
+	 * @param email bool whether this is going in an email or not
+	 * @return the html of all the verses we are reading
+	 */ 
 	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $email=false) {
 		global $schedule;
 		ob_start();

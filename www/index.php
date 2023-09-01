@@ -4,13 +4,16 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
 // set translation, update it if the select box changed
 $tranlsations = ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt'];
-if ($_REQUEST['change_trans'] || $_REQUEST['change_email_me']) {
+if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
   if (!in_array($new_trans, $tranlsations)) {
     $new_trans = 'rcv';
   }
   $me['trans_pref'] = $new_trans;
-  $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST) ? 1 : 0;
+  
+  $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
+    ? $_REQUEST['change_email_me']
+    : 0;
   update("users", [
     'trans_pref' => $new_trans,
     'email_verses' => $me['email_verses']
