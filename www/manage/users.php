@@ -57,7 +57,7 @@ if ($_GET['user_id'] &&
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
-  echo "Last seen: <b>".date('F j, Y \a\t g:ia', $user['last_seen'])."</b><br>";
+  echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
   $last_read_ts = col("SELECT timestamp FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b></p>";
   echo "<form method='post'>
@@ -144,7 +144,7 @@ else {
     $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
   }
   $all_users = select("
-    SELECT u.id, u.name, u.email, u.staff, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses
+    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
@@ -196,7 +196,7 @@ else {
       AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
     echo "
     <tr>
-      <td><small><a href='?user_id=$user[id]' title='Last seen: ".date('M j', (int)$user['last_seen'])."'>".html($user['name'])."</a></small></td>
+      <td><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
       <td><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
       <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
       <td>
