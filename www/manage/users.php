@@ -58,7 +58,7 @@ if ($_GET['user_id'] &&
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
-  $last_read_ts = col("SELECT timestamp FROM read_dates WHERE user_id = $user[id]");
+  $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b></p>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
@@ -191,9 +191,9 @@ else {
       FROM read_dates rd
       JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
       WHERE schedule_id = $schedule[id]
-      AND rd.user_id = $user[id]
-      AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
-      AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
+        AND rd.user_id = $user[id]
+        AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
+        AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
     echo "
     <tr>
       <td><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
