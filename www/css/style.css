@@ -60,6 +60,9 @@ body {
 }
 
 /* calendars */
+.month {
+  overflow-x: auto;
+}
 th, td {
   text-align: center;
 }
