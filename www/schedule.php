@@ -15,7 +15,7 @@
   $page_title = "Schedule";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
-  echo "<p>From here you can jump to any past reading to complete it.</p>
+  echo "<p>Click a date to jump to any past reading to complete it.</p>
   <div>
     ".four_week_trend_canvas($my_id)."
     <div style='width: 300px; text-align: center;'>
@@ -36,17 +36,15 @@
       const date = tableCell.getAttribute('data-date')
       const matchingDay = data.find(sd => sd.date === date)
       if (matchingDay) {
-        tableCell.querySelector('small').textContent = matchingDay.passage
+        tableCell.querySelector('.label').textContent = matchingDay.passage
         if (matchingDay.read) {
           tableCell.classList.add('active')
         }
         if (!tableCell.classList.contains('future')) {
-          const span = tableCell.querySelector('.date')
-          const link = document.createElement('a')
-          link.classList.add('date')
-          link.setAttribute('href', '/?today=' + date)
-          link.textContent = span.textContent
-          span.replaceWith(link)
+          tableCell.setAttribute('href', '/?today=' + date)
+          tableCell.onclick = () => window.location = tableCell.getAttribute('href')
+          tableCell.classList.add('cursor')
+
         }
       }
     })

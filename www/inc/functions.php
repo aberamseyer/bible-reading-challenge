@@ -454,11 +454,15 @@
 			if ($current_day->format('Y-m-d') == $end_date->format('Y-m-d'))
 				$class .= " end";
 			$calendar .= "
-				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'><span class='date'>$day</span><br>";
+				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
+					<span class='date'>$day</span><br>";
 			if ($editable && !$inactive)
-				$calendar .= "<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
+				$calendar .= "
+					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
-			$calendar .= "<small class='label'></small></td>";
+			$calendar .= "
+					<small class='label'></small>
+				</td>";
 			
 			// Move to the next day and update the day of the week
 			$current_day->modify("+1 day");
@@ -590,7 +594,8 @@
 			];
 		}
 		$schedules[$schedule_id] = $days;
-		return get_schedule_days($schedule_id);
+		
+		return $days;
 	}
 
 	/*
@@ -603,6 +608,7 @@
 	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $email=false) {
 		global $schedule;
 		ob_start();
+		echo "<article>";
 		if ($scheduled_reading) {
 			$style = "";
 			if ($email) {
@@ -616,19 +622,19 @@
 				$book_abbrevs = json_decode($passage['book']['abbreviations'], true);
 				$ref = ucwords($book_abbrevs[0]).". ".$passage['chapter']['number'].":";
 	
-				$ref_style = "";
-				$verse_style = "";
+				$ref_style = "class='ref'";
+				$verse_style = "class='verse-text'";
 				if ($email) {
-					$ref_style = "style='font-weight: bold;'";
+					$ref_style = "style='font-weight: bold; user-select: none;'";
 					$verse_style="style='margin-left: 1rem;'";
 				}
 				foreach($verses as $verse_row) {
 					echo "
-						<div class='verse'><span class='ref' $ref_style>".$ref.$verse_row['number']."</span><span class='verse-text' $verse_style>".$verse_row[$trans]."</span></div>";
+						<div class='verse'><span $ref_style>".$ref.$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
 				}
 			}
 			$btn_style = "";
-			$form_style = "";
+			$form_style = "id='done' class='center'";
 			if ($email) {
 				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
@@ -636,7 +642,7 @@
 			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
 			echo "
 			<div style='text-align: center;'><small><i>".$copyright_text[$trans]."</i></small></div>
-			<form action='".SCHEME."://".DOMAIN."/' method='get' id='done' class='center' $form_style>
+			<form action='".SCHEME."://".DOMAIN."/' method='get' $form_style>
 				<input type='hidden' name='complete_key' value='$complete_key'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>
@@ -656,7 +662,7 @@
 				}
 			}
 		}
-
+		echo "</article>";
 		return ob_get_clean();
 	}
 
@@ -678,7 +684,7 @@ function xs($num) {
 }
 
 function help($tip) {
-	return "<span class='help' title='$tip'>?&#x20DD;</span>";
+	return "<span class='cursor' title='$tip'>?&#x20DD;</span>";
 }
 
 function four_week_trend_canvas($user_id) {

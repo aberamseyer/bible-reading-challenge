@@ -82,6 +82,25 @@ echo "<div id='date-header'>
   </form>
 </div>";
 
+// how many have read today
+$total_readers = col("SELECT COUNT(*)
+  FROM read_dates rd
+  JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+  WHERE sd.id = ".$scheduled_reading['id']);
+echo "<p><small>";
+if ($today_completed && $total_readers == 1) {
+  echo "You're the first to complete today's reading";
+}
+else {
+  if ($total_readers > 1) {
+    if ($today_completed) {
+      echo "You and ";
+    }
+    echo ($total_readers-1)." other".($total_readers == 1 ? " has" : "s have")." completed this reading";
+  }
+}
+echo "</small></p>";
+
 echo html_for_scheduled_reading($scheduled_reading, $trans, $me['complete_key']);
 
 

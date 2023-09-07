@@ -8,7 +8,7 @@ body {
   display: flex;
   justify-content: center;
 }
-.help {
+.cursor {
   cursor: pointer;
 }
 
@@ -20,6 +20,7 @@ body {
 .ref {
   font-weight: bold;
   user-select: none;
+  -webkit-user-select: none;
 }
 .verse-text {
   margin-left: 1rem;
@@ -86,6 +87,9 @@ th, td {
   height: 90px;
   vertical-align: top;
   box-sizing: border-box;
+}
+.reading-day.cursor {
+  text-decoration: underline;
 }
 .inactive {
   pointer-events: none;
