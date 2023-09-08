@@ -88,15 +88,26 @@ $total_readers = col("SELECT COUNT(*)
   JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
   WHERE sd.id = ".$scheduled_reading['id']);
 echo "<p><small>";
-if ($today_completed && $total_readers == 1) {
-  echo "You're the first to complete today's reading";
+
+if ($today_completed) {
+  if ($total_readers >= 3) {
+    echo "You and ".($total_readers-1)." others have completed this reading.";
+  }
+  else if ($total_readers == 2) {
+    echo "You and 1 other have completed this reading";
+  }
+  else {
+    echo "You're the first to complete this reading";
+  }
 }
 else {
-  if ($total_readers > 1) {
-    if ($today_completed) {
-      echo "You and ";
-    }
-    echo ($total_readers-1)." other".($total_readers == 1 ? " has" : "s have")." completed this reading";
+  if ($total_readers == 1) {
+    echo number_format($total_readers, )." other has completed this reading.";
+  }
+  else {
+    $nf = new NumberFormatter("", NumberFormatter::SPELLOUT);
+    $words = $nf->format($total_readers);
+    echo strtoupper($words[0]).substr($words, 1)." other".xs($total_readers)." have completed this reading.";
   }
 }
 echo "</small></p>";
