@@ -15,11 +15,37 @@
   $page_title = "Schedule";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
+  $canvas_width = 300;
   echo "<p>Click a date to jump to any past reading to complete it.</p>
-  <div>
-    ".four_week_trend_canvas($my_id)."
-    <div style='width: 300px; text-align: center;'>
-      <small>4-week reading trend</small>
+  <div style='display: flex; justify-content: space-between; align-items: flex-end;'>
+    <div>
+      <h5>My Stats</h5>
+      <ul>
+        <li>Chapters read: ".col("
+          SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
+          FROM schedule_dates sd
+          JOIN read_dates rd ON rd.schedule_date_id = sd.id
+          WHERE rd. user_id = $my_id")."</li>
+        <li>Words read: ".number_format(col("
+          SELECT SUM(
+            LENGTH($me[trans_pref]) - LENGTH(REPLACE($me[trans_pref], ' ', '')) + 1
+          ) as word_count
+          FROM (
+            SELECT value
+            FROM schedule_dates sd
+            JOIN JSON_EACH(passage_chapter_ids)
+            JOIN read_dates rd ON sd.id = rd.schedule_date_id
+            WHERE rd.user_id = $my_id
+          ) chp_ids
+          LEFT JOIN verses v ON v.chapter_id = chp_ids.value
+        "))."</li>
+      </ul>
+    </div>
+    <div>
+      ".four_week_trend_canvas($my_id)."
+      <div style='width: ".$canvas_width."px; text-align: center;'>
+        <small>4-week reading trend</small>
+      </div>
     </div>
   </div>";
 
@@ -27,7 +53,7 @@
   echo generate_schedule_calendar($schedule);
 
   echo "<script>
-  ".four_week_trend_js(300, 50)."
+  ".four_week_trend_js($canvas_width, 120)."
 
   const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
   fetch(`?get_dates=1`).then(rsp => rsp.json())

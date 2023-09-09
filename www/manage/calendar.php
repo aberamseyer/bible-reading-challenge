@@ -20,8 +20,14 @@
     foreach($_POST['days'] as $date => $day) {
       if ($day['id'] && $day['passage']) {
         // update
+        $chp_ids = array_column(
+          array_column(
+            parse_passage($day['passage']),
+          'chapter'),
+        'id');
         update("schedule_dates", [
-          'passage' => $day['passage']
+          'passage' => $day['passage'],
+          'passage_chapter_ids' => json_encode($chp_ids)
         ], "id = ".(int)$day['id']);
       }
       else if ($day['id'] && !$day['passage']) {
@@ -31,10 +37,17 @@
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
+        $chp_ids = array_column(
+          array_column(
+            parse_passage($day['passage']),
+          'chapter'),
+        'id');
+
         insert("schedule_dates", [
           'schedule_id' => $_POST['schedule_id'],
           'date' => $date,
-          'passage' => $day['passage']
+          'passage' => $day['passage'],
+          'passage_chapter_ids' => json_encode($chp_ids)
         ]);
       }
     }

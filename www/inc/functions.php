@@ -499,7 +499,7 @@
 				<input type='hidden' name='schedule_id' value='$schedule[id]'>";
 		}
 		foreach ($period as $date) {
-			echo "<div class='month'>";
+			echo "<div class='month table-scroll'>";
 			echo "<h6 class='text-center'>".$date->format('F Y')."</h6>";
 			echo generate_calendar($date->format('Y'), $date->format('F'), $start_date, $end_date, $editable);
 			echo "</div>";
@@ -513,15 +513,63 @@
 	/**
 	 * returns one element from the array returned by get_schedule_days($schedule_id)
 	 */
-	function get_reading($datetime) {
-		global $schedule;
-		$days = get_schedule_days($schedule['id']);
+	function get_reading($datetime, $schedule_id) {
+		$days = get_schedule_days($schedule_id);
 		$today = $datetime->format('Y-m-d');
 		foreach($days as $day) {
 			if ($day['date'] == $today)
 				return $day;
 		}
 		return false;
+	}
+
+	/**
+	 * This parses a passage that appears in the schedule calendar
+	 * $passage string e.g., Matthew 1-3; Mark 12-14; Jude 1
+	 * @return [
+	 *   'book' => (book info)
+	 *   'chapter' => (chapter info)
+	 * ]
+	 */
+	function parse_passage($passage) {
+		$parts = explode(";", $passage);
+		$chps = [];
+		foreach($parts as $reference) {
+			$reference = trim($reference);
+			
+			$pieces = explode(" ", $reference);
+			if(count($pieces) > 2) {
+				// book name contains a space (e.g., 1 John)
+				$book_str = $pieces[0]." ".$pieces[1];
+				$chapter_str = $pieces[2];
+			}
+			else {
+				// all other cases
+				$book_str = $pieces[0];
+				$chapter_str = $pieces[1];
+			}
+			$chapters = [ $chapter_str ];
+			if (strpos($chapter_str, '-') !== false) {
+				// reference contains multiple chapters via a '-'
+				list($begin, $end) = explode("-", $chapter_str);
+				$chapters = range($begin, $end);
+			}
+			
+			// match the book and chapters to the database
+			$book_row = row("SELECT * FROM books WHERE name = '".db_esc($book_str)."'");
+			foreach(select("
+				SELECT *
+				FROM chapters
+				WHERE book_id = $book_row[id]
+					AND number IN(".implode(',', $chapters).")")
+			as $chapter_row) {
+				$chps[] = [
+					'book' => $book_row,
+					'chapter' => $chapter_row
+				];
+			}
+		}
+		return $chps;
 	}
 
 	/**
@@ -547,54 +595,16 @@
 
 		$schedule_dates = select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
 		$days = [];
-		foreach ($schedule_dates as $sd) {
-			// we have a portion to read today
-			$parts = explode(";", $sd['passage']);
-			$chps = [];
-			foreach($parts as $reference) {
-				$reference = trim($reference);
-				
-				$pieces = explode(" ", $reference);
-				if(count($pieces) > 2) {
-					// book name contains a space (e.g., 1 John)
-					$book_str = $pieces[0]." ".$pieces[1];
-					$chapter_str = $pieces[2];
-				}
-				else {
-					// all other cases
-					$book_str = $pieces[0];
-					$chapter_str = $pieces[1];
-				}
-				$chapters = [ $chapter_str ];
-				if (strpos($chapter_str, '-') !== false) {
-					// reference contains multiple chapters via a '-'
-					list($begin, $end) = explode("-", $chapter_str);
-					$chapters = range($begin, $end);
-				}
-				
-				// match the book and chapters to the database
-				$book_row = row("SELECT * FROM books WHERE name = '".db_esc($book_str)."'");
-				foreach(select("
-					SELECT *
-					FROM chapters
-					WHERE book_id = $book_row[id]
-						AND number IN(".implode(',', $chapters).")") as $chapter_row
-				) {
-					$chps[] = [
-						'book' => $book_row,
-						'chapter'=> $chapter_row
-					];
-				}
-			}
+		foreach ($schedule_dates as $sd) {			
 			$days[] = [
 				'id' => $sd['id'],
 				'date' => $sd['date'],
 				'reference' => $sd['passage'],
-				'passages' => $chps
+				'passages' => parse_passage($sd['passage'])
 			];
 		}
 		$schedules[$schedule_id] = $days;
-		
+
 		return $days;
 	}
 
@@ -605,8 +615,7 @@
 	 * @param email bool whether this is going in an email or not
 	 * @return the html of all the verses we are reading
 	 */ 
-	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $email=false) {
-		global $schedule;
+	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $email=false) {
 		ob_start();
 		echo "<article>";
 		if ($scheduled_reading) {

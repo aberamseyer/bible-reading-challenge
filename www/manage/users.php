@@ -174,49 +174,51 @@ else {
       border-right: 1px solid var(--color-text);
     }
   </style>
-  <table>
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>Last read</th>
-        <th>Emails</th>
-        <th>4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."</th>
-        <th>Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."</th>
-      </tr>
-      </thead>
-    <tbody>";
-  foreach($all_users as $user) {
-    $days_read_this_week = cols("
-      SELECT DATE(sd.date) d
-      FROM read_dates rd
-      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-      WHERE schedule_id = $schedule[id]
-        AND rd.user_id = $user[id]
-        AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
-        AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
-    echo "
-    <tr>
-      <td><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
-      <td><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
-      <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
-      <td>
-        ".four_week_trend_canvas($user['id'])."
-      </td>
-      <td class='week'>";
-    foreach($this_week as $day) {
+  <div class='table-scroll'>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Last read</th>
+          <th>Emails</th>
+          <th>4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."</th>
+          <th>Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."</th>
+        </tr>
+        </thead>
+      <tbody>";
+    foreach($all_users as $user) {
+      $days_read_this_week = cols("
+        SELECT DATE(sd.date) d
+        FROM read_dates rd
+        JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+        WHERE schedule_id = $schedule[id]
+          AND rd.user_id = $user[id]
+          AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
+          AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
       echo "
-      <div class='day "
-      .(in_array($day[0]->format("Y-m-d"), $days_read_this_week) ? 'active' : '') // mark done if this day is in the list of read days for this user
-      ."'>$day[1]</div>"; // underline the current day
+      <tr>
+        <td><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
+        <td><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
+        <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
+        <td>
+          ".four_week_trend_canvas($user['id'])."
+        </td>
+        <td class='week'>";
+      foreach($this_week as $day) {
+        echo "
+        <div class='day "
+        .(in_array($day[0]->format("Y-m-d"), $days_read_this_week) ? 'active' : '') // mark done if this day is in the list of read days for this user
+        ."'>$day[1]</div>"; // underline the current day
+      }
+      echo "
+        </td>
+      </tr>";
+      
     }
     echo "
-      </td>
-    </tr>";
-    
-  }
-  echo "
-    </tbody>
-  </table>";
+      </tbody>
+    </table>
+  </div>";
   echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {

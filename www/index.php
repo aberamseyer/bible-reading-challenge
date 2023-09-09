@@ -29,7 +29,7 @@ if (strtotime($_GET['today'])) {
     ? $override_date
     : $today;
 }
-$scheduled_reading = get_reading($today);
+$scheduled_reading = get_reading($today, $schedule['id']);
 
 // determine if today's reading has been completed
 $today_completed = num_rows("
@@ -112,7 +112,7 @@ else {
 }
 echo "</small></p>";
 
-echo html_for_scheduled_reading($scheduled_reading, $trans, $me['complete_key']);
+echo html_for_scheduled_reading($scheduled_reading, $trans, $me['complete_key'], $schedule);
 
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

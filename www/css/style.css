@@ -60,7 +60,7 @@ body {
 }
 
 /* calendars */
-.month {
+.table-scroll {
   overflow-x: auto;
 }
 th, td {
