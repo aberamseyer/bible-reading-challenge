@@ -43,12 +43,6 @@ CREATE TABLE schedules(
   end_date TEXT,
   active INTEGER
 );
-CREATE TABLE schedule_dates(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  schedule_id INTEGER,
-  date TEXT,
-  passage INTEGER
-);
 CREATE TABLE read_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
@@ -71,6 +65,13 @@ CREATE TABLE users(
   forgot_password_expires TEXT,
   email_verses INTEGER,
   complete_key TEXT
+);
+CREATE TABLE schedule_dates(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  schedule_id INTEGER,
+  date TEXT,
+  passage INTEGER,
+  passage_chapter_ids TEXT
 );
 CREATE INDEX "idx_chapters_book_id" ON "chapters"(`book_id`);
 CREATE INDEX "idx_books_name" ON "books"(`name`);
