@@ -740,7 +740,7 @@ function four_week_trend_js($width, $height) {
 		c.height = $height;
 		
 		// Calculate the scale factors
-		const maxDataValue = 7;
+		const maxDataValue = 8;
 		const scaleFactor = c.height / maxDataValue;
 		
 		// Draw the sparkline
