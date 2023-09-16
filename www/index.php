@@ -32,11 +32,7 @@ if (strtotime($_GET['today'])) {
 $scheduled_reading = get_reading($today, $schedule['id']);
 
 // determine if today's reading has been completed
-$today_completed = num_rows("
-  SELECT id
-  FROM read_dates
-  WHERE schedule_date_id = ".($scheduled_reading['id'] ?: 0)."
-    AND user_id = ".$my_id);
+$today_completed = day_completed($my_id, $scheduled_reading['id'] ?: 0);
 
 // make sure they didn't read too fast 🤔
 if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&

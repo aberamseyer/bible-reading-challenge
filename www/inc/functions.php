@@ -337,7 +337,7 @@
 		return row("SELECT * FROM schedules WHERE active = 1");
 	}
 
-	function send_daily_verse_email($email, $name, $content) {
+	function send_daily_verse_email($email, $name, $subject, $content) {
 		$body = [
 			"from" => [
 				"email" => "uofichristiansoncampus@gmail.com",
@@ -348,6 +348,7 @@
 				[
 					"to" => [[ "email" => $email ]],
 					"dynamic_template_data" => [
+						"subject" => $subject,
 						"name" => $name,
 						"html" => $content
 					]
@@ -612,6 +613,7 @@
 	 * @param scheduled_reading array the return value of get_reading()
 	 * @param trans string one of the translations
 	 * @param complete_key string the key to complete the reading from a row in the user's table
+	 * @param schedule the schedule from which we are generating a reading
 	 * @param email bool whether this is going in an email or not
 	 * @return the html of all the verses we are reading
 	 */ 
@@ -765,4 +767,12 @@ function four_week_trend_js($width, $height) {
 		ctx.lineWidth = 1;
 		ctx.stroke();
 	})";
+}
+
+function day_completed($my_id, $schedule_date_id) {
+	return num_rows("
+		SELECT id
+		FROM read_dates
+		WHERE schedule_date_id = $schedule_date_id
+			AND user_id = $my_id");
 }
