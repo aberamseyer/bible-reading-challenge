@@ -33,7 +33,7 @@ function compareRows(a, b) {
     if (a_email == b_email)
       return a.querySelector('td[data-name]').textContent.localeCompare(b.querySelector('td[data-name]').textContent)
     else
-      return a_email < b_email
+      return a_email > b_email
   }
   else if (column === 'trend') {
     const a_arr = JSON.parse(a.querySelector('[data-graph]').getAttribute('data-graph'))
@@ -41,7 +41,7 @@ function compareRows(a, b) {
     return a_arr.reduce((acc, curr) => acc + curr) > b_arr.reduce((acc, curr) => acc + curr)
   }
   else if (column === 'period') {
-    return a.querySelectorAll('.active').length < b.querySelectorAll('.active').length
+    return a.querySelectorAll('.active').length > b.querySelectorAll('.active').length
   }
 }
 
