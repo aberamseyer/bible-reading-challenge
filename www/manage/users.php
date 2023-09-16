@@ -149,7 +149,7 @@ else {
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
     GROUP BY u.id
-    ORDER BY staff DESC, LOWER(name) ASC");
+    ORDER BY LOWER(name) ASC");
   $student_count = count(
     array_filter($all_users, fn($row) => $row['staff'] == 0)
   );
@@ -173,16 +173,45 @@ else {
     .day:last-child {
       border-right: 1px solid var(--color-text);
     }
+
+    .sort-icon::before {
+      content: '⇅';
+      opacity: 0.3;
+      padding-left: 5px;
+    }
+    .sort-icon.asc::before {
+      content: '↑';
+      opacity: 1;
+    }
+    .sort-icon.desc::before {
+      content: '↓';
+      opacity: 1;
+    }
   </style>
   <div class='table-scroll'>
     <table>
       <thead>
         <tr>
-          <th>User</th>
-          <th>Last read</th>
-          <th>Emails</th>
-          <th>4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."</th>
-          <th>Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."</th>
+          <th data-sort='name'>
+            <span class='sort-icon asc'></span>
+            User
+          </th>
+          <th data-sort='last-read'>
+            <span class='sort-icon'></span>
+            Last read
+          </th>
+          <th data-sort='email'>
+            <span class='sort-icon'></span>
+            Emails
+          </th>
+          <th data-sort='trend'>
+            <span class='sort-icon'></span>
+            4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."
+          </th>
+          <th data-sort='period'>
+            <span class='sort-icon'></span>
+            Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."
+          </th>
         </tr>
         </thead>
       <tbody>";
@@ -197,13 +226,13 @@ else {
           AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
       echo "
       <tr>
-        <td><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
-        <td><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
-        <td>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
-        <td>
+        <td data-name><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
+        <td data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
+        <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
+        <td data-trend>
           ".four_week_trend_canvas($user['id'])."
         </td>
-        <td class='week'>";
+        <td data-period class='week'>";
       foreach($this_week as $day) {
         echo "
         <div class='day "
@@ -229,4 +258,5 @@ else {
   }
 }
 
+echo "<script src='/js/users.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
