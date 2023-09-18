@@ -25,7 +25,7 @@ function compareRows(a, b) {
     return tdA.textContent.localeCompare(tdB.textContent)
   }
   else if (column === "last-read") {
-    return new Date(tdA.getAttribute('data-last-read')) < new Date(tdB.getAttribute('data-last-read'))
+    return new Date(tdA.getAttribute('data-last-read')) > new Date(tdB.getAttribute('data-last-read'))
   }
   else if (column === "email") {
     const a_email = parseInt(tdA.getAttribute('data-email'))
@@ -74,3 +74,20 @@ function handleHeaderClick(event) {
 // Add event listeners to the table headers
 headers.forEach(header =>
   header.addEventListener("click", handleHeaderClick))
+
+
+// show/hide users who have never read via checkbox
+const count = document.getElementById('count')
+document.getElementById('toggle-active').addEventListener('click', function() {
+  if (this.checked) {
+    rows.forEach(row => row.classList.remove('hidden'))
+    count.textContent = rows.length
+  }
+  else {
+    rows.forEach(row =>
+      row.classList.toggle('hidden',
+        row.querySelector('[data-last-read]').getAttribute('data-last-read') === "2100-09-15"))
+    
+    count.textContent = rows.filter(x => !x.classList.contains('hidden')).length
+  }
+})

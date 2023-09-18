@@ -150,12 +150,14 @@ else {
     WHERE $where
     GROUP BY u.id
     ORDER BY LOWER(name) ASC");
-  $student_count = count(
-    array_filter($all_users, fn($row) => $row['staff'] == 0)
-  );
+  $user_count = count($all_users);
   
   echo "<h5>All users</h5>";
-  echo "<p><b>$student_count</b> student".xs($student_count).". Click a user's name to see more details</p>";
+  echo "<p><b id='count'>$user_count</b> reader".xs($user_count).". Click a user's name to see more details
+  <label>
+    <input type='checkbox' id='toggle-active'>
+    Show those who have never read
+  </label></p>";
 
   // table of users
   echo "
@@ -225,7 +227,7 @@ else {
           AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
           AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");
       echo "
-      <tr>
+      <tr class='".($user['last_read'] ? '' : 'hidden')."'>
         <td data-name><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
         <td data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
         <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>

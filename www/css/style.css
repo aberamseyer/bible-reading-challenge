@@ -11,6 +11,9 @@ body {
 .cursor {
   cursor: pointer;
 }
+.hidden {
+  display: none;
+}
 
 /* read page */
 #date-header {
