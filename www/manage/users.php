@@ -150,7 +150,7 @@ else {
     WHERE $where
     GROUP BY u.id
     ORDER BY LOWER(name) ASC");
-  $user_count = count($all_users);
+  $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>All users</h5>";
   echo "<p><b id='count'>$user_count</b> reader".xs($user_count).". Click a user's name to see more details
