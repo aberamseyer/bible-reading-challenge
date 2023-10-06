@@ -8,7 +8,7 @@
 
   $calendar_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_REQUEST['id']);
   if (!$calendar_sched) {
-    redirect('/manage/schedules');
+    redirect('/admin/schedules');
   }
 
   if ($_REQUEST['get_dates']) {
@@ -127,48 +127,21 @@
   $end_date = new Datetime($calendar_sched['end_date']);
 
   $page_title = "Edit Schedule Calendar";
+  $hide_title = true;
+  $add_to_head .= "
+  <link rel='stylesheet' href='/css/admin.css' media='screen'>";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
-  echo "<style>
-  #editor {
-    position: fixed;
-    top: 0;
-    left: -290px;
-    width: 300px;
-    z-index: 1;
-    background: var(--color-bg);
-    padding: 1rem;
-    border: 2px solid var(--color-bg-alt);
-    transition: .2s left;
-  }
-  #editor:hover {
-    left: -1px;
-  }
-  .chapters {
-    display: flex;
-    flex-flow: row wrap;
-  }
-  .chapters small {
-    width: 50%;
-  }
-  .edit-input {
-    font-size: 70%;
-    padding: 0;
-    width: 75px;
-    height: 35px;
-  }
-  .today .date, .future .date {
-    cursor: pointer;
-  }
-  </style>";
+  echo admin_navigation();
 
   echo "
-    <p><a href='/manage/schedules'>&lt;&lt; Back to schedules</a></p>
+    <p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>
     <h5>Editing calendar for '".html($calendar_sched['name'])."'</h5>
     <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
-    <p><small>Double-click white-space to add/edit/remove a day's reading<br>
+    <h6>Instructions</h6>
+    <small>Double-click white-space to add/edit/remove a day's reading<br>
     Hover mouse on the left side for a reference of how many chapters are in each book<br>
     Use format: <b>\"Matthew 28; John 1-2\"</b><br>
-    Only future days can be edited</small></p>";
+    Only <b>future</b> days can be edited</small>";
 
   // sort books/chapters into some arrays for easier printing
   $book_chapters = select("SELECT name, chapters FROM books");

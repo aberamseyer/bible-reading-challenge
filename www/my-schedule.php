@@ -15,12 +15,23 @@
   $page_title = "Schedule";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
-  $canvas_width = 300;
   echo "<p>Click a date to jump to any past reading to complete it.</p>
+  <div>
+    <h5>Badges</h5>";
+  $badges = badges_for_user($my_id);
+  if (!$badges) {
+    echo "Badges for books you complete will be displayed here.";
+  }
+  else {
+    echo $badges;
+  }
+  $canvas_width = 300;
+  echo "</div>
   <div style='display: flex; justify-content: space-between; align-items: flex-end;'>
     <div>
       <h5>Stats</h5>
       <ul>
+        <li>My longest streak: ".$me['max_streak']." days</li>
         <li>My chapters read: ".number_format(col(($chp_qry = "
           SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
           FROM schedule_dates sd

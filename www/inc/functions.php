@@ -3,7 +3,7 @@
 	function db($alt_db = null) {
 		static $db;
 		if (!$db) {
-			$db = new SQLite3(DB_PATH);
+			$db = new SQLite3(DB_FILE);
 		}
 		return $alt_db ?: $db;
 	}
@@ -309,27 +309,44 @@
 		return $response;
 	}
 
+	function active_navigation_class($link) {
+		return strpos($_SERVER['REQUEST_URI'], $link) !== false
+			? 'active-page' : '';
+	}
+
+	function admin_navigation() {
+		$nav = "
+			<div id='admin-navigation'>";
+
+		foreach([
+			['users', 'Users'],
+			['progress', 'Progress'],
+			['schedules', 'Schedules']
+		] as list($link, $title)) {
+			$nav .= "<a class='nav-item ".active_navigation_class($link)."' href='/admin/$link'>$title</a>";
+		}
+		return $nav."</div>";
+	}
+
 	function navigation() {
 		global $staff;
 
-		$active_navigation_class = function($link) {
-			return $_SERVER['REQUEST_URI'] == $link
-				? 'active-page' : '';
-		};
 		$nav = "
-    <div id='navigation'>";
+    	<div class='navigation'>";
+
+		$nav_elements = [
+			['/my-schedule', 'My schedule'],
+			['/today', 'Today'],
+			['/auth/logout', 'Log out']
+		];
 		if ($staff) {
-			$nav .= "<a class='".$active_navigation_class('/manage/users')."' href='/manage/users'>Users</a>";
-			$nav .= "<a class='".$active_navigation_class('/manage/schedules')."' href='/manage/schedules'>Schedules</a>";
+			array_unshift($nav_elements, ['/admin', 'Admin']);
 		}
 
-		foreach([
-			['/schedule', 'My schedule'],
-			['/', 'Today'],
-			['/auth/logout', 'Log out']
-		] as list($link, $title)) {
-			$nav .= "<a class='".$active_navigation_class($link)."' href='$link'>$title</a>";
+		foreach($nav_elements as list($link, $title)) {
+			$nav .= "<a class='".active_navigation_class($link)."' href='$link'>$title</a>";
 		}
+
 		return $nav."</div>";
 	}
 
@@ -651,9 +668,13 @@
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
 			}
 			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
+			$copyright_style = "";
+			if ($email) {
+				$copyright_style = "font-size: 15px; line-height: 18.2px;";
+			}
 			echo "
-			<div style='text-align: center;'><small><i>".$copyright_text[$trans]."</i></small></div>
-			<form action='".SCHEME."://".DOMAIN."/' method='get' $form_style>
+			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
+			<form action='".SCHEME."://".DOMAIN."/today' method='get' $form_style>
 				<input type='hidden' name='complete_key' value='$complete_key'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>
@@ -703,6 +724,7 @@ function four_week_trend_canvas($user_id) {
 }
 
 function four_week_trend_data($user_id) {
+	// reach back 5 weeks so that we don't count the current week in the graph
 	return cols("
 		SELECT COALESCE(count, 0) count
 		FROM (
@@ -713,7 +735,7 @@ function four_week_trend_data($user_id) {
 				UNION ALL
 				SELECT date(cdate, '-7 days')
 				FROM week_sequence
-				LIMIT 4
+				LIMIT 5
 			)
 			SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
 		) sd
@@ -725,7 +747,7 @@ function four_week_trend_data($user_id) {
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-28 days', 'localtime'))
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', 'localtime'))
 		ORDER BY sd.week ASC
 		LIMIT 4");
 }
@@ -775,4 +797,93 @@ function day_completed($my_id, $schedule_date_id) {
 		FROM read_dates
 		WHERE schedule_date_id = $schedule_date_id
 			AND user_id = $my_id");
+}
+
+function number_chapters_in_book_read($book_id, $user_id) {
+	return num_rows("
+      SELECT json_each.value
+      FROM read_dates rd
+      JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
+      WHERE json_each.value IN (SELECT id FROM chapters WHERE book_id = $book_id)
+        AND user_id = $user_id
+      GROUP BY json_each.value");
+}
+
+function all_users($stale = false) {
+  $nine_mo = strtotime('-9 months');
+  if ($stale) {
+    $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
+  }
+  else {
+    // all users
+    $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
+  }
+  return select("
+    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses
+    FROM users u
+    LEFT JOIN read_dates rd ON rd.user_id = u.id
+    WHERE $where
+    GROUP BY u.id
+    ORDER BY LOWER(name) ASC");
+}
+
+function toggle_all_users($initial_count) {
+
+  echo "<div id='toggle-all-wrap'><div><b id='all-count'>$initial_count</b> reader".xs($initial_count)."</div>
+    <label>
+      <input type='checkbox' id='toggle-active'>
+      Show those who have never read
+    </label>
+  </div>";
+	echo "<style>
+		#toggle-all-wrap {
+			margin: 7px 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+	</style>";
+	echo "<script>
+
+	document.addEventListener('DOMContentLoaded', function() {
+		// show/hide users who have never read via checkbox
+		const count = document.getElementById('all-count')
+		const countRows = Array.from(document.querySelectorAll('table tbody tr'))
+		document.getElementById('toggle-active').addEventListener('click', function() {
+			if (this.checked) {
+				countRows.forEach(row => row.classList.remove('hidden'))
+				count.textContent = countRows.length
+			}
+			else {
+				countRows.forEach(row =>
+					row.classList.toggle('hidden',
+						row.querySelector('[data-last-read]').getAttribute('data-last-read') === '2100-09-15'))
+				
+				count.textContent = countRows.filter(x => !x.classList.contains('hidden')).length
+			}
+		})
+	})
+	</script>";
+}
+
+function badges_for_user($user_id) {
+	ob_start();
+	$books = select("SELECT id, name, chapters FROM books");
+  foreach([
+    [0, 10],
+    [17, 5],
+    [22, 17],
+    [39, 5],
+    [44, 22]
+  ] as $section) {
+    echo "<div class='badges'>";
+    foreach(array_slice($books, $section[0], $section[1]) as $book) {
+      $class = $book['chapters'] == number_chapters_in_book_read($book['id'], $user_id)
+				? 'active'
+				: '';
+      echo "<div class='badge $class'>".strtoupper(substr($book['name'], 0, 3))."</div>";
+    }
+    echo "</div>";
+  }
+	return ob_get_clean();
 }

@@ -1,6 +1,6 @@
 const table = document.querySelector("table")
 const headers = table.querySelectorAll("th[data-sort]")
-const rows = Array.from(table.querySelectorAll("tbody tr"))
+const tableRows = Array.from(table.querySelectorAll("tbody tr"))
 let currentSortColumn = 'name'
 let isAscending = true
 
@@ -61,13 +61,13 @@ function handleHeaderClick(event) {
   currentSortColumn = column
   toggleSortIcon(clickedHeader.querySelector('.sort-icon'))
 
-  rows.sort(compareRows)
+  tableRows.sort(compareRows)
 
   if (!isAscending) {
-    rows.reverse()
+    tableRows.reverse()
   }
 
-  rows.forEach(row =>
+  tableRows.forEach(row =>
     table.querySelector("tbody").appendChild(row))
 }
 
@@ -75,19 +75,3 @@ function handleHeaderClick(event) {
 headers.forEach(header =>
   header.addEventListener("click", handleHeaderClick))
 
-
-// show/hide users who have never read via checkbox
-const count = document.getElementById('count')
-document.getElementById('toggle-active').addEventListener('click', function() {
-  if (this.checked) {
-    rows.forEach(row => row.classList.remove('hidden'))
-    count.textContent = rows.length
-  }
-  else {
-    rows.forEach(row =>
-      row.classList.toggle('hidden',
-        row.querySelector('[data-last-read]').getAttribute('data-last-read') === "2100-09-15"))
-    
-    count.textContent = rows.filter(x => !x.classList.contains('hidden')).length
-  }
-})

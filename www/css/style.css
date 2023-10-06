@@ -1,5 +1,6 @@
 body {
-  padding-bottom: 20vh;
+  padding-bottom: 50vh;
+  position: relative;
 }
 .text-center {
   text-align: center;
@@ -38,17 +39,17 @@ body {
 }
 
 /* navigation */
-#navigation-wrap {
+.navigation-wrap {
   display: flex;
   justify-content: space-between;
   align-items: center;;
 }
-#navigation {
+.navigation {
   display: flex;
   justify-content: space-around;
   flex-grow: 1;
 }
-#logo {
+.logo {
   width: 10%;
   cursor: pointer;
 }
@@ -124,4 +125,22 @@ th, td {
 }
 #auth-wrap > div {
   margin: 3rem;
+}
+
+/* my schedule */
+
+.badges {
+  display: flex;
+  justify-content: flex-start;
+  margin: 2px 0;
+}
+.badge {
+  margin: 2px;
+  border: 1px solid var(--color-text);
+  width: 20px;
+  font-size: 0.7rem;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

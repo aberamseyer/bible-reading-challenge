@@ -7,18 +7,19 @@
     <link rel="stylesheet" href="/css/normalize.css" media="screen" />
     <link rel="stylesheet" href="/css/sakura-coc.css" media="screen" />
     <link rel="stylesheet" href="/css/style.css" media="screen" />
+    <?= $add_to_head ?>
     <title>U of I CoC<?= $page_title ? " - ".$page_title : ""?></title>
   </head>
   <body>
     <?php if ($me): ?>
-    <div id='navigation-wrap'>
-      <img id='logo' src='/img/coc-logo.svg' onclick='window.location = `/`'>
+    <div class='navigation-wrap'>
+      <img class='logo' src='/img/coc-logo.svg' onclick='window.location = `/`'>
       <?= navigation() ?>
     </div>
     <hr>
     <?php endif; ?>
     <h1 id='title'><?= $page_title ?></h1>
-    <?php if($insecure): ?>
+    <?php if($insecure || $hide_title): ?>
       <style>
         #title { display: none; }
       </style>

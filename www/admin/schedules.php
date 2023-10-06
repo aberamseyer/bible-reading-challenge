@@ -39,7 +39,7 @@
           INSERT INTO schedule_dates (schedule_id, date, passage)
             SELECT $new_id, date, passage
             FROM schedule_dates WHERE schedule_id = $change_sched[id]");
-        $_SESSION['success'] = "Schedule duplicated.&nbsp;<a href='/manage/calendar?id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
+        $_SESSION['success'] = "Schedule duplicated.&nbsp;<a href='/admin/calendar?id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
       }
       else {
         $start_date = strtotime($change_sched['start_date']);
@@ -96,11 +96,16 @@
   }
   
   $page_title = "Manage Schedules";
+  $hide_title = true;
+  $add_to_head .= "
+  <link rel='stylesheet' href='/css/admin.css' media='screen'>";
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+
+  echo admin_navigation();
 
   if ($_GET['new_schedule']) {
     // create new schedule
-    echo "<p><a href='/manage/schedules'>&lt;&lt; Back to schedules</a></p>";
+    echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
     
     echo "<h5>Create New Schedule</h5>";
     echo "<form method='post'>
@@ -114,7 +119,7 @@
   }
   else if ($edit_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_GET['edit'])) {
     // viewing single schedule
-    echo "<p><a href='/manage/schedules'>&lt;&lt; Back to schedules</a></p>";
+    echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
 
     $start_date = new Datetime($edit_sched['start_date']);
     $end_date = new Datetime($edit_sched['end_date']);
@@ -126,14 +131,14 @@
       <label>End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'></label>
       <label>Name: <input type='text' name='name' minlength='1' value='".html($edit_sched['name'])."'></label>
       <button type='submit'>Save</button>
-      <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $edit_sched[name]? This can NEVER be recovered. All existing reading progress will be permanently lost.`)'>Delete Schedule</button>
+      <button type='submit' ".($edit_sched['active'] ? 'disabled' : '')." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $edit_sched[name]? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
     </form>";
   }
   else {
     // all schedules summary
-    $schedules = select("SELECT * FROM schedules ORDER BY start_date DESC");
-    echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>";
-  
+    $schedules = select("SELECT * FROM schedules ORDER BY active DESC, start_date DESC");
+    echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
+    <p>Click a Schedule's name to edit its start and end date</p>";
     echo "<table>
       <thead>
         <tr>
@@ -156,7 +161,7 @@
                 <input type='hidden' name='schedule_id' value='$schedule[id]'>
                 <button type='submit' name='set_active' value='1' ".($schedule['active'] ? 'disabled' : '').">Set active</button>
                 <button type='submit' name='duplicate' value='1'>Duplicate</button>
-                <button type='button' onclick='window.location = `/manage/calendar?id=$schedule[id]`'>Edit Calendar</button>
+                <button type='button' onclick='window.location = `/admin/calendar?id=$schedule[id]`'>Edit Calendar</button>
               </small>
             </form>
           </td>

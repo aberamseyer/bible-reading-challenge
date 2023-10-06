@@ -8,7 +8,7 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_PATH);
+$db = new SQLite3(DB_FILE);
 
 $today = new Datetime();
 

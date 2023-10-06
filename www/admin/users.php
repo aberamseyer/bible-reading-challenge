@@ -44,6 +44,9 @@ if ($_POST['user_id']) {
 }
 
 $page_title = "Manage Users";
+$hide_title = true;
+$add_to_head .= "
+<link rel='stylesheet' href='/css/admin.css' media='screen'>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   
 if ($_GET['user_id'] &&
@@ -53,7 +56,7 @@ if ($_GET['user_id'] &&
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  echo "<p><a href='/manage/users'>&lt;&lt; Back to users</a></p>";
+  echo "<p><a href='/admin/users'>&lt;&lt; Back to users</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
@@ -95,7 +98,53 @@ if ($_GET['user_id'] &&
 }
 else {
   // regular landing
-  $last_friday = new Datetime('last friday'); // this will always refer to the last period (Fri-Thu) until Saturday, so if someone reads on Friday, that will not be reflected in the Fully Equipped related charts until Saturday
+  echo admin_navigation();
+  
+  $user_start_date = $user_end_date = null;
+  if ($_GET['week_range']) {
+    list($start, $end) = explode('|', $_GET['week_range']);
+    $user_start_date = new Datetime($start);
+    $user_end_date = new Datetime($end);
+  }
+
+  $last_friday = $user_start_date ?: new Datetime('last friday');
+  
+  $schedule_start_date = new Datetime($schedule['start_date']);
+  $schedule_end_date = new Datetime($schedule['end_date']);
+
+  // week picker
+  $period = new DatePeriod(
+    $schedule_start_date,
+    new DateInterval('P1W'), // 1 week
+    $schedule_end_date,
+    DatePeriod::INCLUDE_END_DATE
+  );
+
+  $today = new Datetime(date('Y-m-d'));
+  echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
+  foreach($period as $date) {
+    if ($date->format('N') == 5) {
+      $week_start = clone($date);
+    }
+    else {
+      $week_start = date_create_from_format('U', strtotime('last friday', $date->format('U')));
+    }
+    $week_start->setTime(0, 0, 0, 0);
+
+    $week_end = date_create_from_format('U', strtotime('next thursday', $week_start->format('U')));
+    $week_end->setTime(23, 59, 59, 999999);
+    echo "<option ".
+      ($week_start > $today ? ' disabled ' : '')
+      .(
+        (!$user_start_date && $week_start <= $today && $today <= $week_end) ||
+        ($user_start_date && $user_start_date->format('Y-m-d') == $week_start->format('Y-m-d') && $user_end_date->format('Y-m-d') == $week_end->format('Y-m-d'))
+        ? ' selected ' : '')
+      ." value='".$week_start->format('Y-m-d')."|".($week_end->format('Y-m-d'))
+      ."'>".$week_start->format('M j')."–".$week_end->format('M j')
+      ."</option>";
+  }
+  echo "</select>";
+
   $this_week = [
     [ $last_friday,                                'F' ],
     [ date_modify(clone($last_friday), '+1 day'),  'S' ],
@@ -106,9 +155,11 @@ else {
     [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
-  echo "<h5>Fully Equipped ".help("This list doesnt refer to the current period until Saturday")."</h5>";
-  $where = "WHERE sd.schedule_id = $schedule[id] ".                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
-    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".(date('N') == 5 ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
+  $is_friday = date('N') == 5;
+  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list doesnt refer to the current period until Saturday"))."</h5>";
+  $where = "
+    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                      // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <".($user_start_date || $is_friday ? " '".$this_week[6][0]->format('Y-m-d')."'" : "= '".date('Y-m-d')."'"); // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
@@ -136,60 +187,15 @@ else {
   }
       
   $nine_mo = strtotime('-9 months');
-  if ($_GET['stale']) {
-    $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
-  }
-  else {
-    // all users
-    $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
-  }
-  $all_users = select("
-    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses
-    FROM users u
-    LEFT JOIN read_dates rd ON rd.user_id = u.id
-    WHERE $where
-    GROUP BY u.id
-    ORDER BY LOWER(name) ASC");
+  $all_users = all_users($_GET['stale']);
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>All users</h5>";
-  echo "<p><b id='count'>$user_count</b> reader".xs($user_count).". Click a user's name to see more details
-  <label>
-    <input type='checkbox' id='toggle-active'>
-    Show those who have never read
-  </label></p>";
+  echo "<p>Click a user's name to see more details</p>";
+  echo toggle_all_users($user_count);
 
   // table of users
   echo "
-  <style>
-    .week {
-      display: flex;
-      justify-content: center;
-    }
-    .day {
-      border-left: 1px solid var(--color-text);
-      border-top: 1px solid var(--color-text);
-      border-bottom: 1px solid var(--color-text);
-      width: 25px;
-    }
-    .day:last-child {
-      border-right: 1px solid var(--color-text);
-    }
-
-    .sort-icon::before {
-      content: '⇅';
-      opacity: 0.3;
-      padding-left: 5px;
-    }
-    .sort-icon.asc::before {
-      content: '↑';
-      opacity: 1;
-    }
-    .sort-icon.desc::before {
-      content: '↓';
-      opacity: 1;
-    }
-  </style>
   <div class='table-scroll'>
     <table>
       <thead>
@@ -208,7 +214,7 @@ else {
           </th>
           <th data-sort='trend'>
             <span class='sort-icon'></span>
-            4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule is selected")."
+            4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule is selected")."
           </th>
           <th data-sort='period'>
             <span class='sort-icon'></span>
@@ -253,10 +259,10 @@ else {
   echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
-    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";
+    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
   }
   else {
-    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
+    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
 }
 
