@@ -23,9 +23,8 @@ $schedule = get_active_schedule();;
 foreach($period as $day) {
   $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')));
   
-  $yesterday = new Datetime('@'.strtotime('yesterday'));
   $scheduled_reading = get_reading($yesterday, $schedule['id']);
-  
+
   if ($scheduled_reading) {
     foreach(select("SELECT * FROM users") as $user) {
       $current_streak = $user['streak'];
