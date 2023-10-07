@@ -866,23 +866,26 @@ function toggle_all_users($initial_count) {
 	</script>";
 }
 
-function badges_for_user($user_id, $books = false) {
-	if (!$books) {
-		$books = select("SELECT id, name, chapters FROM books");
-	}
-	$badges = [];
-	foreach($books as $book) {
-		if ($book['chapters'] == number_chapters_in_book_read($book['id'], $user_id)) {
-			$badges[] = $book['name'];
-		}
-	}
-	return $badges;
+function badges_for_user($user_id) {
+	return cols("
+		SELECT b.name, COUNT(*) unique_chapters_read
+		FROM
+		(SELECT json_each.value chapter_id, b.id book_id, c.number
+					FROM read_dates rd
+					JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
+					JOIN chapters c ON c.id = json_each.value
+					JOIN books b ON b.id = c.book_id
+						AND user_id = $user_id
+					GROUP BY json_each.value) chapter_read_counts
+		JOIN books b ON b.id = book_id
+		GROUP BY book_id
+		HAVING unique_chapters_read = b.chapters");
 }
 
 function badges_html_for_user($user_id) {
+	$books = cols("SELECT name FROM books ORDER BY id");
 	ob_start();
-	$books = select("SELECT id, name, chapters FROM books");
-	$badges = badges_for_user($user_id, $books);
+	$badges = badges_for_user($user_id);
   foreach([
     [0, 10],
     [17, 5],
@@ -892,10 +895,10 @@ function badges_html_for_user($user_id) {
   ] as $section) {
     echo "<div class='badges'>";
     foreach(array_slice($books, $section[0], $section[1]) as $book) {
-      $class = in_array($book['name'], $badges, true)
+      $class = in_array($book, $badges)
 				? 'active'
 				: '';
-      echo "<div class='badge $class'>".strtoupper(substr($book['name'], 0, 3))."</div>";
+      echo "<div class='badge $class'>".strtoupper(substr($book, 0, 3))."</div>";
     }
     echo "</div>";
   }
