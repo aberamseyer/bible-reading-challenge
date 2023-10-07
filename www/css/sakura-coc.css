@@ -51,16 +51,6 @@ body {
   padding: 15px;
 }
 
-@media (max-width: var(--mobile-breakpoint)) {
-  body {
-    font-size: var(--font-size-base) * 0.85;
-  }
-}
-@media (max-width: var(--tiny-breakpoint)) {
-  body {
-    font-size: var(--font-size-base) * 0.75;
-  }
-}
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.1;
   font-family: var(--font-family-heading);

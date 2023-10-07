@@ -15,6 +15,16 @@ body {
 .hidden {
   display: none;
 }
+.two-columns {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+@media (max-width: 648px) {
+  .two-columns {
+    display: block;
+  }
+}
 
 /* read page */
 #date-header {
@@ -133,6 +143,7 @@ th, td {
   display: flex;
   justify-content: flex-start;
   margin: 2px 0;
+  flex-flow: row wrap;
 }
 .badge {
   margin: 2px;

@@ -26,9 +26,9 @@
   else {
     echo $badges;
   }
-  $canvas_width = 300;
+  $canvas_width = 225;
   echo "</div>
-  <div style='display: flex; justify-content: space-between; align-items: flex-end;'>
+  <div class='two-columns'>
     <div>
       <h5>Stats</h5>
       <ul>
@@ -55,9 +55,9 @@
         <li>All-club words read: ".number_format(col(sprintf($word_qry, 'rcv', 'rcv', "")))."</li>
       </ul>
     </div>
-    <div>
+    <div style='text-align: center;'>
       ".four_week_trend_canvas($my_id)."
-      <div style='width: ".$canvas_width."px; text-align: center;'>
+      <div style='text-align: center;'>
         <small>4-week reading trend</small>
       </div>
     </div>

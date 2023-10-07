@@ -771,9 +771,9 @@ function four_week_trend_js($width, $height) {
 		ctx.beginPath();
 		ctx.moveTo(0, c.height - data[0] * scaleFactor);
 		for (let i = 1; i < data.length; i++) {
-			const x = (c.width / (data.length - 1)) * i;
+			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
 			const y = c.height - data[i] * scaleFactor;
-			const prevX = (c.width / (data.length - 1)) * (i - 1);
+			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
 			const prevY = c.height - data[i - 1] * scaleFactor;
 			const cpx = (prevX + x) / 2;
 			const cpy = (prevY + y) / 2;
