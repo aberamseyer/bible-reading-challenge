@@ -164,8 +164,8 @@ else {
       
   echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list doesnt refer to the current period until Saturday"))."</h5>";
   $where = "
-    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                      // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
-    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <".($user_start_date || $is_friday ? " '".$this_week[6][0]->format('Y-m-d')."'" : "= '".date('Y-m-d')."'"); // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
+    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                          // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_friday ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
@@ -220,7 +220,7 @@ else {
           </th>
           <th data-sort='trend'>
             <span class='sort-icon'></span>
-            4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule is selected")."
+            4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
           </th>
           <th data-sort='period'>
             <span class='sort-icon'></span>
