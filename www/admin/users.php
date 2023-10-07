@@ -177,7 +177,8 @@ else {
     LEFT JOIN users u ON u.id = rd.user_id
     $where AND u.staff != 1
     GROUP BY rd.user_id
-    HAVING COUNT(rd.id) = $schedule_days_this_week");
+    HAVING COUNT(rd.id) = $schedule_days_this_week
+    ORDER BY SUM(rd.timestamp) ASC");
       
   if ($fully_equipped) {
     echo "

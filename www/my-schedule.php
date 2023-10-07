@@ -83,7 +83,7 @@
           tableCell.classList.add('active')
         }
         if (!tableCell.classList.contains('future')) {
-          tableCell.setAttribute('href', '/?today=' + date)
+          tableCell.setAttribute('href', '/today?today=' + date)
           tableCell.onclick = () => window.location = tableCell.getAttribute('href')
           tableCell.classList.add('cursor')
 
