@@ -21,25 +21,43 @@ $all_users = all_users($_GET['stale']);
 $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
 echo toggle_all_users($user_count);
 
-echo "<table class='table-scroll'>";
+echo "<div class='table-scroll'>
+<table>";
 echo "<thead>
   <tr>
-    <th>User</th>
-    <th>Current/Longest Streak</th>
-    <th>Badges</th>
+    <th data-sort='name'>
+      <span class='sort-icon asc'></span>User
+    </th>
+    <th data-sort='behind'>
+      <span class='sort-icon'></span>
+      Days behind schedule
+    </th>
+    <th data-sort='streak'>
+      <span class='sort-icon'></span>
+      Current/Longest Streak
+    </th>
+    <th data-sort='badges'>
+      <span class='sort-icon'></span>
+      Badges
+    </th>
   </tr>
 </thead>
 <tbody>";
 foreach($all_users as $user) {
+  $days_behind = 
+    col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
+    col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
-  <td data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'>$user[name]</td>
-  <td>$user[streak] / $user[max_streak]</td>
-  <td>";
-  echo badges_for_user($user['id']);
+  <td data-name data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'><a href='/admin/users?user_id=$user[id]'>$user[name]</a></td>
+  <td data-behind='$days_behind'>-$days_behind</td>
+  <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
+  <td data-badges='".count(badges_for_user($user['id']))."'>";
+  echo badges_html_for_user($user['id']);
   echo "</td></tr>";
 }
 echo "</tbody>
-  </table>";
+  </table>
+</div>";
 
 if (!$_GET['stale']) {
   echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1'>Click here to see omitted users</a>.</small>";
@@ -48,4 +66,5 @@ else {
   echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
 }
 
+echo "<script src='/js/progress.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

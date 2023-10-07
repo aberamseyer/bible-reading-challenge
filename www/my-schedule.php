@@ -19,7 +19,7 @@
   echo "
   <div>
     <h5>Badges</h5>";
-  $badges = badges_for_user($my_id);
+  $badges = badges_html_for_user($my_id);
   if (!$badges) {
     echo "Badges for books you complete will be displayed here.";
   }

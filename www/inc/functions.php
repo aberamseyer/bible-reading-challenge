@@ -866,9 +866,23 @@ function toggle_all_users($initial_count) {
 	</script>";
 }
 
-function badges_for_user($user_id) {
+function badges_for_user($user_id, $books = false) {
+	if (!$books) {
+		$books = select("SELECT id, name, chapters FROM books");
+	}
+	$badges = [];
+	foreach($books as $book) {
+		if ($book['chapters'] == number_chapters_in_book_read($book['id'], $user_id)) {
+			$badges[] = $book['name'];
+		}
+	}
+	return $badges;
+}
+
+function badges_html_for_user($user_id) {
 	ob_start();
 	$books = select("SELECT id, name, chapters FROM books");
+	$badges = badges_for_user($user_id, $books);
   foreach([
     [0, 10],
     [17, 5],
@@ -878,7 +892,7 @@ function badges_for_user($user_id) {
   ] as $section) {
     echo "<div class='badges'>";
     foreach(array_slice($books, $section[0], $section[1]) as $book) {
-      $class = $book['chapters'] == number_chapters_in_book_read($book['id'], $user_id)
+      $class = in_array($book['name'], $badges, true)
 				? 'active'
 				: '';
       echo "<div class='badge $class'>".strtoupper(substr($book['name'], 0, 3))."</div>";
