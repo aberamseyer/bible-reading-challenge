@@ -8,6 +8,7 @@ date_default_timezone_set("America/Chicago");
 define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 define('DB_FILE', __DIR__."/../../brc.db");
 define('DOMAIN', PROD ? 'app.uoficoc.com' : 'uoficoc.local');
+define('SOCKET_DOMAIN', PROD ? 'app-socket.uoficoc.com' : 'app-socket.uoficoc.local');
 define('SCHEME', PROD ? 'https' : 'http');
 define('SESSION_LENGTH', 60*60*24*30); // 30-day sessions
 

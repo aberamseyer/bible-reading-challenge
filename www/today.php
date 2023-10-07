@@ -130,7 +130,7 @@ if ($scheduled_reading) {
   </style>";
   echo "
   <script>
-    const WS_URL = 'ws".(PROD ? 's' : '')."://app-socket.".DOMAIN."'
+    const WS_URL = 'ws".(PROD ? 's' : '')."://".SOCKET_DOMAIN."'
   </script>
   <script src='/js/client.js'></script>";
 }

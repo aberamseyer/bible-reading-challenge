@@ -12,7 +12,7 @@ $db = new SQLite3(DB_FILE);
 query("UPDATE users SET streak=0, max_streak=0");
 
 $period = new DatePeriod(
-  new Datetime('2023-08-21'), // e.g., '2023-08-21', the first day of the reading challenge schedule
+  new Datetime(CHANGE_ME_TO_START_DATE), // e.g., '2023-08-21', the first day of the reading challenge schedule
   new DateInterval('P1D'),
   new Datetime(CHANGE_ME_TO_CURRENT_DATE),
   DatePeriod::INCLUDE_END_DATE
