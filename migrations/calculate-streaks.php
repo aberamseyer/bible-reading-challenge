@@ -9,10 +9,10 @@ require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
 $db = new SQLite3(DB_FILE);
-
+query("UPDATE users SET streak=0, max_streak=0");
 
 $period = new DatePeriod(
-  new Datetime(CHANGE_ME_TO_START_DATE), // e.g., '2023-08-21', the first day of the reading challenge schedule
+  new Datetime('2023-08-21'), // e.g., '2023-08-21', the first day of the reading challenge schedule
   new DateInterval('P1D'),
   new Datetime(CHANGE_ME_TO_CURRENT_DATE),
   DatePeriod::INCLUDE_END_DATE
@@ -36,10 +36,10 @@ foreach($period as $day) {
           
       update('users', [
         'streak' => $read_yesterday
-          ? max($user['streak'] + 1, 2) // streaks start at 2 days
+          ? $user['streak'] + 1
           : 0, 
         'max_streak' => $read_yesterday
-          ? max(intval($user['max_streak']), max(2, intval($user['streak'] + 1)))
+          ? max(intval($user['max_streak']), intval($user['streak']) + 1)
           : $user['max_streak']
       ], "id = ".$user['id']);
     }

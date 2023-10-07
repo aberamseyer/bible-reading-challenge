@@ -27,10 +27,10 @@ if ($scheduled_reading) {
 
     update('users', [
       'streak' => $read_yesterday
-        ? max($user['streak'] + 1, 2) // streaks start at 2 days
+        ? $user['streak'] + 1
         : 0, 
       'max_streak' => $read_yesterday
-        ? max(intval($user['max_streak']), max(2, intval($user['streak'] + 1)))
+        ? max(intval($user['max_streak']), intval($user['streak']) + 1)
         : $user['max_streak']
     ], "id = ".$user['id']);
   }

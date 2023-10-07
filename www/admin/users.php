@@ -62,7 +62,8 @@ if ($_GET['user_id'] &&
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
   $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
-  echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b></p>";
+  echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
+  echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."</p>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
     <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
@@ -121,6 +122,12 @@ else {
   );
 
   $today = new Datetime(date('Y-m-d'));
+  $is_friday = $today->format('N') == 5;
+  $today_for_disabled_check = clone($today);
+  if ($is_friday) {
+    $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be friday because that's confusing
+  }
+
   echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
   foreach($period as $date) {
     if ($date->format('N') == 5) {
@@ -134,10 +141,10 @@ else {
     $week_end = date_create_from_format('U', strtotime('next thursday', $week_start->format('U')));
     $week_end->setTime(23, 59, 59, 999999);
     echo "<option ".
-      ($week_start > $today ? ' disabled ' : '')
+      ($week_start > $today_for_disabled_check ? ' disabled ' : '')
       .(
-        (!$user_start_date && $week_start <= $today && $today <= $week_end) ||
-        ($user_start_date && $user_start_date->format('Y-m-d') == $week_start->format('Y-m-d') && $user_end_date->format('Y-m-d') == $week_end->format('Y-m-d'))
+        (!$user_start_date && $week_start <= $today && $today <= $week_end) || // today falls within the week
+        ($user_start_date && $user_start_date->format('Y-m-d') == $week_start->format('Y-m-d') && $user_end_date->format('Y-m-d') == $week_end->format('Y-m-d')) // the selected week's start and end dates match up
         ? ' selected ' : '')
       ." value='".$week_start->format('Y-m-d')."|".($week_end->format('Y-m-d'))
       ."'>".$week_start->format('M j')."–".$week_end->format('M j')
@@ -155,7 +162,6 @@ else {
     [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
-  $is_friday = date('N') == 5;
   echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list doesnt refer to the current period until Saturday"))."</h5>";
   $where = "
     WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                      // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat

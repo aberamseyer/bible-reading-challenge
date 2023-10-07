@@ -25,6 +25,7 @@ echo "<table class='table-scroll'>";
 echo "<thead>
   <tr>
     <th>User</th>
+    <th>Current/Longest Streak</th>
     <th>Badges</th>
   </tr>
 </thead>
@@ -32,6 +33,7 @@ echo "<thead>
 foreach($all_users as $user) {
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'>$user[name]</td>
+  <td>$user[streak] / $user[max_streak]</td>
   <td>";
   echo badges_for_user($user['id']);
   echo "</td></tr>";

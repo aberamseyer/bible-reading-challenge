@@ -138,7 +138,7 @@
     // all schedules summary
     $schedules = select("SELECT * FROM schedules ORDER BY active DESC, start_date DESC");
     echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
-    <p>Click a Schedule's name to edit its start and end date</p>";
+    <p>Click a Schedule's name to edit its start and end dates</p>";
     echo "<table>
       <thead>
         <tr>

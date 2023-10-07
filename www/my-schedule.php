@@ -13,9 +13,10 @@
   }
 
   $page_title = "Schedule";
+  $hide_title = true;
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
-  echo "<p>Click a date to jump to any past reading to complete it.</p>
+  echo "
   <div>
     <h5>Badges</h5>";
   $badges = badges_for_user($my_id);
@@ -31,7 +32,7 @@
     <div>
       <h5>Stats</h5>
       <ul>
-        <li>My longest streak: ".$me['max_streak']." days</li>
+        <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
         <li>My chapters read: ".number_format(col(($chp_qry = "
           SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
           FROM schedule_dates sd
@@ -60,11 +61,13 @@
         <small>4-week reading trend</small>
       </div>
     </div>
-  </div>";
+  </div>
+  <h5>Schedule</h5>
+  <p>Click a date to jump to any past reading to complete it.</p>";
 
   // Generate the calendar for the current month and year
   echo generate_schedule_calendar($schedule);
-
+            
   echo "<script>
   ".four_week_trend_js($canvas_width, 120)."
 
