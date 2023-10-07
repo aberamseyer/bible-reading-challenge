@@ -227,8 +227,8 @@
 		), $alt_db);
 	}
 
-	function redirect($url) {
-		header("Location: $url");
+	function redirect($url = false) {
+		header("Location: ".($url ?: $_SERVER['REDIRECT_URL']));
 		die;
 	}
 
@@ -316,7 +316,7 @@
 
 	function admin_navigation() {
 		$nav = "
-			<div id='admin-navigation'>";
+			<div class='admin-navigation'>";
 
 		foreach([
 			['users', 'Users'],

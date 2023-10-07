@@ -39,7 +39,8 @@
           INSERT INTO schedule_dates (schedule_id, date, passage)
             SELECT $new_id, date, passage
             FROM schedule_dates WHERE schedule_id = $change_sched[id]");
-        $_SESSION['success'] = "Schedule duplicated.&nbsp;<a href='/admin/calendar?id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
+        $_SESSION['success'] = "Schedule duplicated.&nbsp;<a href='/admin/schedules?calendar_id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
+        redirect();
       }
       else {
         $start_date = strtotime($change_sched['start_date']);
@@ -94,83 +95,100 @@
       redirect("?edit=$new_id");
     }
   }
-  
-  $page_title = "Manage Schedules";
-  $hide_title = true;
-  $add_to_head .= "
-  <link rel='stylesheet' href='/css/admin.css' media='screen'>";
-  require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
-
-  echo admin_navigation();
-
-  if ($_GET['new_schedule']) {
-    // create new schedule
-    echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
-    
-    echo "<h5>Create New Schedule</h5>";
-    echo "<form method='post'>
-      <input type='hidden' name='new_schedule' value='1'>
-
-      <label>Start date: <input type='date' name='start_date'></label>
-      <label>End date: <input type='date' name='end_date'></label>
-      <label>Name: <input type='text' name='name' minlength='1'></label>
-      <button type='submit'>Save</button>
-    </form>";
-  }
-  else if ($edit_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_GET['edit'])) {
-    // viewing single schedule
-    echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
-
-    $start_date = new Datetime($edit_sched['start_date']);
-    $end_date = new Datetime($edit_sched['end_date']);
-    echo "<h5>Editing '".html($edit_sched['name'])."' schedule</h5>";
-    echo "<form method='post'>
-      <input type='hidden' name='schedule_id' value='$edit_sched[id]'>
-
-      <label>Start date: <input type='date' name='start_date' value='".$start_date->format('Y-m-d')."'></label>
-      <label>End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'></label>
-      <label>Name: <input type='text' name='name' minlength='1' value='".html($edit_sched['name'])."'></label>
-      <button type='submit'>Save</button>
-      <button type='submit' ".($edit_sched['active'] ? 'disabled' : '')." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $edit_sched[name]? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
-    </form>";
+  else if ($_GET['calendar_id']) {
+    require $_SERVER['DOCUMENT_ROOT']."inc/calendar.php";
   }
   else {
-    // all schedules summary
-    $schedules = select("SELECT * FROM schedules ORDER BY active DESC, start_date DESC");
-    echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
-    <p>Click a Schedule's name to edit its start and end dates</p>";
-    echo "<table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>";
-    foreach($schedules as $schedule) {
-      echo "
-        <tr class='".($schedule['active'] ? 'active' : '')."'>
-          <td><a href='?edit=$schedule[id]'><small>".html($schedule['name'])."</small></a></td>
-          <td><small>".date('F j, Y', strtotime($schedule['start_date']))."</small></td>
-          <td><small>".date('F j, Y', strtotime($schedule['end_date']))."</small></td>
-          <td>
-            <form method='post'>
-              <small>
-                <input type='hidden' name='schedule_id' value='$schedule[id]'>
-                <button type='submit' name='set_active' value='1' ".($schedule['active'] ? 'disabled' : '').">Set active</button>
-                <button type='submit' name='duplicate' value='1'>Duplicate</button>
-                <button type='button' onclick='window.location = `/admin/calendar?id=$schedule[id]`'>Edit Calendar</button>
-              </small>
-            </form>
-          </td>
-        </tr>";
+    $page_title = "Manage Schedules";
+    $hide_title = true;
+    $add_to_head .= "
+    <link rel='stylesheet' href='/css/admin.css' media='screen'>";
+    require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+
+    echo admin_navigation();
+
+    if ($_GET['new_schedule']) {
+      // create new schedule
+      echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
+      
+      echo "<h5>Create New Schedule</h5>";
+      echo "<form method='post'>
+        <input type='hidden' name='new_schedule' value='1'>
+
+        <label>Start date: <input type='date' name='start_date'></label>
+        <label>End date: <input type='date' name='end_date'></label>
+        <label>Name: <input type='text' name='name' minlength='1'></label>
+        <button type='submit'>Save</button>
+      </form>";
     }
-  
-    echo "
-      </tbody>
-    </table>";
-  }
+    else if ($edit_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_GET['edit'])) {
+      // viewing single schedule
+      echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
+
+      $start_date = new Datetime($edit_sched['start_date']);
+      $end_date = new Datetime($edit_sched['end_date']);
+      echo "<h5>Editing '".html($edit_sched['name'])."' schedule</h5>";
+      echo "<form method='post'>
+        <input type='hidden' name='schedule_id' value='$edit_sched[id]'>
+
+        <label>Start date: <input type='date' name='start_date' value='".$start_date->format('Y-m-d')."'></label>
+        <label>End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'></label>
+        <label>Name: <input type='text' name='name' minlength='1' value='".html($edit_sched['name'])."'></label>
+        <button type='submit'>Save</button>
+        <button type='submit' ".($edit_sched['active'] ? 'disabled' : '')." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $edit_sched[name]? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
+      </form>";
+    }
+    else {
+      // all schedules summary
+      $schedules = select("SELECT * FROM schedules ORDER BY active DESC, start_date DESC");
+      echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
+      <p>Click a Schedule's name to edit its start and end dates</p>";
+      echo "<table>
+        <thead>
+          <tr>
+            <th data-sort='name'>
+              <span class='sort-icon asc'></span>
+              Name
+            </th>
+            <th data-sort='start'>
+              <span class='sort-icon'></span>
+              Start
+            </th>
+            <th data-sort='end'>
+              <span class='sort-icon'></span>
+              End
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>";
+      foreach($schedules as $schedule) {
+        echo "
+          <tr class='".($schedule['active'] ? 'active' : '')."'>
+            <td data-name><a href='?edit=$schedule[id]'><small>".html($schedule['name'])."</small></a></td>
+            <td data-start='$schedule[start_date]'><small>".date('F j, Y', strtotime($schedule['start_date']))."</small></td>
+            <td data-end='$schedule[end_date]'><small>".date('F j, Y', strtotime($schedule['end_date']))."</small></td>
+            <td>
+              <form method='post'>
+                <small>
+                  <input type='hidden' name='schedule_id' value='$schedule[id]'>
+                  <button type='submit' name='set_active' value='1' ".($schedule['active'] ? 'disabled' : '').">Set active</button>
+                  <button type='submit' name='duplicate' value='1'>Duplicate</button>
+                  <button type='button' onclick='window.location = `/admin/schedules?calendar_id=$schedule[id]`'>Edit Calendar</button>
+                </small>
+              </form>
+            </td>
+          </tr>";
+      }
     
+      echo "
+        </tbody>
+      </table>";
+    }
+      
+    echo "
+    <script src='/js/tableSort.js'></script>
+    <script src='/js/schedules.js'></script>";
+  }
+
   require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

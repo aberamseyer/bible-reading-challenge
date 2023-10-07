@@ -48,7 +48,7 @@ foreach($all_users as $user) {
     col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
     col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
-  <td data-name data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'><a href='/admin/users?user_id=$user[id]'>$user[name]</a></td>
+  <td data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
   <td data-badges='".count(badges_for_user($user['id']))."'>";
@@ -66,5 +66,7 @@ else {
   echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
 }
 
-echo "<script src='/js/progress.js'></script>";
+echo "
+<script src='/js/tableSort.js'></script>
+<script src='/js/progress.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

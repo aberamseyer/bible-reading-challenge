@@ -56,7 +56,8 @@ if ($_GET['user_id'] &&
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  echo "<p><a href='/admin/users'>&lt;&lt; Back to users</a></p>";
+  echo admin_navigation();
+  echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
@@ -273,5 +274,7 @@ else {
   }
 }
 
-echo "<script src='/js/users.js'></script>";
+echo "
+<script src='/js/tableSort.js'></script>
+<script src='/js/users.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

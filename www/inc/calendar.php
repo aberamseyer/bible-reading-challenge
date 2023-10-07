@@ -1,12 +1,6 @@
 <?php
 
-  require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
-
-  if (!$staff) {
-    redirect('/');
-  }
-
-  $calendar_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_REQUEST['id']);
+  $calendar_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_REQUEST['calendar_id']);
   if (!$calendar_sched) {
     redirect('/admin/schedules');
   }
@@ -134,7 +128,7 @@
   echo admin_navigation();
 
   echo "
-    <p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>
+    <p><a href='/admin/schedules'>&lt;&lt; Back</a></p>
     <h5>Editing calendar for '".html($calendar_sched['name'])."'</h5>
     <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
     <h6>Instructions</h6>
@@ -183,5 +177,3 @@
     const BOOK_CHAPTERS = ".json_encode($book_chapters)."
   </script>
   <script src='/js/edit-calendar.js'></script>";
-
-  require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
