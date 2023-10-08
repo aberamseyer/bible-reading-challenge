@@ -52,12 +52,9 @@ function initTable(compareRows) {
     if (i === 0) {
       sortIcon.classList.add('asc')
     }
-    
+
     // this is to get the icon to appear before the text
-    const text = header.textContent
-    header.textContent = ''
-    header.insertBefore(sortIcon, null)
-    header.textContent = text
+    const text = header.innerHTML = `${sortIcon.outerHTML}${header.innerHTML}`
     header.addEventListener("click", handleHeaderClick)
   })
 }
