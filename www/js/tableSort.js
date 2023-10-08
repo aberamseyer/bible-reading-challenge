@@ -54,7 +54,7 @@ function initTable(compareRows) {
     }
 
     // this is to get the icon to appear before the text
-    const text = header.innerHTML = `${sortIcon.outerHTML}${header.innerHTML}`
+    header.innerHTML = `${sortIcon.outerHTML}${header.innerHTML}`
     header.addEventListener("click", handleHeaderClick)
   })
 }
