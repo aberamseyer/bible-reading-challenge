@@ -2,8 +2,6 @@
 
 error_reporting(E_ALL^E_NOTICE^E_WARNING^E_DEPRECATED);
 
-date_default_timezone_set("America/Chicago");
-
 // paths
 define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 define('DB_FILE', __DIR__."/../../brc.db");

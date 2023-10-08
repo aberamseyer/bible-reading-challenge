@@ -29,15 +29,12 @@ echo "<thead>
       User
     </th>
     <th data-sort='behind'>
-      
       Days behind schedule
     </th>
     <th data-sort='streak'>
-      
       Current/Longest Streak
     </th>
     <th data-sort='badges'>
-      
       Badges
     </th>
   </tr>

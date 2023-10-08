@@ -3,6 +3,11 @@
 ## Language
 Written with php 8.2.3 and apache 2.4.38
 
+## Configuration
+Set the system time zone () and php time zone (`date.timezone` in `php.ini`) to the same thing.
+
+In `php.ini`, set `max_input_vars` to `3000`. This is sufficient for editing a schedule for 4 years long.
+
 Install [composer](https://getcomposer.org/) dependencies in root of project with `composer install`
 
 ## Database

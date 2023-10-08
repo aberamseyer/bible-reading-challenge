@@ -25,7 +25,7 @@
     }
     const fillAfter = activeDay.getAttribute('data-date')
     const chpsPerDay = +document.getElementById('chps-per-day').value || 1
-    fetch(`?id=${SCHEDULE_ID}&fill_dates=${fillAfter}&rate=${chpsPerDay}&start_book=${book}&start_chp=${chp}&${days}`)
+    fetch(`?calendar_id=${CALENDAR_ID}&fill_dates=${fillAfter}&rate=${chpsPerDay}&start_book=${book}&start_chp=${chp}&${days}`)
     .then(rsp => rsp.json())
     .then(data => {
       calendarDays.forEach(cd => {
@@ -126,7 +126,7 @@
   })
 
   // fill calendar on page load
-  fetch(`?get_dates=1&id=${SCHEDULE_ID}`).then(rsp => rsp.json())
+  fetch(`?get_dates=1&calendar_id=${CALENDAR_ID}`).then(rsp => rsp.json())
   .then(data => {
     calendarDays.forEach(tableCell => {
       const date = tableCell.getAttribute('data-date')

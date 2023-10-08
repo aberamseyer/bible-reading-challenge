@@ -8,6 +8,7 @@ require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 
 require_once "session.php";
 session_name("brc-sessid");
+
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
 ini_set('session.gc_maxlifetime', SESSION_LENGTH);

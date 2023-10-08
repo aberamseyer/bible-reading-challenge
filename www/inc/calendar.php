@@ -38,13 +38,15 @@
         'id');
 
         insert("schedule_dates", [
-          'schedule_id' => $_POST['schedule_id'],
+          'schedule_id' => $_POST['calendar_id'],
           'date' => $date,
           'passage' => $day['passage'],
           'passage_chapter_ids' => json_encode($chp_ids)
         ]);
       }
     }
+    $_SESSION['success'] = 'Schedule saved';
+    redirect("/admin/schedules?calendar_id=".$calendar_sched['id']);
   }
 
   if ($_REQUEST['fill_dates'] && $_REQUEST['rate'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
@@ -173,7 +175,7 @@
 
   echo "
   <script>
-    const SCHEDULE_ID = ".$calendar_sched['id']."
+    const CALENDAR_ID = ".$calendar_sched['id']."
     const BOOK_CHAPTERS = ".json_encode($book_chapters)."
   </script>
   <script src='/js/edit-calendar.js'></script>";

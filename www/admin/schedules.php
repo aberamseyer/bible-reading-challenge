@@ -49,7 +49,14 @@
         $end_date = strtotime($change_sched['end_date']);
         if ($new_date = strtotime($_POST['end_date']))
           $end_date = $new_date;
-        if ($start_date >= $end_date) {
+
+        $start_date_obj = new Datetime('@'.$start_date);
+        $end_date_obj = new Datetime('@'.$end_date);
+        $interval = $start_date_obj->diff($end_date_obj);
+        if ($interval->y > 3) {
+          $_SESSION['error'] = "Schedule must be shorter 4 years";
+        }
+        else if ($start_date >= $end_date) {
           $_SESSION['error'] = "Start date must be before end date.";
         }
         else if (!$_POST['name']) {
@@ -73,7 +80,9 @@
           $_SESSION['success'] = "Saved schedule";
         }   
       }
+      redirect("/admin/schedules?edit=".$change_sched['id']);
     }
+    redirect();
   }
   else if ($_POST['new_schedule']) {
     $start_date = strtotime($_POST['start_date']);
@@ -91,11 +100,11 @@
         'end_date' => date('Y-m-d', $end_date),
         'active' => 0
       ]);
-      $_SESSION['success'] = "Created schedule";
+      $_SESSION['success'] = "Created schedule.&nbsp;<a href='/admin/schedules?calendar_id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
       redirect("?edit=$new_id");
     }
   }
-  else if ($_GET['calendar_id']) {
+  else if ($_REQUEST['calendar_id']) {
     require $_SERVER['DOCUMENT_ROOT']."inc/calendar.php";
   }
   else {
@@ -136,6 +145,7 @@
         <label>Name: <input type='text' name='name' minlength='1' value='".html($edit_sched['name'])."'></label>
         <button type='submit'>Save</button>
         <button type='submit' ".($edit_sched['active'] ? 'disabled' : '')." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $edit_sched[name]? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
+        <button type='button' onclick='window.location = \"/admin/schedules?calendar_id=$edit_sched[id]\"'>Edit Calendar</button>
       </form>";
     }
     else {
@@ -147,15 +157,12 @@
         <thead>
           <tr>
             <th data-sort='name'>
-              
               Name
             </th>
             <th data-sort='start'>
-              
               Start
             </th>
             <th data-sort='end'>
-              
               End
             </th>
             <th>Actions</th>
@@ -184,11 +191,11 @@
       echo "
         </tbody>
       </table>";
+
+      echo "
+      <script src='/js/tableSort.js'></script>
+      <script src='/js/schedules.js'></script>";
     }
-      
-    echo "
-    <script src='/js/tableSort.js'></script>
-    <script src='/js/schedules.js'></script>";
   }
 
   require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

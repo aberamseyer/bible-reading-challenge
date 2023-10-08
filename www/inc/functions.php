@@ -514,7 +514,7 @@
 		ob_start();
 		if ($editable) {
 			echo "<form method='post'>
-				<input type='hidden' name='schedule_id' value='$schedule[id]'>";
+				<input type='hidden' name='calendar_id' value='$schedule[id]'>";
 		}
 		foreach ($period as $date) {
 			echo "<div class='month table-scroll'>";
@@ -556,7 +556,11 @@
 			$reference = trim($reference);
 			
 			$pieces = explode(" ", $reference);
-			if(count($pieces) > 2) {
+			if (count($pieces) > 3) {
+				$book_str = $pieces[0]." ".$pieces[1]." ".$pieces[2];
+				$chapter_str = $pieces[3];
+			}
+			else if(count($pieces) > 2) {
 				// book name contains a space (e.g., 1 John)
 				$book_str = $pieces[0]." ".$pieces[1];
 				$chapter_str = $pieces[2];
