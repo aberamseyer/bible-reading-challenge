@@ -48,7 +48,7 @@ foreach($all_users as $user) {
     col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
     col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
-  <td data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
+  <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
   <td data-badges='".count(badges_for_user($user['id']))."'>";

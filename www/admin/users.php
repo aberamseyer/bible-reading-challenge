@@ -243,7 +243,7 @@ else {
       echo "
       <tr class='".($user['last_read'] ? '' : 'hidden')."'>
         <td data-name><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".html($user['name'])."</a></small></td>
-        <td data-last-read='".date('Y-m-d', $user['last_read'] ?: "4124746800")."'><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
+        <td ".last_read_attr($user['last_read'])."><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
         <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
         <td data-trend>
           ".four_week_trend_canvas($user['id'])."

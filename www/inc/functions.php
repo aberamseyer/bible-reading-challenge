@@ -904,3 +904,7 @@ function badges_html_for_user($user_id) {
   }
 	return ob_get_clean();
 }
+
+function last_read_attr($last_read) {
+	return "data-last-read='".date('Y-m-d', $last_read ?: "4124746800")."'";
+}

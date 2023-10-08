@@ -33,12 +33,12 @@
       <h5>Stats</h5>
       <ul>
         <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
-        <li>My chapters read: ".number_format(col(($chp_qry = "
+        <li>Chapters I've read: ".number_format(col(($chp_qry = "
           SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
           FROM schedule_dates sd
           JOIN read_dates rd ON rd.schedule_date_id = sd.id")."
           WHERE rd. user_id = $my_id"))."</li>
-        <li>My words read: ".number_format(col(sprintf($word_qry = "
+        <li>Words I've read: ".number_format(col(sprintf($word_qry = "
           SELECT SUM(
             LENGTH(%s) - LENGTH(REPLACE(%s, ' ', '')) + 1
           ) as word_count
