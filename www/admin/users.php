@@ -209,23 +209,23 @@ else {
       <thead>
         <tr>
           <th data-sort='name'>
-            <span class='sort-icon asc'></span>
+            
             User
           </th>
           <th data-sort='last-read'>
-            <span class='sort-icon'></span>
+            
             Last read
           </th>
           <th data-sort='email'>
-            <span class='sort-icon'></span>
+            
             Emails
           </th>
           <th data-sort='trend'>
-            <span class='sort-icon'></span>
+            
             4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
           </th>
           <th data-sort='period'>
-            <span class='sort-icon'></span>
+            
             Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."
           </th>
         </tr>

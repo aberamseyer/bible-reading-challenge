@@ -26,18 +26,18 @@ echo "<div class='table-scroll'>
 echo "<thead>
   <tr>
     <th data-sort='name'>
-      <span class='sort-icon asc'></span>User
+      User
     </th>
     <th data-sort='behind'>
-      <span class='sort-icon'></span>
+      
       Days behind schedule
     </th>
     <th data-sort='streak'>
-      <span class='sort-icon'></span>
+      
       Current/Longest Streak
     </th>
     <th data-sort='badges'>
-      <span class='sort-icon'></span>
+      
       Badges
     </th>
   </tr>

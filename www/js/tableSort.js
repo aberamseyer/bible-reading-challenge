@@ -45,7 +45,19 @@ function initTable(compareRows) {
       table.querySelector("tbody").appendChild(row))
   }
 
-  // Add event listeners to the table headers
-  headers.forEach(header =>
-    header.addEventListener("click", handleHeaderClick))
+  // Add event listeners and sort icons to the table headers
+  headers.forEach((header, i) => {
+    const sortIcon = document.createElement('span')
+    sortIcon.classList.add('sort-icon')
+    if (i === 0) {
+      sortIcon.classList.add('asc')
+    }
+    
+    // this is to get the icon to appear before the text
+    const text = header.textContent
+    header.textContent = ''
+    header.insertBefore(sortIcon, null)
+    header.textContent = text
+    header.addEventListener("click", handleHeaderClick)
+  })
 }

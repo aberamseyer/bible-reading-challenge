@@ -147,15 +147,15 @@
         <thead>
           <tr>
             <th data-sort='name'>
-              <span class='sort-icon asc'></span>
+              
               Name
             </th>
             <th data-sort='start'>
-              <span class='sort-icon'></span>
+              
               Start
             </th>
             <th data-sort='end'>
-              <span class='sort-icon'></span>
+              
               End
             </th>
             <th>Actions</th>
