@@ -22,7 +22,7 @@ if (!$scheduled_reading) {
   die("nothing to do today!");
 }
 
-foreach(select("SELECT id, name, email, trans_pref, last_seen, complete_key FROM users WHERE email_verses = 1") as $user) {
+foreach(select("SELECT id, name, email, trans_pref, last_seen, complete_key, streak FROM users WHERE email_verses = 1") as $user) {
   // if a user hasn't been active near the period of the schedule, we won't email them
   $last_seen_date = new Datetime('@'.$user['last_seen']);
   if ($last_seen_date < $recently) {
@@ -60,5 +60,6 @@ foreach(select("SELECT id, name, email, trans_pref, last_seen, complete_key FROM
   /* unsubscribe */
   $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
   
-  send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html);
+  $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
+  send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
 }

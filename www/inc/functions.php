@@ -354,7 +354,7 @@
 		return row("SELECT * FROM schedules WHERE active = 1");
 	}
 
-	function send_daily_verse_email($email, $name, $subject, $content) {
+	function send_daily_verse_email($email, $name, $subject, $content, $streak) {
 		$body = [
 			"from" => [
 				"email" => "uofichristiansoncampus@gmail.com",
@@ -367,7 +367,8 @@
 					"dynamic_template_data" => [
 						"subject" => $subject,
 						"name" => $name,
-						"html" => $content
+						"html" => $content,
+						"streaK" => $streak
 					]
 				]
 			]
@@ -640,7 +641,11 @@
 	 */ 
 	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $email=false) {
 		ob_start();
-		echo "<article>";
+		$article_style = "";
+		if ($email) {
+			$article_style = "style='line-height: 1.618; font-size: 1.1rem;'";
+		}
+		echo "<article $article_style>";
 		if ($scheduled_reading) {
 			$style = "";
 			if ($email) {
@@ -658,7 +663,7 @@
 				$verse_style = "class='verse-text'";
 				if ($email) {
 					$ref_style = "style='font-weight: bold; user-select: none;'";
-					$verse_style="style='margin-left: 1rem;'";
+					$verse_style = "style='margin-left: 1rem;'";
 				}
 				foreach($verses as $verse_row) {
 					echo "
@@ -674,7 +679,7 @@
 			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
 			$copyright_style = "";
 			if ($email) {
-				$copyright_style = "font-size: 15px; line-height: 18.2px;";
+				$copyright_style = "font-size: 75%;";
 			}
 			echo "
 			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
