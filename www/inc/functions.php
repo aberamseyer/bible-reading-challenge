@@ -368,7 +368,7 @@
 						"subject" => $subject,
 						"name" => $name,
 						"html" => $content,
-						"streaK" => $streak
+						"streak" => $streak
 					]
 				]
 			]
