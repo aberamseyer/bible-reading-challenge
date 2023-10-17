@@ -1,7 +1,7 @@
 <?php
 
 //
-// Updates user streaks–meant to be run daily
+// Updates user streaks–should be run daily
 //
 // crontab entry: 50 3 * * * php /home/bible-reading-challenge/cron/update-streaks.php
 

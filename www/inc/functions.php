@@ -360,7 +360,7 @@
 				"email" => "uofichristiansoncampus@gmail.com",
 				"name" => "U of I Christians on Campus"
 			],
-			"template_id" => "d-302fcd68c8e94bf29decb61ae6e470a7",
+			"template_id" => SENDGRID_DAILY_EMAIL_TEMPLATE,
 			"personalizations" => [
 				[
 					"to" => [[ "email" => $email ]],
@@ -382,7 +382,7 @@
 				"email" => "uofichristiansoncampus@gmail.com",
 				"name" => "U of I Christians on Campus"
 			],
-			"template_id" => "d-834e3be872e84d1eb57a7f2b7d4c5bec",
+			"template_id" => SENDGRID_REGISTER_EMAIL_TEMPLATE,
 			"personalizations" => [
 				[
 					"to" => [[ "email" => $to ]],
@@ -399,7 +399,7 @@
 				"email" => "uofichristiansoncampus@gmail.com",
 				"name" => "U of I Christians on Campus"
 			],
-			"template_id" => "d-da3c099d74854e919f8819a6f7d9e274",
+			"template_id" => SENDGRID_FORGOT_PASSWORD_TEMPLATE,
 			"personalizations" => [
 				[
 					"to" => [[ "email" => $to ]],
@@ -902,14 +902,13 @@ function badges_html_for_user($user_id) {
     [39, 5],
     [44, 22]
   ] as $section) {
-    echo "<div class='badges'>";
-    foreach(array_slice($books, $section[0], $section[1]) as $book) {
-      $class = in_array($book, $badges)
-				? 'active'
-				: '';
-      echo "<div class='badge $class'>".strtoupper(substr($book, 0, 3))."</div>";
-    }
-    echo "</div>";
+		echo "<div class='badges'>";
+		foreach(array_slice($books, $section[0], $section[1]) as $book) {
+			if(in_array($book, $badges)) {
+				echo "<div class='badge active'>".strtoupper(substr($book, 0, 3))."</div>";
+			}
+		}
+		echo "</div>";
   }
 	return ob_get_clean();
 }
