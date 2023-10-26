@@ -4,6 +4,7 @@
 		static $db;
 		if (!$db) {
 			$db = new SQLite3(DB_FILE);
+			$db->busyTimeout(250);
 		}
 		return $alt_db ?: $db;
 	}

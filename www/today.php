@@ -50,10 +50,6 @@ if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
     'complete_key' => $me['complete_key']
   ], "id = ".$my_id);
 }
-else {
-  // reset the timer for when we started reading only if we did not try to submit too soon
-  $_SESSION['started_reading'] = $time;
-}
 
 $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
