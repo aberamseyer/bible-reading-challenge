@@ -624,7 +624,8 @@
 				'id' => $sd['id'],
 				'date' => $sd['date'],
 				'reference' => $sd['passage'],
-				'passages' => parse_passage($sd['passage'])
+				'passages' => parse_passage($sd['passage']),
+				'complete_key' => $sd['complete_key']
 			];
 		}
 		$schedules[$schedule_id] = $days;

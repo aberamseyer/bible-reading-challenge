@@ -18,7 +18,7 @@ $period = new DatePeriod(
   DatePeriod::INCLUDE_END_DATE
 );
 
-$schedule = get_active_schedule();;
+$schedule = get_active_schedule();
 
 foreach($period as $day) {
   $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')));

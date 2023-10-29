@@ -41,7 +41,8 @@
           'schedule_id' => $_POST['calendar_id'],
           'date' => $date,
           'passage' => $day['passage'],
-          'passage_chapter_ids' => json_encode($chp_ids)
+          'passage_chapter_ids' => json_encode($chp_ids),
+          'complete_key' => bin2hex(random_bytes(16))
         ]);
       }
     }

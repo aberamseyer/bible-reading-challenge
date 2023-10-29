@@ -34,21 +34,15 @@ $scheduled_reading = get_reading($today, $schedule['id']);
 // determine if today's reading has been completed
 $today_completed = day_completed($my_id, $scheduled_reading['id'] ?: 0);
 
-// make sure they didn't read too fast 🤔
+// "Done!" clicked
 if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
-  $_REQUEST['complete_key'] == $me['complete_key']) {
+  $_REQUEST['complete_key'] == $scheduled_reading['complete_key']) {
   insert("read_dates", [
     'user_id' => $my_id,
     'schedule_date_id' => $scheduled_reading['id'],
     'timestamp' => $time
   ]);
   $today_completed = true;
-
-  // rotate the key used for verifying the reading was completed
-  $me['complete_key'] = bin2hex(random_bytes(16));
-  update('users', [
-    'complete_key' => $me['complete_key']
-  ], "id = ".$my_id);
 }
 
 $page_title = "Read";
@@ -105,7 +99,7 @@ else {
 }
 echo "</small></p>";
 
-echo html_for_scheduled_reading($scheduled_reading, $trans, $me['complete_key'], $schedule);
+echo html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
 
 if ($scheduled_reading) {
   echo "<style>
