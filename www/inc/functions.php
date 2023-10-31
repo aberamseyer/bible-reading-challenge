@@ -658,8 +658,14 @@
 				$book = $passage['book'];
 				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
 	
-				$book_abbrevs = json_decode($passage['book']['abbreviations'], true);
-				$ref = ucwords($book_abbrevs[0]).". ".$passage['chapter']['number'].":";
+				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
+
+				$ref = ucwords($abbrev).
+					(
+						$abbrev !== strtolower($passage['book']['name'])
+							? ". " : " "
+					)
+					.$passage['chapter']['number'].":";
 	
 				$ref_style = "class='ref'";
 				$verse_style = "class='verse-text'";
