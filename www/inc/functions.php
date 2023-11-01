@@ -660,13 +660,6 @@
 	
 				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
 
-				$ref = ucwords($abbrev).
-					(
-						$abbrev !== strtolower($passage['book']['name'])
-							? ". " : " "
-					)
-					.$passage['chapter']['number'].":";
-	
 				$ref_style = "class='ref'";
 				$verse_style = "class='verse-text'";
 				if ($email) {
@@ -675,7 +668,7 @@
 				}
 				foreach($verses as $verse_row) {
 					echo "
-						<div class='verse'><span $ref_style>".$ref.$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
+						<div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
 				}
 			}
 			$btn_style = "";
@@ -900,20 +893,20 @@ function badges_for_user($user_id) {
 }
 
 function badges_html_for_user($user_id) {
-	$books = cols("SELECT name FROM books ORDER BY id");
+	$books = select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
 	$badges = badges_for_user($user_id);
   foreach([
-    [0, 10],
-    [17, 5],
-    [22, 17],
-    [39, 5],
-    [44, 22]
+    // [0, 10],
+    // [17, 5],
+    // [22, 17],
+    [39, 4],
+    [43, 22]
   ] as $section) {
 		echo "<div class='badges'>";
 		foreach(array_slice($books, $section[0], $section[1]) as $book) {
-			if(in_array($book, $badges)) {
-				echo "<div class='badge active'>".strtoupper(substr($book, 0, 3))."</div>";
+			if(in_array($book['name'], $badges)) {
+				echo "<img class='badge' src='/img/badge/nt/rgb-small/".($book['id']-39).".png'>";
 			}
 		}
 		echo "</div>";
