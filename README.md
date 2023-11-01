@@ -25,6 +25,8 @@ This website supports readers' seeing each other on the page reading together
 ### Setup
 From the `socket` directory, run `npm i` and then keep it alive with `forever start server.js`
 
+It defaults to port `8085`, customizable with the environment variable `SOCKET_PORT`
+
 ## API Keys
 create a '.env' file in the project root. required keys:
 

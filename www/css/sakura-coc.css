@@ -48,7 +48,7 @@ body {
   margin: auto;
   color: var(--color-text);
   background-color: var(--color-bg);
-  padding: 15px;
+  padding: 15px 25px;
 }
 
 h1, h2, h3, h4, h5, h6 {

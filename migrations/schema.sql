@@ -49,14 +49,6 @@ CREATE TABLE read_dates(
   schedule_date_id INTEGER,
   timestamp TEXT
 );
-CREATE INDEX "idx_chapters_book_id" ON "chapters"(`book_id`);
-CREATE INDEX "idx_books_name" ON "books"(`name`);
-CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
-CREATE INDEX idx_verses_esv ON verses(esv);
-CREATE INDEX idx_verses_kjv ON verses(kjv);
-CREATE INDEX idx_verses_niv ON verses(niv);
-CREATE INDEX idx_verses_nlt ON verses(nlt);
-CREATE INDEX idx_verses_text ON verses(rcv);
 CREATE TABLE schedule_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   schedule_id INTEGER,
@@ -65,6 +57,14 @@ CREATE TABLE schedule_dates(
   passage_chapter_ids TEXT,
   complete_key TEXT
 );
+CREATE INDEX "idx_chapters_book_id" ON "chapters"(`book_id`);
+CREATE INDEX "idx_books_name" ON "books"(`name`);
+CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
+CREATE INDEX idx_verses_esv ON verses(esv);
+CREATE INDEX idx_verses_kjv ON verses(kjv);
+CREATE INDEX idx_verses_niv ON verses(niv);
+CREATE INDEX idx_verses_nlt ON verses(nlt);
+CREATE INDEX idx_verses_text ON verses(rcv);
 CREATE TABLE users(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   uuid TEXT,
@@ -81,5 +81,6 @@ CREATE TABLE users(
   forgot_password_expires TEXT,
   email_verses INTEGER,
   streak INTEGER DEFAULT(0),
-  max_streak INTEGER DEFAULT(0)
+  max_streak INTEGER DEFAULT(0),
+  emoji TEXT
 );

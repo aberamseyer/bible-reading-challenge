@@ -26,7 +26,8 @@ else {
         'email_verified' => 1,
         'trans_pref' => 'rcv',
         'date_created' => $time,
-        'email_verify_token' => uniqid("", true).uniqid("", true)
+        'email_verify_token' => uniqid("", true).uniqid("", true),
+        'emoji' => '😄'
       ]);
     }
     else {

@@ -33,12 +33,27 @@ if ($_POST['user_id']) {
       }
     }
     else {
-      update("users", [
-        'name' => $_POST['name'],
-        'email_verses' => array_key_exists('email_verses', $_POST) ? 1 : 0,
-        'staff' => intval($_POST['staff']) ? 1 :0
-      ], "id = $to_change[id]");
-      $_SESSION['success'] = "Updated user";
+      $name = trim($_POST['name']);
+      $emoji = trim($_POST['emoji']);
+      if (!$name) {
+        $_SESSION['error'] = "Name cannot be blank";
+      }
+      else if (!$emoji) {
+        $_SESSION['error'] = "Emoji cannot be blank";
+      }
+      else if (grapheme_strlen($emoji) !== 1) {
+        $_SESSION['error'] = "Enter exactly 1 character for your emoji";
+      }
+      else {
+        update("users", [
+          'name' => $_POST['name'],
+          'email_verses' => array_key_exists('email_verses', $_POST) ? 1 : 0,
+          'staff' => intval($_POST['staff']) ? 1 :0,
+          'emoji' => $emoji
+        ], "id = $to_change[id]");
+        $_SESSION['success'] = "Updated user";
+        redirect();
+      }
     }
   }
 }
@@ -70,6 +85,15 @@ if ($_GET['user_id'] &&
     <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
     <div>
       <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
+    </div>
+    <div>
+      <label>My emoji
+        <input type='text' name='emoji'
+          minlength='1' maxlength='6'
+          value='".html($user['emoji'])."'
+          style='width: 60px'
+        >
+      </label>
     </div>
     <div>
       <legend>Account Type</legend>

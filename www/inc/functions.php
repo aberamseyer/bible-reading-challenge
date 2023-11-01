@@ -338,7 +338,7 @@
 		$nav_elements = [
 			['/my-schedule', 'My schedule'],
 			['/today', 'Today'],
-			['/auth/logout', 'Log out']
+			['/profile', 'Profile']
 		];
 		if ($staff) {
 			array_unshift($nav_elements, ['/admin', 'Admin']);

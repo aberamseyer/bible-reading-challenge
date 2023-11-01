@@ -109,13 +109,25 @@ if ($scheduled_reading) {
     .mug {
       display: inline-block;
       position: absolute;
-      width: 1.1rem;
-      height: 1.1rem;
+      width: 2rem;
+      height: 2rem;
       left: 2px;
       top: 0;
-      line-height: 1.1rem;
-      font-size: 1.1rem;
+      line-height: 1rem;
+      font-size: 1.5rem;
       transition: .7s all;
+      box-shadow: 1px 1px  2.4px var(--color-text);
+      border-radius: 50%;
+      padding: 3px;
+      text-align: center;
+      background: var(--color-fade);
+    }
+    .mug small {
+      font-size: 0.7rem;
+      display: block;
+      text-align: center;
+      margin-top: 2px;
+      color: var(--color-bg);
     }
   </style>";
   echo "
