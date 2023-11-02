@@ -154,4 +154,5 @@ th, td {
   align-items: center;
   justify-content: center;
   box-shadow: 1px 0px 2.4px var(--color-text);
+  border-radius: 3px;
 }
