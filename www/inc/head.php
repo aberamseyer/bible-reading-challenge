@@ -19,7 +19,7 @@
     <hr>
     <?php endif; ?>
     <h1 id='title'><?= $page_title ?></h1>
-    <?php if($insecure || $hide_title): ?>
+    <?php if($hide_title): ?>
       <style>
         #title { display: none; }
       </style>

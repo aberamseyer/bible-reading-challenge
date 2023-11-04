@@ -69,7 +69,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         </p>
         <p>
           <input name='password' type='password' placeholder="Password" required><br>
-          <small>At least 8 characters.</small>
+          <small>At least 8 characters</small>
         </p>
         <p>
           <input name='password_confirm' type='password' placeholder="Confirm password" required><br>

@@ -34,6 +34,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
 }
 
 $page_title = "Log in";
+$hide_title = true;
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
   <div id='auth-wrap'>
