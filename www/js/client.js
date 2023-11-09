@@ -15,11 +15,12 @@ function getRelativeScrollPosition() {
   return scrollPercentage;
 }
 
-function createUser(id, position, name, emoji) {
+function createUser(id, position, name, emoji, zIndex) {
   let newUser = document.createElement('span')
   newUser.classList.add('mug')
   newUser.innerHTML = `${emoji}<small>${name.split(' ').map(x => x.charAt(0)).join('').toUpperCase()}</small>`
   newUser.style.top = position
+  newUser.style.zIndex = zIndex
   newUser.setAttribute('data-id', id)
   newUser.setAttribute('title', name)
   document.querySelector('body').appendChild(newUser)
@@ -34,23 +35,27 @@ function setup() {
     let myId
     const people = new Map()
   
+    ws.send(`init|${WEBSOCKET_NONCE}`)
+
     ws.addEventListener('message', event => {
       const data = JSON.parse(event.data)
 
-      if (!myId && data.type !== 'init') {
+      if (!myId && data.type !== 'init-client') {
         // uninitialized, dont try anything
         return
       }
     
       let user = null
+      let zIndex = 2
       switch (data.type) {
-        case 'init':
+        case 'init-client':
           console.log(`initializing with ${data.people.length} users and id: ${data.id}`)
           myId = data.id
   
           people.clear()
+          zIndex = 2
           for(let person of data.people) {
-            people.set(person.id, createUser(person.id, person.position, person.name, person.emoji))
+            people.set(person.id, createUser(person.id, person.position, person.name, person.emoji, zIndex++))
           }
   
           function heartbeat () {
@@ -66,9 +71,9 @@ function setup() {
           heartbeat()
           break
         case 'add-user':
-          // console.log('adding user', data)
+          console.log(`adding user: ${data.id}`)
           people.delete(data.id)
-          people.set(data.id, createUser(data.id, data.position, data.name, data.emoji))
+          people.set(data.id, createUser(data.id, data.position, data.name, data.emoji, people.size+2))
           break
         case 'move-user':
           // console.log('moving user', data)
@@ -85,7 +90,7 @@ function setup() {
           }
           break
         case 'remove-user':
-          // console.log('removing user', data)
+          console.log(`removing user: ${data.id}`)
           user = people.get(data.id)
           if (user) {
             user.remove()
@@ -100,7 +105,7 @@ function setup() {
       console.log('Disconnected from server')
       people.clear()
       clearInterval(heartbeatInterval)
-    })
+    }, { once: true })
   
     let timeout
     document.addEventListener('scroll', () => {
@@ -115,12 +120,15 @@ function setup() {
         }))
       }, 10)
     })
-  })
+  }, { once: true })
 }
 
-setInterval(() => {
-  if (!ws || [ WebSocket.CLOSED, WebSocket.CLOSING ].includes(ws.readyState)) {
-    setup()
-  }
-}, 5000)
-setup()
+setTimeout(() => {
+  setup()
+
+  setInterval(() => {
+    if (!ws || [ WebSocket.CLOSED, WebSocket.CLOSING ].includes(ws.readyState)) {
+      setup()
+    }
+  }, 5000)
+}, 1000)

@@ -2,6 +2,11 @@
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
+// this key is used by the websocket client to authenticate as the current user
+update('users', [
+  'websocket_nonce' => $me['websocket_nonce'] = bin2hex(random_bytes(32))
+], 'id = '.$me['id']);
+
 // set translation, update it if the select box changed
 $tranlsations = ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt'];
 if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
@@ -133,6 +138,7 @@ if ($scheduled_reading) {
   echo "
   <script>
     const WS_URL = 'ws".(PROD ? 's' : '')."://".SOCKET_DOMAIN."'
+    const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'
   </script>
   <script src='/js/client.js'></script>";
 }
