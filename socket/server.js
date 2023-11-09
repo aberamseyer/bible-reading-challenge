@@ -134,7 +134,7 @@ server.on('connection', (ws, req) => {
       })
     }
     else {
-      console.log(`invalid initialization code: ${data}`)
+      console.log(`invalid initialization code: ${event.data}`)
       ws.close(1003, 'invalid initialization code')
     }
   }, { 'once': true })
