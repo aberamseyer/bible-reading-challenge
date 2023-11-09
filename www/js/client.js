@@ -106,8 +106,8 @@ function setup() {
       
     });
     
-    ws.addEventListener('close', () => {
-      console.log('Disconnected from server')
+    ws.addEventListener('close', ({ code, reason }) => {
+      console.log(`Disconnected from server: ${code}|${reason}`)
       people.clear()
       clearInterval(heartbeatInterval)
     }, { once: true })
