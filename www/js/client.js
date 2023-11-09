@@ -59,12 +59,17 @@ function setup() {
           }
   
           function heartbeat () {
-            ws.send(JSON.stringify({ 
-              type: 'ping',
-              id: myId,
-              uptime: Math.floor((Date.now() - initTime) / 1000),
-              timestamp: new Date()
-            }))
+            if (ws) {
+              ws.send(JSON.stringify({ 
+                type: 'ping',
+                id: myId,
+                uptime: Math.floor((Date.now() - initTime) / 1000),
+                timestamp: new Date()
+              }))
+            }
+            else {
+              clearInterval(heartbeatInterval)
+            }
           }
           clearInterval(heartbeatInterval)
           heartbeatInterval = setInterval(heartbeat, 10000)
@@ -113,12 +118,14 @@ function setup() {
         clearTimeout(timeout)
       }
       timeout = setTimeout(() => {
-        ws.send(JSON.stringify({
-          type: 'move',
-          id: myId,
-          position: `${getRelativeScrollPosition()}%` // how much we've scrolled down + half of viewport / total length of documnet
-        }))
-      }, 10)
+        if (ws) {
+          ws.send(JSON.stringify({
+            type: 'move',
+            id: myId,
+            position: `${getRelativeScrollPosition()}%` // how much we've scrolled down + half of viewport / total length of documnet
+          }))
+        }
+      }, 50)
     })
   }, { once: true })
 }
@@ -130,5 +137,5 @@ setTimeout(() => {
     if (!ws || [ WebSocket.CLOSED, WebSocket.CLOSING ].includes(ws.readyState)) {
       setup()
     }
-  }, 5000)
+  }, 7500)
 }, 1000)
