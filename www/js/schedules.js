@@ -13,4 +13,4 @@ const compareRows = (a, b, currentSortColumn) => {
     return new Date(tdA.getAttribute('data-end')) > new Date(tdB.getAttribute('data-end'))
   }
 }
-initTable(compareRows)
+initTable(compareRows, 'start')

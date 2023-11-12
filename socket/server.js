@@ -34,7 +34,7 @@ function broadcast (obj, exceptId) {
   }
 }
 
-server.on('connection', (ws, req) => {
+server.on('connection', ws => {
   const connectionId = crypto.randomBytes(16).toString("hex")
   console.log(`Client connected: ${connectionId}`);
   
@@ -99,7 +99,7 @@ server.on('connection', (ws, req) => {
           // console.log('moving user', data)
           user = people.get(data.id)
           if (!user) {
-            ws.close(1008, 'client not registered with server')
+            ws.terminate()
             return
           }
           user.position = data.position
@@ -116,7 +116,7 @@ server.on('connection', (ws, req) => {
   
     // prune on close
     ws.addEventListener('close', event => {
-      console.log(`Client disconnected: ${event.code}|${event.reason}`);
+      console.log(`Client disconnected`);
       removeUser(connectionId)
     }, { once: true })
   }
@@ -129,13 +129,13 @@ server.on('connection', (ws, req) => {
           setupListeners(connectionId, row)
         }
         else {
-          ws.close(1003, `invalid websocket nonce: ${nonce}`)
+          ws.terminate()
         }
       })
     }
     else {
       console.log(`invalid initialization code: ${event.data}`)
-      ws.close(1003, 'invalid initialization code')
+      ws.terminate()
     }
   }, { 'once': true })
 })

@@ -47,8 +47,8 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       <form action='' method='post'>
         <input type='hidden' name='csrf' value='<?= $csrf ?>'>
         <p>
-          <input name='email' type='text' placeholder="Email"><br>
-          <input name='password' type='password' placeholder="Password">
+          <input name='email' type='text' placeholder="Email" required><br>
+          <input name='password' type='password' placeholder="Password" required>
         </p>
         <p><button type="submit">Log in</button> <a href='forgot'>Forgot password</a></p>
         <p>Or <a href='register'>register here</a></p>

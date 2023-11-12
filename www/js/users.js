@@ -26,4 +26,4 @@ const compareRows = (a, b, currentSortColumn) => {
     return a.querySelectorAll('.active').length > b.querySelectorAll('.active').length
   }
 }
-initTable(compareRows)
+initTable(compareRows, 'period')

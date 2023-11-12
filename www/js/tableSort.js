@@ -1,8 +1,8 @@
-function initTable(compareRows) {
+function initTable(compareRows, defaultColumn) {
   const table = document.querySelector("table")
   const headers = table.querySelectorAll("th[data-sort]")
   const tableRows = Array.from(table.querySelectorAll("tbody tr"))
-  let currentSortColumn = 'name'
+  let currentSortColumn = defaultColumn
   let isAscending = true
 
   // Function to toggle sorting icons
@@ -45,7 +45,7 @@ function initTable(compareRows) {
       table.querySelector("tbody").appendChild(row))
   }
 
-  // Add event listeners and sort icons to the table headers
+  // Add event listeners and sort icons to the table headers, activating the default one
   headers.forEach((header, i) => {
     const sortIcon = document.createElement('span')
     sortIcon.classList.add('sort-icon')
@@ -55,6 +55,11 @@ function initTable(compareRows) {
 
     // this is to get the icon to appear before the text
     header.innerHTML = `${sortIcon.outerHTML}${header.innerHTML}`
-    header.addEventListener("click", handleHeaderClick)
+    header.addEventListener('click', handleHeaderClick)
+    if (header.getAttribute('data-sort') === currentSortColumn) {
+      setTimeout(() => {
+        header.click()
+      }, 10)
+    }
   })
 }

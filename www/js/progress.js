@@ -16,4 +16,4 @@ const compareRows = (a, b, currentSortColumn) => {
     return parseInt(tdA.getAttribute('data-badges')) > parseInt(tdB.getAttribute('data-badges'))
   }
 }
-initTable(compareRows)
+initTable(compareRows, 'behind')

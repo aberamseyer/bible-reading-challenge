@@ -41,7 +41,7 @@ echo "<form method='post'>
     <input type='text' name='emoji'
       minlength='1' maxlength='6'
       value='".html($me['emoji'])."'
-      style='width: 60px'
+      style='width: 70px'
     >
   </label>
   <button type='submit'>Save</button>
