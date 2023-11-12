@@ -7,7 +7,7 @@ const compareRows = (a, b, currentSortColumn) => {
     return tdA.textContent.localeCompare(tdB.textContent)
   }
   else if (column === "behind") {
-    return parseInt(tdA.getAttribute('data-behind')) > parseInt(tdB.getAttribute('data-behind'))
+    return parseInt(tdA.getAttribute('data-behind')) < parseInt(tdB.getAttribute('data-behind'))
   }
   else if (column === "streak") {
     return parseInt(tdA.getAttribute('data-streak')) > parseInt(tdB.getAttribute('data-streak'))
