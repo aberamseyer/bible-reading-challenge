@@ -82,5 +82,6 @@ CREATE TABLE users(
   email_verses INTEGER,
   streak INTEGER DEFAULT(0),
   max_streak INTEGER DEFAULT(0),
-  emoji TEXT
+  emoji TEXT,
+  websocket_nonce TEXT
 );
