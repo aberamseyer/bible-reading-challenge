@@ -13,12 +13,9 @@
   }
 
   $page_title = "Schedule";
-  $hide_title = true;
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
-  echo
-  "<h5>Schedule</h5>
-  <p>Click a date to jump to any past reading to complete it.</p>";
+  echo "<p>Click a date to jump to any past reading to complete it.</p>";
 
   // Generate the calendar for the current month and year
   echo generate_schedule_calendar($schedule);
