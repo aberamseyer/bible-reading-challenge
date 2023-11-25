@@ -91,7 +91,7 @@ if ($_GET['user_id'] &&
         <input type='text' name='emoji'
           minlength='1' maxlength='6'
           value='".html($user['emoji'])."'
-          style='width: 60px'
+          style='width: 70px'
         >
       </label>
     </div>

@@ -730,7 +730,8 @@ function help($tip) {
 }
 
 function four_week_trend_canvas($user_id) {
-	return "<canvas data-graph='".json_encode(four_week_trend_data($user_id))."'></canvas>";
+	$data = json_encode(four_week_trend_data($user_id));
+	return "<canvas title='$data' data-graph='$data'></canvas>";
 }
 
 function four_week_trend_data($user_id) {
