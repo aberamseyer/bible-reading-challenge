@@ -82,27 +82,29 @@ echo "<div id='date-header'>
     </div>";
   }
 
-// how many have read today
-$total_readers = col("SELECT COUNT(*)
-  FROM read_dates rd
-  JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-  WHERE sd.id = ".$scheduled_reading['id']);
-echo "<p><small>";
-
-if ($today_completed) {
-  if ($total_readers == 1) {
-    echo "You're the first to complete this reading";
+if ($scheduled_reading) {
+  // how many have read today
+  $total_readers = col("SELECT COUNT(*)
+    FROM read_dates rd
+    JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+    WHERE sd.id = ".$scheduled_reading['id']);
+  echo "<p><small>";
+  
+  if ($today_completed) {
+    if ($total_readers == 1) {
+      echo "You're the first to complete this reading";
+    }
+    else {
+      echo "You and ".($total_readers-1)." other".xs($total_readers-1)." have completed this reading";
+    }
   }
   else {
-    echo "You and ".($total_readers-1)." other".xs($total_readers-1)." have completed this reading";
+    $nf = new NumberFormatter("", NumberFormatter::SPELLOUT);
+    $words = $nf->format($total_readers);
+    echo ucwords($words)." other".xs($total_readers)." ".($total_readers == 1 ? "has" : "have")." completed this reading.";
   }
+  echo "</small></p>";
 }
-else {
-  $nf = new NumberFormatter("", NumberFormatter::SPELLOUT);
-  $words = $nf->format($total_readers);
-  echo ucwords($words)." other".xs($total_readers)." ".($total_readers == 1 ? "has" : "have")." completed this reading.";
-}
-echo "</small></p>";
 
 echo html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
 
@@ -134,8 +136,7 @@ if ($scheduled_reading) {
       margin-top: 2px;
       color: var(--color-bg);
     }
-  </style>";
-  echo "
+  </style>
   <script>
     const WS_URL = 'ws".(PROD ? 's' : '')."://".SOCKET_DOMAIN."'
     const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'

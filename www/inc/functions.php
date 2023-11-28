@@ -653,8 +653,8 @@
 			if ($email) {
 				$style = "style='text-align: center; font-size: 1.4rem;'";
 			}
-			echo "<h4 class='text-center' $style>$scheduled_reading[reference]</h4>";
 			foreach($scheduled_reading['passages'] as $passage) {
+				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
 				$book = $passage['book'];
 				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
 	
