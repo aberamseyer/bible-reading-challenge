@@ -36,7 +36,7 @@ function broadcast (obj, exceptId) {
 
 server.on('connection', ws => {
   const connectionId = crypto.randomBytes(16).toString("hex")
-  console.log(`Client connected: ${connectionId}`);
+  console.log(`${(new Date()).toLocaleString()} Client connected: ${connectionId}`);
   
   function setupListeners(connectionId, userRow) {
     const newUser = {
@@ -116,7 +116,7 @@ server.on('connection', ws => {
   
     // prune on close
     ws.addEventListener('close', event => {
-      console.log(`Client disconnected`);
+      console.log(`${(new Date()).toLocaleString()} Client disconnected`);
       removeUser(connectionId)
     }, { once: true })
   }
