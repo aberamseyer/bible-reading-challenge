@@ -57,7 +57,7 @@ if ($today_completed) {
   $next_reading = null;
   foreach(get_schedule_days($schedule['id']) as $reading) {
     $dt = new Datetime($reading['date']);
-    if ($today < $dt && !day_completed($my_id, $reading['id'])) {
+    if ($today < $dt && $dt < new Datetime() && !day_completed($my_id, $reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
       $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading >></a>";
       break;
     }
@@ -143,6 +143,13 @@ if ($scheduled_reading) {
       text-align: center;
       margin-top: 2px;
       color: var(--color-bg);
+    }
+    .mug .caret-up {
+      position: absolute;
+      left: 0.9rem;
+      top: -1.5rem;
+      color: var(--color-fade);
+      font-size: 1.1rem;
     }
   </style>
   <script>
