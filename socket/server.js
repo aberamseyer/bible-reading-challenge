@@ -116,7 +116,7 @@ server.on('connection', ws => {
   
     // prune on close
     ws.addEventListener('close', event => {
-      console.log(`${(new Date()).toLocaleString()} Client disconnected`);
+      console.log(`${(new Date()).toLocaleString()} Client disconnected: ${connectionId}`);
       removeUser(connectionId)
     }, { once: true })
   }

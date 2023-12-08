@@ -54,7 +54,15 @@ $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 if ($today_completed) {
-  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the reading for today!</blockquote>";
+  $next_reading = null;
+  foreach(get_schedule_days($schedule['id']) as $reading) {
+    $dt = new Datetime($reading['date']);
+    if ($today < $dt && !day_completed($my_id, $reading['id'])) {
+      $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading >></a>";
+      break;
+    }
+  }
+  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
 }
 // header with translation selector and email pref
 echo "<div id='date-header'>
