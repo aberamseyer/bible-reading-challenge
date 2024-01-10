@@ -1,8 +1,8 @@
 <?php
 
-	require_once __DIR__."/MailSender/Mailsender.php";
-	require_once __DIR__."/MailSender/MailsenderSES.php";
-	require_once __DIR__."/MailSender/MailsenderSendgrid.php";
+	require_once __DIR__."/MailSender/MailSender.php";
+	require_once __DIR__."/MailSender/MailSenderSES.php";
+	require_once __DIR__."/MailSender/MailSenderSendgrid.php";
 
 	function db($alt_db = null) {
 		static $db;
