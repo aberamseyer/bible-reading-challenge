@@ -1,5 +1,9 @@
 <?php
 
+	require_once "MailSender/Mailsender.php";
+	require_once "MailSender/MailsenderSES.php";
+	require_once "MailSender/MailsenderSendgrid.php";
+
 	function db($alt_db = null) {
 		static $db;
 		if (!$db) {
@@ -353,62 +357,6 @@
 
 	function get_active_schedule() {
 		return row("SELECT * FROM schedules WHERE active = 1");
-	}
-
-	function send_daily_verse_email($email, $name, $subject, $content, $streak) {
-		$body = [
-			"from" => [
-				"email" => "uofichristiansoncampus@gmail.com",
-				"name" => "U of I Christians on Campus"
-			],
-			"template_id" => SENDGRID_DAILY_EMAIL_TEMPLATE,
-			"personalizations" => [
-				[
-					"to" => [[ "email" => $email ]],
-					"dynamic_template_data" => [
-						"subject" => $subject,
-						"name" => $name,
-						"html" => $content,
-						"streak" => $streak
-					]
-				]
-			]
-		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body);
-	}
-
-  function send_register_email($to, $link) {		
-		$body = [
-			"from" => [
-				"email" => "uofichristiansoncampus@gmail.com",
-				"name" => "U of I Christians on Campus"
-			],
-			"template_id" => SENDGRID_REGISTER_EMAIL_TEMPLATE,
-			"personalizations" => [
-				[
-					"to" => [[ "email" => $to ]],
-					"dynamic_template_data" => [ "confirm_link" => $link ]
-				]
-			]
-		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body);
-  }
-
-	function send_forgot_password_email($to, $link) {
-		$body = [
-			"from" => [
-				"email" => "uofichristiansoncampus@gmail.com",
-				"name" => "U of I Christians on Campus"
-			],
-			"template_id" => SENDGRID_FORGOT_PASSWORD_TEMPLATE,
-			"personalizations" => [
-				[
-					"to" => [[ "email" => $to ]],
-					"dynamic_template_data" => [ "reset_link" => $link ]
-				]
-			]
-		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body); 
 	}
 
 	function allowed_schedule_date(Datetime $date) {

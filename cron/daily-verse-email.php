@@ -22,6 +22,7 @@ if (!$scheduled_reading) {
   die("nothing to do today!");
 }
 
+$ms = new Email\MailSenderSendgrid();
 foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users WHERE email_verses = 1") as $user) {
   // if a user hasn't been active near the period of the schedule, we won't email them
   $last_seen_date = new Datetime('@'.$user['last_seen']);
@@ -61,5 +62,6 @@ foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users
   $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
   
   $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
-  send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
+  
+  $ms->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
 }
