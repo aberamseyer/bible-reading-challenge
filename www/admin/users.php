@@ -154,6 +154,7 @@ else {
   }
 
   echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
+  $opt_group_year = null; $i = 0; $total_periods = iterator_count($period);
   foreach($period as $date) {
     if ($date->format('N') == 5) {
       $week_start = clone($date);
@@ -165,6 +166,10 @@ else {
 
     $week_end = date_create_from_format('U', strtotime('next thursday', $week_start->format('U')));
     $week_end->setTime(23, 59, 59, 999999);
+    if ($week_start->format('Y') !== $opt_group_year) {
+      $opt_group_year = $week_start->format('Y');
+      echo "<optgroup label='".$week_start->format('Y')."'>";
+    }
     echo "<option ".
       ($week_start > $today_for_disabled_check ? ' disabled ' : '')
       .(
@@ -174,7 +179,12 @@ else {
       ." value='".$week_start->format('Y-m-d')."|".($week_end->format('Y-m-d'))
       ."'>".$week_start->format('M j')."–".$week_end->format('M j')
       ."</option>";
+      if ($week_end->format('Y') !== $opt_group_year && $i !== $total_periods) { // we skip if on the last iteration because there's an extra </optgroup> outside the loop
+        echo "</optgroup>";
+      }
+      $i++;
   }
+  echo "</optgroup>"; // this is a bug if the schedule ends at the start of the year
   echo "</select>";
 
   $this_week = [
@@ -187,7 +197,7 @@ else {
     [ date_modify(clone($last_friday), '+6 days'), 'T' ]
   ];
       
-  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list doesnt refer to the current period until Saturday"))."</h5>";
+  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until Saturday"))."</h5>";
   $where = "
     WHERE sd.schedule_id = $schedule[id] ".                                                                                                                          // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
     " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_friday ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
@@ -245,7 +255,7 @@ else {
             4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This chart switches to the current Fri-Thu period on Saturday")."
+            Read this period ".help("This chart always begins with \"last friday\"")."
           </th>
         </tr>
         </thead>
