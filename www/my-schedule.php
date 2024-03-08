@@ -40,6 +40,7 @@
         }
       }
     })
+    Array.from(document.querySelectorAll('.active')).at(-1).scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
   </script>";
   require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
