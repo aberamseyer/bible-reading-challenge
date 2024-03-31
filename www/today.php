@@ -36,9 +36,10 @@ if (strtotime($_GET['today'])) {
 }
 $scheduled_reading = get_reading($today, $schedule['id']);
 
-// determine if today's reading has been completed
+// determine if today's reading and the entire schedule have been completed
 $today_completed = day_completed($my_id, $scheduled_reading['id'] ?: 0);
-
+$schedule_completed = schedule_completed($my_id, $schedule['id']);
+$schedule_just_completed = false; // only true on the day we finish the schedule
 // "Done!" clicked
 if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
   $_REQUEST['complete_key'] == $scheduled_reading['complete_key']) {
@@ -48,11 +49,39 @@ if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
     'timestamp' => $time
   ]);
   $today_completed = true;
+
+  $schedule_completed = schedule_completed($my_id, $schedule['id']);
+  $schedule_just_completed = true;
 }
 
 $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
+if ($schedule_completed) {
+  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+  echo "
+    <script src='https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js'></script>
+    <script>
+      const jsConfetti = new JSConfetti()
+      function party() {
+        const mess = () => {
+          jsConfetti.addConfetti({  
+            emojis: ['$me[emoji]'],
+            emojiSize: 80,
+            confettiNumber: 10,
+          })
+          jsConfetti.addConfetti({
+            confettiNumber: 100,
+          })
+        }
+        setTimeout(mess, 0)
+        setTimeout(mess, 1300)
+        setTimeout(mess, 2000)
+        setTimeout(mess, 3300)
+      }
+      ".($schedule_just_completed ? "party()" : "")."
+    </script>";
+}
 if ($today_completed) {
   $next_reading = null;
   foreach(get_schedule_days($schedule['id']) as $reading) {

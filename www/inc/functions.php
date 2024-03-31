@@ -656,6 +656,15 @@
 		return ob_get_clean();
 	}
 
+	function schedule_completed($user_id, $schedule_id) {
+		return col("SELECT COUNT(*)
+			FROM read_dates rd
+			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+			WHERE user_id = $user_id AND schedule_id = $schedule_id")
+			== col("SELECT COUNT(*)
+				FROM schedule_dates WHERE schedule_id = $schedule_id");
+	}
+
 function log_user_in($id) {
 	global $me;
 	$_SESSION['my_id'] = $id;
