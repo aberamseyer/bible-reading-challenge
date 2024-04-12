@@ -7,7 +7,7 @@ const compareRows = (a, b, currentSortColumn) => {
     return tdA.textContent.localeCompare(tdB.textContent)
   }
   else if (column === "last-read") {
-    return new Date(tdA.getAttribute('data-last-read')) > new Date(tdB.getAttribute('data-last-read'))
+    return new Date(tdA.getAttribute('data-last-read')) > new Date(tdB.getAttribute('data-last-read')) ? 1 : -1
   }
   else if (column === "email") {
     const a_email = parseInt(tdA.getAttribute('data-email'))
@@ -15,15 +15,15 @@ const compareRows = (a, b, currentSortColumn) => {
     if (a_email == b_email)
       return a.querySelector('td[data-name]').textContent.localeCompare(b.querySelector('td[data-name]').textContent)
     else
-      return a_email > b_email
+      return a_email > b_email ? 1 : -1
   }
   else if (column === 'trend') {
     const a_arr = JSON.parse(a.querySelector('[data-graph]').getAttribute('data-graph'))
     const b_arr = JSON.parse(b.querySelector('[data-graph]').getAttribute('data-graph'))
-    return a_arr.reduce((acc, curr) => acc + curr) > b_arr.reduce((acc, curr) => acc + curr)
+    return a_arr.reduce((acc, curr) => acc + curr) > b_arr.reduce((acc, curr) => acc + curr) ? 1 : -1
   }
   else if (column === 'period') {
-    return a.querySelectorAll('.active').length > b.querySelectorAll('.active').length
+    return a.querySelectorAll('.active').length > b.querySelectorAll('.active').length ? 1 : -1
   }
 }
 initTable(compareRows, 'period')

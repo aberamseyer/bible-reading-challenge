@@ -1,5 +1,6 @@
 function initTable(compareRows, defaultColumn) {
   const table = document.querySelector("table")
+  const tBody = document.querySelector("table tbody")
   const headers = table.querySelectorAll("th[data-sort]")
   const tableRows = Array.from(table.querySelectorAll("tbody tr"))
   let currentSortColumn = defaultColumn
@@ -42,7 +43,7 @@ function initTable(compareRows, defaultColumn) {
     }
 
     tableRows.forEach(row =>
-      table.querySelector("tbody").appendChild(row))
+      tBody.appendChild(row))
   }
 
   // Add event listeners and sort icons to the table headers, activating the default one
