@@ -7,13 +7,16 @@ const compareRows = (a, b, currentSortColumn) => {
     return tdA.textContent.localeCompare(tdB.textContent)
   }
   else if (column === "behind") {
-    return parseInt(tdA.getAttribute('data-behind')) < parseInt(tdB.getAttribute('data-behind'))
+    return parseInt(tdA.getAttribute('data-behind')) < parseInt(tdB.getAttribute('data-behind')) ? 1 : -1
   }
   else if (column === "streak") {
-    return parseInt(tdA.getAttribute('data-streak')) > parseInt(tdB.getAttribute('data-streak'))
+    return parseInt(tdA.getAttribute('data-streak')) > parseInt(tdB.getAttribute('data-streak')) ? 1 : -1
   }
   else if (column === 'badges') {
-    return parseInt(tdA.getAttribute('data-badges')) > parseInt(tdB.getAttribute('data-badges'))
+    return parseInt(tdA.getAttribute('data-badges')) > parseInt(tdB.getAttribute('data-badges')) ? 1 : -1
+  }
+  else if (column == 'percent') {
+    return parseInt(tdA.getAttribute('data-percent')) > parseInt(tdB.getAttribute('data-percent')) ? 1 : -1
   }
 }
 initTable(compareRows, 'behind')

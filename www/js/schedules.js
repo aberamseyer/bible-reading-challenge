@@ -7,10 +7,10 @@ const compareRows = (a, b, currentSortColumn) => {
     return tdA.textContent.localeCompare(tdB.textContent)
   }
   else if (column === "start") {
-    return new Date(tdA.getAttribute('data-start')) > new Date(tdB.getAttribute('data-start'))
+    return new Date(tdA.getAttribute('data-start')) > new Date(tdB.getAttribute('data-start')) ? 1 : -1
   }
   else if (column === "end") {
-    return new Date(tdA.getAttribute('data-end')) > new Date(tdB.getAttribute('data-end'))
+    return new Date(tdA.getAttribute('data-end')) > new Date(tdB.getAttribute('data-end')) ? 1 : -1
   }
 }
 initTable(compareRows, 'start')

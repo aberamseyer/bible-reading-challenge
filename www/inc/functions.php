@@ -787,7 +787,7 @@ function all_users($stale = false) {
     $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
   }
   return select("
-    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak
+    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where
@@ -874,4 +874,43 @@ function badges_html_for_user($user_id) {
 
 function last_read_attr($last_read) {
 	return "data-last-read='".date('Y-m-d', $last_read ?: "4124746800")."'";
+}
+
+function words_read($user = 0, $schedule_id = 0) {
+	$word_qry = "
+		SELECT SUM(
+			LENGTH(%s) - LENGTH(REPLACE(%s, ' ', '')) + 1
+		) as word_count
+		FROM (
+			SELECT value
+			FROM schedule_dates sd
+			JOIN JSON_EACH(passage_chapter_ids)
+			JOIN read_dates rd ON sd.id = rd.schedule_date_id
+			WHERE 1 %s
+		) chp_ids
+		LEFT JOIN verses v ON v.chapter_id = chp_ids.value
+	";
+	$schedule_where = $schedule_id ? " AND sd.schedule_id = ".$schedule_id : "";
+	if (!$user) {
+		$words_read = col(sprintf($word_qry, 'rcv', 'rcv', ''), $user['trans_pref']);
+	}
+	else {
+		$words_read = col(sprintf($word_qry, $user['trans_pref'], $user['trans_pref'], " AND rd.user_id = ".$user['id'].$schedule_where));
+	}
+
+	return $words_read;
+}
+
+function total_words_in_schedule($user, $schedule_id) {
+	return col(
+		"SELECT SUM(
+			LENGTH($user[trans_pref]) - LENGTH(REPLACE($user[trans_pref], ' ', '')) + 1
+		) as word_count
+		FROM (
+			SELECT value
+			FROM schedule_dates sd
+			JOIN JSON_EACH(passage_chapter_ids)
+			WHERE sd.schedule_id = $schedule_id
+		) chp_ids
+		LEFT JOIN verses v ON v.chapter_id = chp_ids.value");
 }

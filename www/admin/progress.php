@@ -34,20 +34,26 @@ echo "<thead>
     <th data-sort='streak'>
       Current/Longest Streak
     </th>
+    <th data-sort='percent'>
+      % Complete ".help('by # of words read')."
+    </th>
     <th data-sort='badges'>
       Badges
     </th>
   </tr>
 </thead>
 <tbody>";
+
 foreach($all_users as $user) {
   $days_behind = 
     col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
     col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
+  $percent_complete = words_read($user, $schedule['id']) / total_words_in_schedule($user, $schedule['id']) * 100;
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
+  <td data-percent='".($percent_complete)."'>".round($percent_complete, 2)."%</td>
   <td data-badges='".count(badges_for_user($user['id']))."'>";
   echo badges_html_for_user($user['id']);
   echo "</td></tr>";
