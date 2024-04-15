@@ -16,7 +16,7 @@ const compareRows = (a, b, currentSortColumn) => {
     return parseInt(tdA.getAttribute('data-badges')) > parseInt(tdB.getAttribute('data-badges')) ? 1 : -1
   }
   else if (column == 'percent') {
-    return parseInt(tdA.getAttribute('data-percent')) > parseInt(tdB.getAttribute('data-percent')) ? 1 : -1
+    return parseFloat(tdA.getAttribute('data-percent')) > parseFloat(tdB.getAttribute('data-percent')) ? 1 : -1
   }
 }
 initTable(compareRows, 'behind')

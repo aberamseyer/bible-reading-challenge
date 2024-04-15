@@ -878,39 +878,29 @@ function last_read_attr($last_read) {
 
 function words_read($user = 0, $schedule_id = 0) {
 	$word_qry = "
-		SELECT SUM(
-			LENGTH(%s) - LENGTH(REPLACE(%s, ' ', '')) + 1
-		) as word_count
-		FROM (
-			SELECT value
+			SELECT SUM(word_count)
 			FROM schedule_dates sd
 			JOIN JSON_EACH(passage_chapter_ids)
+			JOIN chapters c on c.id = value
 			JOIN read_dates rd ON sd.id = rd.schedule_date_id
 			WHERE 1 %s
-		) chp_ids
-		LEFT JOIN verses v ON v.chapter_id = chp_ids.value
 	";
 	$schedule_where = $schedule_id ? " AND sd.schedule_id = ".$schedule_id : "";
 	if (!$user) {
-		$words_read = col(sprintf($word_qry, 'rcv', 'rcv', ''), $user['trans_pref']);
+		$words_read = col(sprintf($word_qry, ''));
 	}
 	else {
-		$words_read = col(sprintf($word_qry, $user['trans_pref'], $user['trans_pref'], " AND rd.user_id = ".$user['id'].$schedule_where));
+		$words_read = col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
 	}
 
 	return $words_read;
 }
 
 function total_words_in_schedule($user, $schedule_id) {
-	return col(
-		"SELECT SUM(
-			LENGTH($user[trans_pref]) - LENGTH(REPLACE($user[trans_pref], ' ', '')) + 1
-		) as word_count
-		FROM (
-			SELECT value
+	return col("
+			SELECT SUM(word_count)
 			FROM schedule_dates sd
 			JOIN JSON_EACH(passage_chapter_ids)
-			WHERE sd.schedule_id = $schedule_id
-		) chp_ids
-		LEFT JOIN verses v ON v.chapter_id = chp_ids.value");
+			JOIN chapters c ON c.id = value
+			WHERE sd.schedule_id = $schedule_id");
 }
