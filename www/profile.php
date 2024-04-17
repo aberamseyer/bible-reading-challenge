@@ -36,7 +36,7 @@ echo "<p><a href='/auth/logout'>Logout</a></p>";
 
 echo "
 <div>
-  <h5>Badges</h5>";
+  <h3>Progress</h3>";
 $badges = badges_html_for_user($my_id);
 if (!$badges) {
   echo "Badges for books you complete will be displayed here.";
@@ -47,7 +47,7 @@ else {
 
 $words_read = words_read($me, $schedule['id']);
 
-$total_words_in_challenge = total_words_in_schedule($me, $schedule['id']);
+$total_words_in_challenge = total_words_in_schedule($schedule['id']);
 
 $canvas_width = 225;
 echo "</div>
@@ -64,21 +64,43 @@ echo "</div>
         WHERE rd. user_id = $my_id"))."</li>
       <li>Words I've read: ".number_format($words_read)."</li>
     </ul>
+  </div>
+  <div>
     <h5>Cross Challenge Stats</h5>
     <ul>
       <li>All-club chapters read: ".number_format(col($chp_qry))."</li>
       <li>All-club words read: ".number_format(words_read())."</li>
     </ul>
   </div>
-  <div style='text-align: center;'>
-    ".four_week_trend_canvas($my_id)."
-    <div style='text-align: center;'>
-      <small>4-week reading trend</small>
-    </div>
-  </div>
 </div>";
 
-echo "<h5>Edit Profile</h5>";
+// mountain
+$total_words_in_schedule = total_words_in_schedule($schedule['id']);
+$emojis = select("
+  SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
+  FROM schedule_dates sd
+  JOIN JSON_EACH(passage_chapter_ids)
+  JOIN chapters c on c.id = value
+  JOIN read_dates rd ON sd.id = rd.schedule_date_id
+  JOIN users u ON u.id = rd.user_id
+  WHERE sd.schedule_id = 3
+  GROUP BY u.id
+  ORDER BY RANDOM()
+  LIMIT 12");
+echo "
+  <div id='mountain-wrap'>";
+foreach($emojis as $i => $datum) {
+  echo "
+  <span id='em-$i' class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]'>
+    <span class='inner'>$datum[emoji]</span>
+  </span>";
+}
+  echo "
+    <img src='/img/mountain-sm.png' id='mountain'>
+  </div>";
+
+
+echo "<h2>Edit Profile</h2>";
 echo "<p>Email: <b>".html($me['email'])."</b><br>";
 echo "Created: <b>".date('F j, Y', $me['date_created'])."</b><br>";
 echo "<form method='post'>
@@ -95,4 +117,6 @@ echo "<form method='post'>
 
 
 echo "<script>".four_week_trend_js($canvas_width, 120)."</script>";
+echo "<script src='/js/profile.js'></script>";
+
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

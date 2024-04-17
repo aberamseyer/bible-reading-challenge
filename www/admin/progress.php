@@ -48,7 +48,7 @@ foreach($all_users as $user) {
   $days_behind = 
     col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
     col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
-  $percent_complete = words_read($user, $schedule['id']) / total_words_in_schedule($user, $schedule['id']) * 100;
+  $percent_complete = words_read($user, $schedule['id']) / total_words_in_schedule($schedule['id']) * 100;
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>

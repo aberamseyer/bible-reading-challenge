@@ -26,7 +26,7 @@ foreach(select("
       $text = str_replace('  ', ' ', $text);
     $count = count(explode(' ', $text));
     print($chapter['chp'].": ".$count.PHP_EOL);
-    // update("chapters", [
-    //   'word_count' => $count
-    // ], 'id = '.$chapter['id']);
+    update("chapters", [
+      'word_count' => $count
+    ], 'id = '.$chapter['id']);
 }

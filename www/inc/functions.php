@@ -669,8 +669,9 @@ function log_user_in($id) {
 	global $me;
 	$_SESSION['my_id'] = $id;
 	if ($_SESSION['login_redirect']) {
-		redirect($_SESSION['login_redirect']);
+		$redir = $_SESSION['login_redirect'];
 		$_SESSION['login_redirect'] = null;
+		redirect($redir);
 	}
 	else {
 		redirect("/");
@@ -896,7 +897,7 @@ function words_read($user = 0, $schedule_id = 0) {
 	return $words_read;
 }
 
-function total_words_in_schedule($user, $schedule_id) {
+function total_words_in_schedule($schedule_id) {
 	return col("
 			SELECT SUM(word_count)
 			FROM schedule_dates sd
