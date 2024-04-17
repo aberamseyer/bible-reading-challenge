@@ -788,7 +788,7 @@ function all_users($stale = false) {
     $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
   }
   return select("
-    SELECT u.id, u.name, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
+    SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
     WHERE $where

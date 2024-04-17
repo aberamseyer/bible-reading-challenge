@@ -76,6 +76,9 @@ body {
 .table-scroll {
   overflow-x: auto;
 }
+.left {
+  text-align: left !important;
+}
 th, td {
   text-align: center;
 }

@@ -4,7 +4,7 @@ const compareRows = (a, b, currentSortColumn) => {
   const tdB = b.querySelector(`td[data-${column}]`)
   
   if (column === "name") {
-    return tdA.textContent.localeCompare(tdB.textContent)
+    return tdA.textContent.split(/\s/g).slice(1).join(' ').localeCompare(tdB.textContent.split(/\s/g).slice(1).join(' '))
   }
   else if (column === "last-read") {
     return new Date(tdA.getAttribute('data-last-read')) > new Date(tdB.getAttribute('data-last-read')) ? 1 : -1

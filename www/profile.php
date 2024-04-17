@@ -91,6 +91,7 @@ $emojis = select("
     END DESC
   LIMIT 20");
 echo "
+  <h5 class='text-center'>Top 20 Readers (and you)</h5>
   <div id='mountain-wrap'>";
 foreach($emojis as $i => $datum) {
   $style = '';
