@@ -85,13 +85,20 @@ $emojis = select("
   JOIN users u ON u.id = rd.user_id
   WHERE sd.schedule_id = 3
   GROUP BY u.id
-  ORDER BY RANDOM()
-  LIMIT 12");
+  ORDER BY 
+    CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
+    ELSE COUNT(*)
+    END DESC
+  LIMIT 20");
 echo "
   <div id='mountain-wrap'>";
 foreach($emojis as $i => $datum) {
+  $style = '';
+  if ($datum['id'] == $me['id']) {
+    $style = "style='z-index: 10'";
+  }
   echo "
-  <span id='em-$i' class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]'>
+  <span id='em-$i' class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
     <span class='inner'>$datum[emoji]</span>
   </span>";
 }

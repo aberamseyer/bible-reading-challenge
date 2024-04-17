@@ -16,7 +16,7 @@ setTimeout(() => {
     setTimeout(() => {
       em.classList.add('animated')
       em.style.transition = `${Math.round(time*10)/10}s all`
-      em.style.bottom = (yRange[1]*progress + (1-progress)*random(-4, 4)) + '%'
+      em.style.bottom = (yRange[1]*progress + (1-progress)*random(-2, 2)) + '%'
       em.style.left = (50 + (1-progress)*random(-15, 15)) + '%'
       em.children[0].style.animation = `yAxis 0.2s ${Math.round(time / 0.2)} cubic-bezier(0.02, 0.01, 0.21, 1)`
     }, delay)
