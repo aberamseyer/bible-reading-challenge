@@ -43,8 +43,6 @@ mountains.forEach(mountain => {
   })
 })
 
-
-
 const mountainSelect = document.getElementById('mountain-select')
 function toggleMountains() {
   document.querySelectorAll('.mountain-wrap').forEach((el, i) => {

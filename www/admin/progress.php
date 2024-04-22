@@ -42,15 +42,27 @@ do {
     ];
   $next->modify('+1 month');
   $prev->modify('+1 month');
-} while ($next <= $end_date);
+} while ($next->format('U') <= strtotime('+1 month', $end_date->format('U')));
 
+$today = new Datetime();
+$opt_group_year = '';
 echo "<select id='mountain-select' onchange='toggleMountains()'>";
 foreach($graphs as $i => $graph) {
-  echo "<option value='$i'>".$graph['dates']['start']->format('M j')."–".$graph['dates']['end']->format('M j')."</option>";
-  if ($graph['dates']['start'] > new Datetime()) {
-    break;
+  if ($graph['dates']['start']->format('Y') !== $opt_group_year) {
+    $opt_group_year = $graph['dates']['start']->format('Y');
+    echo "<optgroup label='".$opt_group_year."'>";
+  }
+
+  $selected = '';
+  if ($graph['dates']['start'] < $today && $today <= $graph['dates']['end']) {
+    $selected = 'selected';
+  }
+  echo "<option value='$i' $selected>".$graph['dates']['start']->format('M j')."–".$graph['dates']['end']->format('M j')."</option>";
+  if ($graph['dates']['end']->format('Y') !== $opt_group_year && $i !== count($graphs)) {
+    echo "</optgroup>";
   }
 }
+echo "</optgroup>";
 echo "</select>";
 foreach($graphs as $i => $graph) {
   mountain_for_emojis($graph['data']);

@@ -5,10 +5,10 @@ function random(min, max) {
 }
 
 const emojis = document.querySelectorAll('.emoji')
-const mountainWrap = document.querySelector('.mountain-wrap')
+const mountain = document.querySelector('.mountain')
 
 setTimeout(() => {
-  const yRange = [0, Math.floor(mountainWrap.clientHeight / 250 * 100) - 12] // target % is 88
+  const yRange = [0, Math.floor(mountain.clientHeight / 250 * 100) - 12] // target % is 88
   emojis.forEach(em => {
     const delay = random(0, 1500)
     const progress = parseFloat(em.getAttribute('data-percent')) / 100
@@ -29,7 +29,7 @@ setTimeout(() => {
 }, 500)
 
 // emoji mouse repulsion
-mountainWrap.addEventListener('mousemove', e => {
+mountain.addEventListener('mousemove', e => {
   const mouseX = e.clientX
   const mouseY = e.clientY
 
