@@ -920,6 +920,6 @@ function mountain_for_emojis($emojis, $my_id = 0) {
 		</span>";
 	}
   
-  echo "<img src='/img/mountain-sm.png' class='mountain'>";
+  echo "<img src='/img/mountain-num.png' class='mountain'>";
   echo "</div>";
 }
