@@ -160,7 +160,7 @@ th, td {
 }
 
 /* mountain */
-#mountain-wrap {
+.mountain-wrap {
   display: block;
   position: relative;
   max-width: 100%;
@@ -169,14 +169,15 @@ th, td {
   justify-content: center;
   align-items: flex-end;
 }
-#mountain {
+.mountain {
   max-width: 100%;
   max-height: 100%;
   position: relative;
 }
-#mountain-wrap .emoji {
+.mountain-wrap .emoji {
   position: absolute;
   font-size: 12px;
+  line-height: 12px;
   bottom: 0;
   left: 50%;
   z-index: 1;
@@ -185,6 +186,7 @@ th, td {
   position: absolute;
   left: 0;
   bottom: 0;
+  transition: .1s all;
 }
 
 @keyframes yAxis {

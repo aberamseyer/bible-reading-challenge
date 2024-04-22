@@ -83,7 +83,7 @@ $emojis = select("
   JOIN chapters c on c.id = value
   JOIN read_dates rd ON sd.id = rd.schedule_date_id
   JOIN users u ON u.id = rd.user_id
-  WHERE sd.schedule_id = 3
+  WHERE sd.schedule_id = $schedule[id]
   GROUP BY u.id
   ORDER BY 
     CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
@@ -91,22 +91,9 @@ $emojis = select("
     END DESC
   LIMIT 20");
 echo "
-  <h5 class='text-center'>Top 20 Readers (and you)</h5>
-  <div id='mountain-wrap'>";
-foreach($emojis as $i => $datum) {
-  $style = '';
-  if ($datum['id'] == $me['id']) {
-    $style = "style='z-index: 10'";
-  }
-  echo "
-  <span id='em-$i' class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
-    <span class='inner'>$datum[emoji]</span>
-  </span>";
-}
-  echo "
-    <img src='/img/mountain-sm.png' id='mountain'>
-  </div>";
+  <h5 class='text-center'>Top 20 Readers (and you)</h5>";
 
+  mountain_for_emojis($emojis, $me['id']);
 
 echo "<h2>Edit Profile</h2>";
 echo "<p>Email: <b>".html($me['email'])."</b><br>";

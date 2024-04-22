@@ -15,8 +15,49 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 echo admin_navigation();
 
-echo "<h5>Badges</h5>";
+echo "<h5>Montly Reading</h5>";
+$start = new Datetime($schedule['start_date']);
+$end_date = new Datetime($schedule['end_date']);
+$next = clone($start); $next->modify('+1 month');
+$prev = clone($start);
 
+$total_words_in_schedule = total_words_in_schedule($schedule['id']);
+$graphs = [];
+$sum = 0;
+do {
+  $data = select("
+    SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id
+    FROM schedule_dates sd
+    JOIN JSON_EACH(passage_chapter_ids)
+    JOIN chapters c on c.id = value
+    JOIN read_dates rd ON sd.id = rd.schedule_date_id
+    JOIN users u ON u.id = rd.user_id
+    WHERE sd.schedule_id = $schedule[id] AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
+    GROUP BY u.id
+    ORDER BY COUNT(*) DESC, RANDOM()
+    LIMIT 20");
+    $graphs[] = [ 
+      'dates' => [ 'start' => clone($prev), 'end' => clone($next) ], 
+      'data' => $data
+    ];
+  $next->modify('+1 month');
+  $prev->modify('+1 month');
+} while ($next <= $end_date);
+
+echo "<select id='mountain-select' onchange='toggleMountains()'>";
+foreach($graphs as $i => $graph) {
+  echo "<option value='$i'>".$graph['dates']['start']->format('M j')."–".$graph['dates']['end']->format('M j')."</option>";
+  if ($graph['dates']['start'] > new Datetime()) {
+    break;
+  }
+}
+echo "</select>";
+foreach($graphs as $i => $graph) {
+  mountain_for_emojis($graph['data']);
+}
+
+
+echo "<h5>User Progress</h5>";
 $all_users = all_users($_GET['stale']);
 $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
 echo toggle_all_users($user_count);

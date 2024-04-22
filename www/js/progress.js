@@ -20,3 +20,35 @@ const compareRows = (a, b, currentSortColumn) => {
   }
 }
 initTable(compareRows, 'behind')
+
+
+
+
+
+function random(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const emojis = document.querySelectorAll('.emoji')
+const mountains = document.querySelectorAll('.mountain')
+
+mountains.forEach(mountain => {
+  const yRange = [0, Math.floor(mountain.clientHeight / 250 * 100) - 12] // target % is 88
+  emojis.forEach(em => {
+    const progress = parseFloat(em.getAttribute('data-percent')) / 100
+    em.style.bottom = (yRange[1]*progress + (1-progress)*random(-0.5, 0.5)) + '%'
+    em.style.left = (50 + (1-progress)*random(-15, 15)) + '%'
+  })
+})
+
+
+
+const mountainSelect = document.getElementById('mountain-select')
+function toggleMountains() {
+  document.querySelectorAll('.mountain-wrap').forEach((el, i) => {
+    el.classList.toggle('hidden', i !== parseInt(mountainSelect.value))
+  })
+}
+toggleMountains()

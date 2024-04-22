@@ -905,3 +905,21 @@ function total_words_in_schedule($schedule_id) {
 			JOIN chapters c ON c.id = value
 			WHERE sd.schedule_id = $schedule_id");
 }
+
+function mountain_for_emojis($emojis, $my_id = 0) {
+  echo "<div class='mountain-wrap' $mountain_attrs>";
+
+	foreach($emojis as $i => $datum) {
+		$style = '';
+		if ($datum['id'] == $my_id) {
+			$style = "style='z-index: 10'";
+		}
+		echo "
+		<span class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
+			<span class='inner'>$datum[emoji]</span>
+		</span>";
+	}
+  
+  echo "<img src='/img/mountain-sm.png' class='mountain'>";
+  echo "</div>";
+}
