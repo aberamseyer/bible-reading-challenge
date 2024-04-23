@@ -1,8 +1,7 @@
 <?php
 
 //
-// Creates user streaks. run once after adjusting the constants in the DatePeriod constructor
-// all this code does is loop over the same code as the 'update-streaks.php', manually setting what day it is
+// Creates word counts on chapter rows
 // 
 
 require __DIR__."/../www/inc/env.php";

@@ -15,6 +15,9 @@ body {
 .hidden {
   display: none !important;
 }
+.filtered {
+  display: none !important;
+}
 .two-columns {
   display: flex;
   justify-content: space-around;

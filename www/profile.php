@@ -95,6 +95,14 @@ echo "
 
   mountain_for_emojis($emojis, $me['id']);
 
+  echo "<p>
+  <h6 class='text-center'>Days read each weeek</h6>
+  <div class='center'>";
+  echo weekly_progress_canvas($me['id'], $schedule);
+  echo "<script>".weekly_progress_js(300, 150)."</script>";
+  echo "</div>
+  </p>";
+
 echo "<h2>Edit Profile</h2>";
 echo "<p>Email: <b>".html($me['email'])."</b><br>";
 echo "Created: <b>".date('F j, Y', $me['date_created'])."</b><br>";
@@ -111,7 +119,6 @@ echo "<form method='post'>
 </form>";
 
 
-echo "<script>".four_week_trend_js($canvas_width, 120)."</script>";
 echo "<script src='/js/profile.js'></script>";
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

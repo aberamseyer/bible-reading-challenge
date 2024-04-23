@@ -799,6 +799,9 @@ function all_users($stale = false) {
 function toggle_all_users($initial_count) {
 
   echo "<div id='toggle-all-wrap'><div><b id='all-count'>$initial_count</b> reader".xs($initial_count)."</div>
+		<label>
+			<input type='search' id='filter-table' placeholder='Search..'>
+		</label>
     <label>
       <input type='checkbox' id='toggle-active'>
       Show those who have never read
@@ -815,7 +818,20 @@ function toggle_all_users($initial_count) {
 	echo "<script>
 
 	document.addEventListener('DOMContentLoaded', function() {
-		// show/hide users who have never read via checkbox
+		// search box
+		document.getElementById('filter-table').addEventListener('keyup', e => {
+			const rows = document.querySelectorAll('table tbody tr')
+			if (e.target.value) {
+				rows.forEach(row => 
+					row.classList.toggle('filtered', 
+						!(~row.querySelector('td:first-child').textContent.toLowerCase().indexOf(e.target.value))))
+			}
+			else {
+				rows.forEach(row => row.classList.remove('filtered'))
+			}
+		})
+		
+		// hidden/shown stale users
 		const count = document.getElementById('all-count')
 		const countRows = Array.from(document.querySelectorAll('table tbody tr'))
 		document.getElementById('toggle-active').addEventListener('click', function() {
@@ -826,7 +842,7 @@ function toggle_all_users($initial_count) {
 			else {
 				countRows.forEach(row =>
 					row.classList.toggle('hidden',
-						row.querySelector('[data-last-read]').getAttribute('data-last-read') === '2100-09-15'))
+						row.querySelector('[data-last-read]').getAttribute('data-last-read') === '2200-01-01'))
 				
 				count.textContent = countRows.filter(x => !x.classList.contains('hidden')).length
 			}
@@ -874,7 +890,7 @@ function badges_html_for_user($user_id) {
 }
 
 function last_read_attr($last_read) {
-	return "data-last-read='".date('Y-m-d', $last_read ?: "4124746800")."'";
+	return "data-last-read='".($last_read ? date('Y-m-d', $last_read) : "2200-01-01")."'";
 }
 
 function words_read($user = 0, $schedule_id = 0) {
@@ -922,4 +938,136 @@ function mountain_for_emojis($emojis, $my_id = 0) {
   
   echo "<img src='/img/mountain-num.png' class='mountain'>";
   echo "</div>";
+}
+
+function weekly_counts($user_id, $schedule) {
+	$start = new DateTime($schedule['start_date']);
+	$end = new DateTime($schedule['end_date']);
+
+	$interval = $start->diff($end);
+	$days_between = abs(intval($interval->format('%a')));
+	$week_count = ceil($days_between / 7);
+
+	$counts = select("
+		SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
+		FROM (
+				WITH RECURSIVE week_sequence AS (
+								SELECT date('now', 'localtime') AS cdate
+								UNION ALL
+								SELECT date(cdate, '-7 days') 
+									FROM week_sequence
+									LIMIT $week_count
+						)
+						SELECT strftime('%Y-%W', cdate) AS week,
+						strftime('%Y-%m-%d', cdate, 'weekday 0') AS start_of_week
+							FROM week_sequence
+				)
+				sd
+				LEFT JOIN
+				(
+						SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', 'localtime')) AS week,
+										COUNT(rd.user_id) count
+							FROM read_dates rd
+							WHERE rd.user_id = $user_id
+							GROUP BY week, rd.user_id
+				)
+				rd ON rd.week = sd.week
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', 'localtime') ) 
+		ORDER BY sd.week ASC
+		LIMIT $week_count");
+
+		return [
+			'week' => array_column($counts, 'week'),
+			'counts' => array_column($counts, 'count'),
+			'start_of_week' => array_column($counts, 'start_of_week')
+		];
+}
+
+function deviation_for_user($user_id, $schedule) {
+	$weekly_counts = weekly_counts($user_id, $schedule)['counts'];
+	
+	// standard deviation
+	$n = count($weekly_counts);
+	if ($n === 0) {
+		return null;
+	}
+	$mean = array_sum($weekly_counts) / $n;
+	$variance = 0.0;
+	foreach ($weekly_counts as $val) {
+			$variance += pow($val - $mean, 2);
+	}
+	$variance /= $n;
+
+	return round(sqrt($variance), 3);
+}
+
+function weekly_progress_canvas($user_id, $schedule) {
+	$counts = weekly_counts($user_id, $schedule);
+	$data = json_encode($counts['counts']);
+	return "<canvas title='$data' data-graph='$data'></canvas>";
+}
+
+function weekly_progress_js($width, $height) {
+	return "
+	const canvas = document.querySelectorAll('canvas');
+	canvas.forEach(c => {
+		const data = JSON.parse(c.getAttribute('data-graph'));
+		const ctx = c.getContext('2d');
+		
+		// Set the canvas dimensions
+		c.width = $width;
+		c.height = $height;
+		
+		// Calculate the scale factors
+		const maxDataValue = Math.max(...data);
+		const scaleFactor = c.height / maxDataValue;
+		
+		// Draw the sparkline
+		ctx.beginPath();
+		ctx.moveTo(0, c.height - data[0] * scaleFactor);
+		for (let i = 1; i < data.length; i++) {
+			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
+			const y = c.height - data[i] * scaleFactor;
+			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
+			const prevY = c.height - data[i - 1] * scaleFactor;
+			const cpx = (prevX + x) / 2;
+			const cpy = (prevY + y) / 2;
+			
+			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
+		}
+		
+		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
+		gradient.addColorStop(0, 'rgb(63, 70, 143)');
+		gradient.addColorStop(1, 'rgb(219, 184, 100)');
+		ctx.strokeStyle = gradient;
+		
+		ctx.lineWidth = 1;
+		ctx.stroke();
+
+		// Draw left border
+		ctx.beginPath();
+		ctx.strokeStyle = 'rgb(63, 70, 143)';
+		ctx.lineWidth = 2;
+		ctx.moveTo(0, 0);
+		ctx.lineTo(0, $height);
+		ctx.stroke();
+
+		// Draw top number
+		ctx.lineWidth = 1;
+		ctx.fillStyle = gradient;
+		ctx.font = '16px Arial'; 
+		ctx.textAlign = 'center';
+		ctx.fillText(maxDataValue.toString(), 10, 20); // Adjust position as needed
+
+		// Draw bottom border
+		ctx.beginPath();
+		ctx.moveTo(0, $height);
+		ctx.lineTo($width, $height);
+		ctx.stroke();
+
+		// Draw bottom number
+		ctx.textAlign = 'center';
+		ctx.fillText('0', 10, $height - 10); // Adjust position as needed
+
+	})";
 }

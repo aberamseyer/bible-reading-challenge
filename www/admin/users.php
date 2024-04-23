@@ -72,6 +72,8 @@ if ($_GET['user_id'] &&
 ) {
   // specific user's stats
   echo admin_navigation();
+  $deviation = deviation_for_user($user['id'], $schedule);
+
   echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
@@ -79,7 +81,16 @@ if ($_GET['user_id'] &&
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
   $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
-  echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."</p>";
+  echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
+  echo "Consistency (lower is better) ".help('Standard deviation of average chapters read per week').": <b>".$deviation."</b>";
+  echo badges_html_for_user($user['id'])."</p>";
+  echo "<p>
+  <h6 class='text-center'>Days read each weeek</h6>
+  <div class='center'>";
+  echo weekly_progress_canvas($user['id'], $schedule);
+  echo "<script>".weekly_progress_js(400, 300)."</script>";
+  echo "</div>
+  </p>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
     <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>

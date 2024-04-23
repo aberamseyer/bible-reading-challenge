@@ -46,11 +46,9 @@ foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users
   $word_length = array_reduce(
     $scheduled_reading['passages'], 
     fn($acc, $cur) => intval(col("
-      SELECT SUM(
-        LENGTH($user[trans_pref]) - LENGTH(REPLACE($user[trans_pref], ' ', '')) + 1
-      )
-      FROM verses
-      WHERE chapter_id = ".$cur['chapter']['id'])) + $acc);
+      SELECT word_count
+      FROM chapters
+      WHERE id = ".$cur['chapter']['id'])) + $acc);
   $minutes_to_read = ceil($word_length / 246); // words per minute
 
   // BUILD EMAIL
