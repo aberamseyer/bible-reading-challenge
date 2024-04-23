@@ -96,7 +96,7 @@ echo "
   mountain_for_emojis($emojis, $me['id']);
 
   echo "<p>
-  <h6 class='text-center'>Days read each weeek</h6>
+  <h6 class='text-center'>Days read each week</h6>
   <div class='center'>";
   echo weekly_progress_canvas($me['id'], $schedule);
   echo "<script>".weekly_progress_js(300, 150)."</script>";

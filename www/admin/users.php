@@ -85,7 +85,7 @@ if ($_GET['user_id'] &&
   echo "Consistency (lower is better) ".help('Standard deviation of average chapters read per week').": <b>".$deviation."</b>";
   echo badges_html_for_user($user['id'])."</p>";
   echo "<p>
-  <h6 class='text-center'>Days read each weeek</h6>
+  <h6 class='text-center'>Days read each week</h6>
   <div class='center'>";
   echo weekly_progress_canvas($user['id'], $schedule);
   echo "<script>".weekly_progress_js(400, 300)."</script>";
