@@ -15,7 +15,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 echo admin_navigation();
 
-echo "<h5>Montly Reading</h5>";
+echo "<h5>Monthly Reading</h5>";
 $start = new Datetime($schedule['start_date']);
 $end_date = new Datetime($schedule['end_date']);
 $next = clone($start); $next->modify('+1 month');
