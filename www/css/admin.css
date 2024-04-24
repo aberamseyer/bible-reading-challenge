@@ -16,7 +16,6 @@
   background: var(--color-blossom);
   color: var(--color-bg) !important;
   border: 2px solid var(--color-blossom);
-  pointer-events: none;
 }
 
 /* users page */

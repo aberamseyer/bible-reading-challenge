@@ -65,7 +65,7 @@ foreach($graphs as $i => $graph) {
 echo "</optgroup>";
 echo "</select>";
 foreach($graphs as $i => $graph) {
-  mountain_for_emojis($graph['data']);
+  mountain_for_emojis($graph['data'], 0, $i !== count($graphs)-1); // one of the mountains must start visible in order for the js that measures its height to function
 }
 
 
@@ -107,7 +107,7 @@ foreach($all_users as $user) {
   <td data-behind='$days_behind'>-$days_behind</td>
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
   <td data-percent='".($percent_complete)."'>".round($percent_complete, 2)."%</td>
-  <td data-badges='".count(badges_for_user($user['id']))."'>";
+  <td data-badges='".count(badges_for_user($user['id']))."' style='display: block; max-height: 100px; overflow: scroll'>";
   echo badges_html_for_user($user['id']);
   echo "</td></tr>";
 }

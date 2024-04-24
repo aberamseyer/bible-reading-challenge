@@ -82,13 +82,13 @@ if ($_GET['user_id'] &&
   $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
-  echo "Consistency (lower is better) ".help('Standard deviation of average chapters read per week').": <b>".$deviation."</b>";
+  echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b>";
   echo badges_html_for_user($user['id'])."</p>";
   echo "<p>
   <h6 class='text-center'>Days read each week</h6>
   <div class='center'>";
   echo weekly_progress_canvas($user['id'], $schedule);
-  echo "<script>".weekly_progress_js(400, 300)."</script>";
+  echo "<script>".weekly_progress_js(300, 150)."</script>";
   echo "</div>
   </p>";
   echo "<form method='post'>

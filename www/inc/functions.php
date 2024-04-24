@@ -922,8 +922,8 @@ function total_words_in_schedule($schedule_id) {
 			WHERE sd.schedule_id = $schedule_id");
 }
 
-function mountain_for_emojis($emojis, $my_id = 0) {
-  echo "<div class='mountain-wrap' $mountain_attrs>";
+function mountain_for_emojis($emojis, $my_id = 0, $hidden = false) {
+  echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
 
 	foreach($emojis as $i => $datum) {
 		$style = '';
