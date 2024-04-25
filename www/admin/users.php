@@ -9,26 +9,26 @@ if (!$staff) {
 // get dates for single user's progress view
 if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
   print_json(
-    select("
+    $db->select("
     SELECT sd.id, sd.date, sd.passage, rd.id read
     FROM schedule_dates sd
     LEFT JOIN (
       SELECT * FROM read_dates WHERE user_id = ".intval($_REQUEST['user_id'])."
-      ) rd ON rd.schedule_date_id = sd.id
-      WHERE schedule_id = $schedule[id]"));
+    ) rd ON rd.schedule_date_id = sd.id
+    WHERE schedule_id = $schedule[id]"));
 }
     
 // edit/delete user
 if ($_POST['user_id']) {
-  $to_change = row("SELECT * FROM users WHERE id = ".(int)$_POST['user_id']);
+  $to_change = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['user_id']);
   if ($to_change) {
     if ($_POST['delete']) {
       if ($to_change['staff']) {
         $_SESSION['error'] = "Can't delete a staff member. Make them a student first.";
       }
       else {
-        query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
-        query("DELETE FROM users WHERE id = ".$to_change['id']);
+        $db->query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
+        $db->query("DELETE FROM users WHERE site_id = ".$site->ID." AND id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
@@ -45,7 +45,7 @@ if ($_POST['user_id']) {
         $_SESSION['error'] = "Enter exactly 1 character for your emoji";
       }
       else {
-        update("users", [
+        $db->update("users", [
           'name' => $_POST['name'],
           'email_verses' => array_key_exists('email_verses', $_POST) ? 1 : 0,
           'staff' => intval($_POST['staff']) ? 1 :0,
@@ -58,65 +58,117 @@ if ($_POST['user_id']) {
   }
 }
 
+// merge accounts
+if ($_POST['merge_from_account']) {
+  $merge_from_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_from_account']);
+  $merge_to_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_to_account']);
+
+  if (!$merge_from_account || !$merge_to_account) {
+    $_SESSION['error'] = "Invalid accounts for merge.";
+  }
+  else {
+    $sql = "
+      SELECT sd.id
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      WHERE rd.user_id = ";
+    $read_days_from = $db->cols($sql.$merge_from_account['id']);
+    $read_days_to = $db->cols($sql.$merge_to_account['id']);
+
+    $difference = array_values(array_diff($read_days_from, $read_days_to));
+
+    if ($difference) {
+      $db->query("
+        UPDATE read_dates
+        SET user_id = $merge_to_account[id]
+        WHERE id IN(
+          SELECT rd.id
+          FROM read_dates rd
+          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+          WHERE sd.id IN(".implode(',', $difference).")
+            AND rd.user_id = $merge_from_account[id]
+        )");
+    }
+
+    $db->query("DELETE FROM read_dates WHERE user_id = $merge_from_account[id]");
+    $db->query("DELETE FROM users WHERE id = $merge_from_account[id]");
+
+    $_SESSION['success'] = "Deleted account: ".html($merge_from_account['email'])." and updated ".count($difference)." unread day".xs(count($difference))." to ".html($merge_to_account['email']);
+    redirect('/admin/users?user_id='.$merge_to_account['id']);
+  }
+  redirect();
+}
+
 $page_title = "Manage Users";
 $hide_title = true;
 $add_to_head .= "
 <link rel='stylesheet' href='/css/admin.css' media='screen'>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+  echo admin_navigation();
   
 if ($_GET['user_id'] &&
-  $user = row("
+  $user = $db->row("
     SELECT * FROM users
-    WHERE id = ".intval($_GET['user_id'])."
+    WHERE site_id = ".$site->ID." AND id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  echo admin_navigation();
-  $deviation = deviation_for_user($user['id'], $schedule);
-
+  $deviation = $site->deviation_for_user($user['id'], $schedule);
+  
   echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
-  $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
+  $last_read_ts = $db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
   echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b>";
   echo badges_html_for_user($user['id'])."</p>";
   echo "<p>
-  <h6 class='text-center'>Days read each week</h6>
-  <div class='center'>";
-  echo weekly_progress_canvas($user['id'], $schedule);
-  echo "<script>".weekly_progress_js(300, 150)."</script>";
-  echo "</div>
-  </p>";
-  echo "<form method='post'>
-    <input type='hidden' name='user_id' value='$user[id]'>
-    <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
+  <div class='two-columns'>
     <div>
-      <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
+      <h6 class='text-center'>Progress</h6>
+     ".$site->progress_canvas($user['id'], $schedule['id'])."
     </div>
     <div>
-      <label>My emoji
-        <input type='text' name='emoji'
-          minlength='1' maxlength='6'
-          value='".html($user['emoji'])."'
-          style='width: 70px'
-        >
-      </label>
+      <h6 class='text-center'>Days read each week</h6>
+      ".$site->weekly_progress_canvas($user['id'], $schedule)."
     </div>
-    <div>
-      <legend>Account Type</legend>
-      <label><input type='radio' name='staff' ".($user['staff'] ? 'checked' : '')." value='1'".($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "")."> Staff</label>
-      <label><input type='radio' name='staff' ".($user['staff'] ? '' : 'checked')." value='0'".($user['id'] == $my_id ? "title='Cant mark yourself as a student' disabled" : "")."> Student</label>
-    </div>
-    <button type='submit'>Save</button>
-    <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $user[name]? This can NEVER be recovered.`)'>Delete user</button>
-  </form> ";
+  </div>
+  <br>
+  <form method='post'>
+    <fieldset>
+      <legend>Edit Account</legend>
+      <input type='hidden' name='user_id' value='$user[id]'>
+      <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
+      <div>
+        <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
+      </div>
+      <div>
+        <label>My emoji
+          <input type='text' name='emoji'
+            minlength='1' maxlength='6'
+            value='".html($user['emoji'])."'
+            style='width: 70px'
+          >
+        </label>
+      </div>
+      <div>
+        <legend>Account Type</legend>
+        <label><input type='radio' name='staff' ".($user['staff'] ? 'checked' : '')." value='1'".($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "")."> Staff</label>
+        <label><input type='radio' name='staff' ".($user['staff'] ? '' : 'checked')." value='0'".($user['id'] == $my_id ? "title='Cant mark yourself as a student' disabled" : "")."> Student</label>
+      </div>
+      <button type='submit'>Save</button>
+      <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $user[name]? This can NEVER be recovered.`)'>Delete user</button>
+    </fieldset>
+  </form>";
   echo "<h5>Progress</h5>";
   echo generate_schedule_calendar($schedule);
-  echo "<script>
+  $add_to_foot .= chartjs_js();
+  $add_to_foot .= "
+  <script src='/js/user.js'></script>
+  <script>
     const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
     fetch(`?get_dates=1&user_id=".$user['id']."`).then(rsp => rsp.json())
     .then(data => {
@@ -132,10 +184,51 @@ if ($_GET['user_id'] &&
       })
     })
     </script>";
+
+    // merge accounts
+    $read_days_sql = "
+      SELECT COUNT(*) read_days, u.*
+      FROM users u
+      JOIN read_dates rd ON rd.user_id = u.id
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      %s
+      GROUP BY u.id
+      ORDER BY name";
+    $user_read_days = $db->col(sprintf($read_days_sql, "WHERE u.site_id = ".$site->ID." AND u.id = $user[id]"));
+    echo "
+    <form method='post'>
+      <fieldset>
+        <legend>Merge Accounts</legend>
+        <p>You can use this form to merge this account into another account. This is destructive, deleting THIS account and retaining the other account.</p>
+        <details>
+          <summary>Danger Zone</summary>
+          I want to delete <input style='width: 450px;' type='text' readonly value='$user[emoji] ".html($user['name']).": ".html($user['email']).", $user_read_days read days'> and put all of that account's progress into: ";
+        echo "
+          <input type='hidden' name='merge_from_account' value='$user[id]'>
+          <select name='merge_to_account'>";
+        foreach($db->select(sprintf($read_days_sql, "WHERE u.site_id = ".$site->ID." AND u.id != $user[id]")) as $other_user) {
+          echo "<option value='$other_user[id]'>$other_user[emoji] ".html($other_user['name']).": ".html($other_user['email']).", $other_user[read_days] read days</option>";
+        }
+        echo  "   </select>
+        <button type='submit' onclick='return confirm(`Are you sure you want to merge $user[email] into another account? $user[email] will be deleted and NEVER able to be recovered.`)'>Go</button>
+        </details>
+      </fieldset>
+    </form>";
 }
 else {
   // regular landing
-  echo admin_navigation();
+  $WEEK_ARR = [
+    0 => 'Sunday',
+    1 => 'Monday',
+    2 => 'Tuesday',
+    3 => 'Wednesday',
+    4 => 'Thursday',
+    5 => 'Friday',
+    6 => 'Saturday',
+    7 => 'Sunday',
+    8 => 'Monday'
+  ];
+  $starting_day_of_week = $WEEK_ARR[ (int)$site->data('start_of_week') ];
   
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {
@@ -144,7 +237,7 @@ else {
     $user_end_date = new Datetime($end);
   }
 
-  $last_friday = $user_start_date ?: new Datetime('last friday');
+  $last_beginning = $user_start_date ?: new Datetime("last $starting_day_of_week");
   
   $schedule_start_date = new Datetime($schedule['start_date']);
   $schedule_end_date = new Datetime($schedule['end_date']);
@@ -158,24 +251,24 @@ else {
   );
 
   $today = new Datetime(date('Y-m-d'));
-  $is_friday = $today->format('N') == 5;
+  $is_special_day = $today->format('N') == (int)$site->data('start_of_week');
   $today_for_disabled_check = clone($today);
-  if ($is_friday) {
-    $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be friday because that's confusing
+  if ($is_special_day) {
+    $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be the special day because that's confusing
   }
 
   echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
   $opt_group_year = null; $i = 0; $total_periods = iterator_count($period);
   foreach($period as $date) {
-    if ($date->format('N') == 5) {
+    if ($date->format('N') == $site->data('start_of_week')) {
       $week_start = clone($date);
     }
     else {
-      $week_start = date_create_from_format('U', strtotime('last friday', $date->format('U')));
+      $week_start = date_create_from_format('U', strtotime("last $starting_day_of_week", $date->format('U')));
     }
     $week_start->setTime(0, 0, 0, 0);
 
-    $week_end = date_create_from_format('U', strtotime('next thursday', $week_start->format('U')));
+    $week_end = date_create_from_format('U', strtotime("next ".$WEEK_ARR[ intval($site->data('start_of_week')) - 1 ], $week_start->format('U')));
     $week_end->setTime(23, 59, 59, 999999);
     if ($week_start->format('Y') !== $opt_group_year) {
       $opt_group_year = $week_start->format('Y');
@@ -199,24 +292,24 @@ else {
   echo "</select>";
 
   $this_week = [
-    [ $last_friday,                                'F' ],
-    [ date_modify(clone($last_friday), '+1 day'),  'S' ],
-    [ date_modify(clone($last_friday), '+2 day'),  'S' ],
-    [ date_modify(clone($last_friday), '+3 days'), 'M' ],
-    [ date_modify(clone($last_friday), '+4 days'), 'T' ],
-    [ date_modify(clone($last_friday), '+5 days'), 'W' ],
-    [ date_modify(clone($last_friday), '+6 days'), 'T' ]
+    [ $last_beginning,                                        substr($WEEK_ARR[ (int)$last_beginning->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+1 day'),  substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+2 day'),  substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+3 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+4 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+5 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+6 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ]
   ];
       
-  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until Saturday"))."</h5>";
+  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ]))."</h5>";
   $where = "
-    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                          // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
-    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_friday ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
-  $schedule_days_this_week = col("
+    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
+  $schedule_days_this_week = $db->col("
     SELECT COUNT(*)
     FROM schedule_dates sd
     $where");
-  $fully_equipped = cols("
+  $fully_equipped = $db->cols("
     SELECT u.name
     FROM read_dates rd
     LEFT JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
@@ -228,7 +321,7 @@ else {
       
   if ($fully_equipped) {
     echo "
-    <ol>";
+    <ol style='columns: 2'>";
     foreach($fully_equipped as $name) {
       echo "<li>".html($name)."</li>";
     }
@@ -240,10 +333,10 @@ else {
   }
       
   $nine_mo = strtotime('-9 months');
-  $all_users = all_users($_GET['stale']);
+  $all_users = $site->all_users($_GET['stale']);
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
-  echo "<h5>All users</h5>";
+  echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";
   echo "<p>Click a user's name to see more details</p>";
   echo toggle_all_users($user_count);
 
@@ -266,13 +359,13 @@ else {
             4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This chart always begins with \"last friday\"")."
+            Read this period ".help("This chart always begins with \"last $starting_day_of_week\"")."
           </th>
         </tr>
         </thead>
       <tbody>";
     foreach($all_users as $user) {
-      $days_read_this_week = cols("
+      $days_read_this_week = $db->cols("
         SELECT DATE(sd.date) d
         FROM read_dates rd
         JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
@@ -284,7 +377,7 @@ else {
       <tr class='".($user['last_read'] ? '' : 'hidden')."'>
         <td data-name class='left'><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".$user['emoji'].'&nbsp;&nbsp;&nbsp;&nbsp;'.html($user['name'])."</a></small></td>
         <td ".last_read_attr($user['last_read'])."><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
-        <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/circle-check.svg" class="icon">' : '<img src="/img/circle-x.svg" class="icon">')."</td>
+        <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/static/circle-check.svg" class="icon">' : '<img src="/img/static/circle-x.svg" class="icon">')."</td>
         <td data-trend>
           ".four_week_trend_canvas($user['id'])."
         </td>
@@ -304,17 +397,18 @@ else {
       </tbody>
     </table>
   </div>";
-  echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
-    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
+    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
   }
   else {
-    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
+    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
+
+  $add_to_foot .= chartjs_js()."
+  <script src='/js/lib/tableSort.js'></script>
+  <script src='/js/users.js'></script>";
 }
 
-echo "
-<script src='/js/tableSort.js'></script>
-<script src='/js/users.js'></script>";
+
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

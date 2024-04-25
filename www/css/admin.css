@@ -85,3 +85,8 @@
 .today .date, .future .date {
   cursor: pointer;
 }
+
+.thumbnail {
+  max-width: 80px;
+  height: auto;
+}

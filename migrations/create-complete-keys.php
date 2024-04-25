@@ -7,12 +7,12 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_FILE);
+$db = BibleReadingChallenge\Database::get_instance();
 
-$days = cols("SELECT id FROM schedule_dates");
+$days = $db->cols("SELECT id FROM schedule_dates WHERE LENGTH(complete_key) = 0");
 
 foreach($days as $day_id) {
-  update('schedule_dates', [
+  $db->update('schedule_dates', [
     'complete_key' => bin2hex(random_bytes(16))
   ], 'id = '.$day_id);
 }

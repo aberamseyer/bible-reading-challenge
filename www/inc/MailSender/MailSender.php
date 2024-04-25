@@ -3,7 +3,8 @@
 namespace Email;
 
 interface MailSender {
-  public function send_daily_verse_email($email, $name, $subject, $content, $streak);
-  public function send_register_email($to, $link);
-  public function send_forgot_password_email($to, $link);
+  public function send_dynamic_email(string $to, string $template, array $dynamic_data);
+  public function daily_email_template();
+  public function register_email_template();
+  public function forgot_password_template();
 }

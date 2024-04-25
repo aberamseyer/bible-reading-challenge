@@ -10,15 +10,17 @@ if ($me) {
 
 // confirm user from email link
 if ($_REQUEST['confirm']) {
-  $user_row = row("SELECT * FROM users WHERE uuid = '".db_esc($_REQUEST['confirm'])."'");
+  $user_row = $db->row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['confirm'])."'");
   if (!$user_row || $user_row['email_verify_token'] != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid confirmation link.";
   }
   else {
-    update("users", [
+    $db->update("users", [
       "email_verified" => 1
     ], "id = ".$user_row['id']);
-    redirect("/auth/login");
+    $_SESSION['success'] = "Email verified, welcome!";
+    log_user_in($user_row['id']);
+    redirect("/today");
   }
 }
 else if ($_POST['email']) {
@@ -33,41 +35,32 @@ else if ($_POST['email']) {
   else if (strlen($_POST['password']) < 8) {
     $_SESSION['error'] = "Password too short.";
   }
-  else if (row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."'")) {
+  else if ($db->row("SELECT * FROM users WHERE email = '".$db->esc($_POST['email'])."'")) {
     $_SESSION['error'] = "Email already registered.";
   }
   else {
-    $uuid = uniqid();
-    $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
-    $verify_token = uniqid("", true).uniqid("", true);
-    insert("users", [ 
-      'uuid' => $uuid,
-      'name' => $_POST['name'],
-      'email' => $_POST['email'],
-      'password' => $hash,
-      'trans_pref' => 'rcv',
-      'date_created' => $time,
-      'email_verify_token' => $verify_token,
-      'emoji' => '😄'
-    ]);
-    $ms = new Email\MailSenderSendgrid();
-    $ms->send_register_email($_POST['email'], SCHEME."://".DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
-    $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!";
+    $ret = $site->create_user($_POST["email"], $_POST['name'], $_POST["password"]);
+    $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=".$ret['uuid']."&key=".$ret['verify_token']);
+    $_SESSION['email'] = "Registration email sent. Check your inbox!";
+    redirect("/auth/login");
   }
 }
 
+$hide_title = true;
 $page_title = "Register";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <p>Or <a href='login'>log in</a></p>
+      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+    </div>
+    <div>
       <form action='' method='post'>
         <p>
           <input name='name' type='text' placeholder="Name" value="<?= $_POST['name'] ?>" minlength='1' required>
         </p>
         <p>
-          <input name='email' type='text' placeholder="Email" value="<?= $_POST['email'] ?>">
+        <input name='email' type='text' placeholder="Email" value="<?= $_POST['email'] ?>">
         </p>
         <p>
           <input name='password' type='password' placeholder="Password" required><br>
@@ -76,14 +69,15 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         <p>
           <input name='password_confirm' type='password' placeholder="Confirm password" required><br>
         </p>
+        <p>Or <a href='login'>log in</a></p>
         <button type="submit">Submit</button>
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
+        data-client_id="<?= $site->env('GOOGLE_CLIENT_ID') ?>"
         data-context="signup"
         data-ux_mode="popup"
-        data-login_uri="https://<?= DOMAIN ?>/auth/oauth"
+        data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"
@@ -94,9 +88,8 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-size="large"
         data-logo_alignment="left">
       </div>
-      <script src="https://accounts.google.com/gsi/client" async></script>
+      <?php $add_to_foot .= '<script src="https://accounts.google.com/gsi/client" async></script>'; ?>
     </div>
-    <div></div>
   </div>
 <?php
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

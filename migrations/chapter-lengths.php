@@ -7,11 +7,9 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_FILE);
+$db = BibleReadingChallenge\Database::get_instance();
 
-$schedule = get_active_schedule();
-
-foreach(select("
+foreach($db->select("
   SELECT SUM(
     LENGTH(rcv) - LENGTH(REPLACE(rcv, ' ', '')) + 1
   ) as word_count, GROUP_CONCAT(rcv, ' ') chapter, c.id, b.name || ' ' || c.number chp
@@ -25,7 +23,7 @@ foreach(select("
       $text = str_replace('  ', ' ', $text);
     $count = count(explode(' ', $text));
     print($chapter['chp'].": ".$count.PHP_EOL);
-    update("chapters", [
+    $db->update("chapters", [
       'word_count' => $count
     ], 'id = '.$chapter['id']);
 }

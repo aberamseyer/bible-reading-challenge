@@ -3,35 +3,44 @@
 //
 // Updates user streaks–should be run daily
 //
-// crontab entry: 50 3 * * * php /home/bible-reading-challenge/cron/update-streaks.php
+// crontab entry: 50 * * * * php /home/bible-reading-challenge/cron/update-streaks.php
 
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_FILE);
+$db = BibleReadingChallenge\Database::get_instance();
 
-$schedule = get_active_schedule();;
+foreach($db->cols("SELECT id FROM sites") as $site_id) {
+  $site = BibleReadingChallenge\Site::get_site($site_id);
+  $dt = new DateTime('now', $site->TZ);
+  // this cron runs every hour, we only want to update the sites who's local time is 3:50 AM
+  if ($dt->format('G') !== 3) {
+    continue;
+  }
 
-$yesterday = new Datetime('@'.strtotime('yesterday'));
-$scheduled_reading = get_reading($yesterday, $schedule['id']);
+  $schedule = $site->get_active_schedule();
 
-if ($scheduled_reading) {
-  foreach(select("SELECT * FROM users") as $user) {
-    $current_streak = $user['streak'];
-    
-    $read_yesterday = col("
-      SELECT id
-      FROM read_dates
-      WHERE user_id = $user[id] AND
-        DATE(timestamp, 'unixepoch', 'localtime') = '".$yesterday->format('Y-m-d')."'"); // irrespective of schedule
+  $yesterday = new Datetime('@'.strtotime('yesterday'), $site->TZ);
+  $scheduled_reading = get_reading($yesterday, $schedule['id']);
 
-    update('users', [
-      'streak' => $read_yesterday
-        ? $user['streak'] + 1
-        : 0, 
-      'max_streak' => $read_yesterday
-        ? max(intval($user['max_streak']), intval($user['streak']) + 1)
-        : $user['max_streak']
-    ], "id = ".$user['id']);
+  if ($scheduled_reading) {
+    foreach($db->select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {
+      $current_streak = $user['streak'];
+      
+      $read_yesterday = $db->col("
+        SELECT id
+        FROM read_dates
+        WHERE user_id = $user[id] AND
+          DATE(timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') = '".$yesterday->format('Y-m-d')."'"); // irrespective of schedule within a site
+
+      $db->update('users', [
+        'streak' => $read_yesterday
+          ? $user['streak'] + 1
+          : 0, 
+        'max_streak' => $read_yesterday
+          ? max(intval($user['max_streak']), intval($user['streak']) + 1)
+          : $user['max_streak']
+      ], "id = ".$user['id']);
+    }
   }
 }

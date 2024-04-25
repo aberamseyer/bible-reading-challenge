@@ -1,172 +1,10 @@
 <?php
 
-	require_once __DIR__."/MailSender/MailSender.php";
-	require_once __DIR__."/MailSender/MailSenderSES.php";
-	require_once __DIR__."/MailSender/MailSenderSendgrid.php";
-
-	function db($alt_db = null) {
-		static $db;
-		if (!$db) {
-			$db = new SQLite3(DB_FILE);
-			$db->busyTimeout(250);
-		}
-		return $alt_db ?: $db;
-	}
-	
-	function query ($query, $return = "", $db = null) {
-    if ($db = null) $db = db();
-
-		$db = db($db);
-		$result = $db->query($query);
-		if (!$result) {
-			echo "<p><b>Warning:</b> A sqlite3 error occurred: <b>" . $db->lastErrorMsg() . "</b></p>";
-			debug($query);
-		}
-		if ($return == "insert_id")
-			return $db->lastInsertRowID();
-		if ($return == "num_rows")
-			return $db->changes();
-		return $result;
-	}
-
-	function select ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$rows = query($query, null, $db);
-		for ($result = []; $row = $rows->fetchArray(); $result[] = $row) {
-			foreach(array_keys($row) as $key)
-				if (is_numeric($key))
-					unset($row[$key]);
-		}
-		return $result;
-	}
-
-	function row ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$results = select($query, $db);
-		return $results[0];
-	}
-
-	function col ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$row = query($query, null, $db)->fetchArray();
-		return $row ? $row[0] : null;
-	}
-
-	function cols ($query, $db = null) {
-    if ($db = null) $db = db();
-    
-		$rows = query($query, null, $db);
-		if ($rows) {
-			$results = [];
-			while ($row = $rows->fetchArray(SQLITE3_NUM))
-				$results[] = $row[0];
-			return $results;
-		}
-		return null;
-	}
-
-	function format_db_vals ($db_vals, array $options = []) {
-		$options = array_merge([
-			"source" => $_POST
-		], $options);
-		return map_assoc(function ($col, $val) use ($options) {
-
-			// Was a value provided for this column ("col" => "val") or not ("col")?
-			$no_value_provided = is_int($col);
-			if ($no_value_provided)
-				$col = $val;
-
-			// The modifiers should not contain regex special characters. If they do, then we will have to use preg_quote().
-			$modifiers = [
-				"nullable" => "__",
-				"literal" => "##"
-			];
-
-			// Check for column modifiers
-			if (preg_match("/^(" . implode("|", $modifiers) . ")/", $col,$matches))
-				$col = substr($col, 2);
-
-			// Keep track of whether each modifier is present (true) or not
-			$modifiers = map_assoc(function ($name, $symbol) use ($matches) {
-				return [$name => $matches && $matches[1] == $symbol];
-			}, $modifiers);
-
-			$val = $no_value_provided ? $options["source"][$col] : $val;
-			// If it's not literal, then transform the value
-			if (!$modifiers["literal"])
-				$val = $modifiers["nullable"] && ($val === null || $val === false || $val === 0 || !strlen($val))
-					? "NULL"
-					: ("'" . db_esc($val) . "'");
-
-			return [ $col => $val ];
-		}, $db_vals);
-	}
-
-	function get_num_params (callable $callback) {
-		try {
-			return (new ReflectionFunction($callback))->getNumberOfParameters();
-		}
-		catch (ReflectionException $e) {}
-	}
-
-	function map_assoc (callable $callback, array $arr) {
-		$ret = [];
-		foreach($arr as $k => $v) {
-			$u =
-				get_num_params($callback) == 1
-					? $callback($v)
-					: $callback($k, $v);
-			$ret[key($u)] = current($u);
-		}
-		return $ret;
-	}
-
-	/**
-	 * @param $table
-	 * @param $vals	array	An associative array of columns and values to update.
-	 * 						Each value will be converted to a string UNLESS its
-	 * 						corresponding column name begins with "__", in which
-	 *						case its literal value will be used.
-	 * @param $where
-	 */
-	function update ($table, $vals, $where, $db = null) {
-    if ($db = null) $db = db();
-
-		$SET = array();
-		foreach (format_db_vals($vals) as $col => $val) {
-			$col = preg_replace("/^__/", "", $col, 1, $use_literal);
-			$SET[] = "$col = $val";
-		}
-
-		query("
-			UPDATE $table
-			SET " . implode(",", $SET) . "
-			WHERE $where
-		", null, $db);
-	}
-
-	function insert ($table, array $db_vals, array $options = [], $db = null) {
-    if ($db = null) $db = db();
-
-		$db_vals = format_db_vals($db_vals, $options);
-		return query("
-			INSERT INTO $table (" . implode(", ", array_keys($db_vals)) . ")
-			VALUES (" . implode(", ", array_values($db_vals)) . ")
-		", "insert_id", $db);
-	}
-
-	function num_rows ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$i = 0;
-		$res = query($query, null, $db);
-		while ($res->fetchArray(SQLITE3_NUM))
-			$i++;
-		return $i;
-	}
+require_once __DIR__."/MailSender/MailSender.php";
+require_once __DIR__."/MailSender/MailSenderSES.php";
+require_once __DIR__."/MailSender/MailSenderSendgrid.php";
+require_once __DIR__."/BibleReadingChallenge/Site.php";
+require_once __DIR__."/BibleReadingChallenge/Database.php";
 
 	function html ($str, $lang_flag = ENT_HTML5) {
 		return htmlspecialchars($str, ENT_QUOTES|$lang_flag);
@@ -219,19 +57,6 @@
 			die;
 	}
 
-	function db_esc ($string, $alt_db = null) {
-		$db = db($alt_db);
-		return $db->escapeString($string);
-	}
-
-	function db_esc_like ($string, $alt_db = null) {
-		return db_esc(str_replace(
-			["\\", "_", "%"],
-			["\\\\", "\\_", "\\%"],
-			$string
-		), $alt_db);
-	}
-
 	function redirect($url = false) {
 		header("Location: ".($url ?: $_SERVER['REDIRECT_URL']));
 		die;
@@ -250,31 +75,31 @@
 	}
 
 	function cors() {
-    
-	    // Allow from any origin
-	    if (isset($_SERVER['HTTP_ORIGIN'])) {
-	        // Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
-	        // you want to allow, and if so:
-	        header("Access-Control-Allow-Origin: $_SERVER[HTTP_ORIGIN]");
-	        header('Access-Control-Allow-Credentials: true');
-	        header('Access-Control-Max-Age: 86400');    // cache for 1 day
-	    }
-	    
-	    // Access-Control headers are received during OPTIONS requests
-	    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-        
-	        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
-	            // may also be using PUT, PATCH, HEAD etc
-	            header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-	        
-	        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-	            header("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
-	    
-	        die;
-	    }
+		// Allow from any origin
+		if (isset($_SERVER['HTTP_ORIGIN'])) {
+				// Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
+				// you want to allow, and if so:
+				header("Access-Control-Allow-Origin: $_SERVER[HTTP_ORIGIN]");
+				header('Access-Control-Allow-Credentials: true');
+				header('Access-Control-Max-Age: 86400');    // cache for 1 day
+		}
+		
+		// Access-Control headers are received during OPTIONS requests
+		if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+			
+				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+						// may also be using PUT, PATCH, HEAD etc
+						header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+				
+				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+						header("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
+		
+				die;
+		}
 	}
 
 	function curl_post_json($url, $headers, $arr) {
+		$debug = false;
 		// $debug = true;
 
 		$curl = curl_init($url);
@@ -282,20 +107,24 @@
 		curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($arr));
 		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', ...$headers ]);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		/*
 		if ($debug) {
 			$temp_file = fopen('php://temp', 'w+');
 			curl_setopt($curl, CURLOPT_VERBOSE, true);
 			curl_setopt($curl, CURLOPT_STDERR, $temp_file);
 		}
+		*/
 
 		$response = curl_exec($curl);
 
+		/*
 		if ($debug) {
 			// Get the verbose output
 			rewind($temp_file);
 			$verboseData = stream_get_contents($temp_file);
 			fclose($temp_file);
 		}
+		*/
 
 		if(curl_errno($curl)) {
 				$error = curl_error($curl);
@@ -303,6 +132,7 @@
 		}
 		curl_close($curl);
 
+		/*
 		if ($debug) {
 			// Dump the cURL data
 			echo "---- cURL Verbose Output ----\n";
@@ -310,6 +140,7 @@
 			echo "---- Response Body ----\n";
 			echo nl2br($response);
 		}
+		*/
 
 		return $response;
 	}
@@ -320,14 +151,22 @@
 	}
 
 	function admin_navigation() {
+		global $me;
+
 		$nav = "
 			<div class='admin-navigation'>";
 
-		foreach([
+		$arr = [
 			['users', 'Users'],
 			['progress', 'Progress'],
-			['schedules', 'Schedules']
-		] as list($link, $title)) {
+			['schedules', 'Schedules'],
+			['customize', 'Customize']
+		];
+		if ($me['id'] == 1) {
+			$arr[] = ['sites', 'Sites'];
+		}
+
+		foreach($arr as list($link, $title)) {
 			$nav .= "<a class='nav-item ".active_navigation_class($link)."' href='/admin/$link'>$title</a>";
 		}
 		return $nav."</div>";
@@ -353,10 +192,6 @@
 		}
 
 		return $nav."</div>";
-	}
-
-	function get_active_schedule() {
-		return row("SELECT * FROM schedules WHERE active = 1");
 	}
 
 	function allowed_schedule_date(Datetime $date) {
@@ -424,7 +259,7 @@
 			$calendar .= "
 				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
 					<span class='date'>$day</span><br>";
-			if ($editable && !$inactive)
+			if ($editable)
 				$calendar .= "
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
@@ -528,8 +363,9 @@
 			}
 			
 			// match the book and chapters to the database
-			$book_row = row("SELECT * FROM books WHERE name = '".db_esc($book_str)."'");
-			foreach(select("
+			$db = BibleReadingChallenge\Database::get_instance();
+			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book_str)."'");
+			foreach($db->select("
 				SELECT *
 				FROM chapters
 				WHERE book_id = $book_row[id]
@@ -565,7 +401,8 @@
 			return $schedules[$schedule_id];
 		}
 
-		$schedule_dates = select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
+		$db = BibleReadingChallenge\Database::get_instance();
+		$schedule_dates = $db->select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
 		$days = [];
 		foreach ($schedule_dates as $sd) {			
 			$days[] = [
@@ -581,87 +418,13 @@
 		return $days;
 	}
 
-	/*
-	 * @param scheduled_reading array the return value of get_reading()
-	 * @param trans string one of the translations
-	 * @param complete_key string the key to complete the reading from a row in the user's table
-	 * @param schedule the schedule from which we are generating a reading
-	 * @param email bool whether this is going in an email or not
-	 * @return the html of all the verses we are reading
-	 */ 
-	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $email=false) {
-		ob_start();
-		$article_style = "";
-		if ($email) {
-			$article_style = "style='line-height: 1.618; font-size: 1.1rem;'";
-		}
-		echo "<article $article_style>";
-		if ($scheduled_reading) {
-			$style = "";
-			if ($email) {
-				$style = "style='text-align: center; font-size: 1.4rem;'";
-			}
-			foreach($scheduled_reading['passages'] as $passage) {
-				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
-				$book = $passage['book'];
-				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
-	
-				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
-
-				$ref_style = "class='ref'";
-				$verse_style = "class='verse-text'";
-				if ($email) {
-					$ref_style = "style='font-weight: bold; user-select: none;'";
-					$verse_style = "style='margin-left: 1rem;'";
-				}
-				foreach($verses as $verse_row) {
-					echo "
-						<div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
-				}
-			}
-			$btn_style = "";
-			$form_style = "id='done' class='center'";
-			if ($email) {
-				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
-				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
-			}
-			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
-			$copyright_style = "";
-			if ($email) {
-				$copyright_style = "font-size: 75%;";
-			}
-			echo "
-			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
-			<form action='".SCHEME."://".DOMAIN."/today' method='get' $form_style>
-				<input type='hidden' name='complete_key' value='$complete_key'>
-				<input type='hidden' name='today' value='$scheduled_reading[date]'>
-				<button type='submit' name='done' value='1' $btn_style>Done!</button>
-			</form>";
-		}
-		else {
-			echo "<p>Nothing to read today!</p>";
-	
-			// look for the next time to read in the schedule.
-			$days = get_schedule_days($schedule['id']);
-			$today = new Datetime();
-			foreach($days as $day) {
-				$dt = new Datetime($day['date']);
-				if ($today < $dt) {
-					echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
-					break;
-				}
-			}
-		}
-		echo "</article>";
-		return ob_get_clean();
-	}
-
 	function schedule_completed($user_id, $schedule_id) {
-		return col("SELECT COUNT(*)
+		$db = BibleReadingChallenge\Database::get_instance();
+		return $db->col("SELECT COUNT(*)
 			FROM read_dates rd
 			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
 			WHERE user_id = $user_id AND schedule_id = $schedule_id")
-			== col("SELECT COUNT(*)
+			== $db->col("SELECT COUNT(*)
 				FROM schedule_dates WHERE schedule_id = $schedule_id");
 	}
 
@@ -689,24 +452,26 @@ function help($tip) {
 
 function four_week_trend_canvas($user_id) {
 	$data = json_encode(four_week_trend_data($user_id));
-	return "<canvas title='$data' data-graph='$data'></canvas>";
+	return "<canvas title='$data' data-graph='$data' width='200' style='margin: auto;'></canvas>";
 }
 
 function four_week_trend_data($user_id) {
+	$site = BibleReadingChallenge\Site::get_site();
+	$db = BibleReadingChallenge\Database::get_instance();
 	// reach back 5 weeks so that we don't count the current week in the graph
-	return cols("
-		SELECT COALESCE(count, 0) count
+	$values = $db->select("
+		SELECT COALESCE(count, 0) count, day_start
 		FROM (
 			-- generates last 4 weeks to join what we read to
 			WITH RECURSIVE week_sequence AS (
 				SELECT
-					date('now', 'localtime') AS cdate
+					date('now', '".$site->TZ_OFFSET." hours') AS cdate
 				UNION ALL
 				SELECT date(cdate, '-7 days')
 				FROM week_sequence
 				LIMIT 5
 			)
-			SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
+			SELECT strftime('%Y-%W', cdate) AS week, strftime('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
 		) sd
 		LEFT JOIN (
 			-- gives the number of days we have read each week
@@ -716,52 +481,15 @@ function four_week_trend_data($user_id) {
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', 'localtime'))
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', '".$site->TZ_OFFSET." hours'))
 		ORDER BY sd.week ASC
 		LIMIT 4");
-}
-
-function four_week_trend_js($width, $height) {
-	return "
-	const canvas = document.querySelectorAll('canvas');
-	canvas.forEach(c => {
-		const data = JSON.parse(c.getAttribute('data-graph'));
-		const ctx = c.getContext('2d');
-		
-		// Set the canvas dimensions
-		c.width = $width;
-		c.height = $height;
-		
-		// Calculate the scale factors
-		const maxDataValue = 8;
-		const scaleFactor = c.height / maxDataValue;
-		
-		// Draw the sparkline
-		ctx.beginPath();
-		ctx.moveTo(0, c.height - data[0] * scaleFactor);
-		for (let i = 1; i < data.length; i++) {
-			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
-			const y = c.height - data[i] * scaleFactor;
-			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
-			const prevY = c.height - data[i - 1] * scaleFactor;
-			const cpx = (prevX + x) / 2;
-			const cpy = (prevY + y) / 2;
-			
-			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
-		}
-		
-		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
-		gradient.addColorStop(0, 'rgb(63, 70, 143)');
-		gradient.addColorStop(1, 'rgb(219, 184, 100)');
-		ctx.strokeStyle = gradient;
-		
-		ctx.lineWidth = 1;
-		ctx.stroke();
-	})";
+		return array_column($values, 'count', 'day_start');
 }
 
 function day_completed($my_id, $schedule_date_id) {
-	return num_rows("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->num_rows("
 		SELECT id
 		FROM read_dates
 		WHERE schedule_date_id = $schedule_date_id
@@ -769,7 +497,8 @@ function day_completed($my_id, $schedule_date_id) {
 }
 
 function number_chapters_in_book_read($book_id, $user_id) {
-	return num_rows("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->num_rows("
       SELECT json_each.value
       FROM read_dates rd
       JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
@@ -778,25 +507,8 @@ function number_chapters_in_book_read($book_id, $user_id) {
       GROUP BY json_each.value");
 }
 
-function all_users($stale = false) {
-  $nine_mo = strtotime('-9 months');
-  if ($stale) {
-    $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
-  }
-  else {
-    // all users
-    $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
-  }
-  return select("
-    SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
-    FROM users u
-    LEFT JOIN read_dates rd ON rd.user_id = u.id
-    WHERE $where
-    GROUP BY u.id
-    ORDER BY LOWER(name) ASC");
-}
-
 function toggle_all_users($initial_count) {
+	global $add_to_foot;
 
   echo "<div id='toggle-all-wrap'><div><b id='all-count'>$initial_count</b> reader".xs($initial_count)."</div>
 		<label>
@@ -815,7 +527,7 @@ function toggle_all_users($initial_count) {
 			justify-content: space-between;
 		}
 	</style>";
-	echo "<script>
+	$add_to_foot .= "<script>
 
 	document.addEventListener('DOMContentLoaded', function() {
 		// search box
@@ -852,7 +564,8 @@ function toggle_all_users($initial_count) {
 }
 
 function badges_for_user($user_id) {
-	return cols("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->cols("
 		SELECT b.name, COUNT(*) unique_chapters_read
 		FROM
 		(SELECT json_each.value chapter_id, b.id book_id, c.number
@@ -868,7 +581,8 @@ function badges_for_user($user_id) {
 }
 
 function badges_html_for_user($user_id) {
-	$books = select("SELECT id, name FROM books ORDER BY id");
+	$db = BibleReadingChallenge\Database::get_instance();
+	$books = $db->select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
 	$badges = badges_for_user($user_id);
   foreach([
@@ -894,6 +608,7 @@ function last_read_attr($last_read) {
 }
 
 function words_read($user = 0, $schedule_id = 0) {
+	$db = BibleReadingChallenge\Database::get_instance();
 	$word_qry = "
 			SELECT SUM(word_count)
 			FROM schedule_dates sd
@@ -904,17 +619,18 @@ function words_read($user = 0, $schedule_id = 0) {
 	";
 	$schedule_where = $schedule_id ? " AND sd.schedule_id = ".$schedule_id : "";
 	if (!$user) {
-		$words_read = col(sprintf($word_qry, ''));
+		$words_read = $db->col(sprintf($word_qry, ''));
 	}
 	else {
-		$words_read = col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
+		$words_read = $db->col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
 	}
 
 	return $words_read;
 }
 
 function total_words_in_schedule($schedule_id) {
-	return col("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->col("
 			SELECT SUM(word_count)
 			FROM schedule_dates sd
 			JOIN JSON_EACH(passage_chapter_ids)
@@ -922,152 +638,60 @@ function total_words_in_schedule($schedule_id) {
 			WHERE sd.schedule_id = $schedule_id");
 }
 
-function mountain_for_emojis($emojis, $my_id = 0, $hidden = false) {
-  echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
-
-	foreach($emojis as $i => $datum) {
-		$style = '';
-		if ($datum['id'] == $my_id) {
-			$style = "style='z-index: 10'";
-		}
-		echo "
-		<span class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
-			<span class='inner'>$datum[emoji]</span>
-		</span>";
+function hex_to_rgb($hex) {
+	if (!preg_match('/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex)) {
+		return false;
 	}
-  
-  echo "<img src='/img/mountain-num.png' class='mountain'>";
-  echo "</div>";
+	// Remove any '#' characters
+	$hex = str_replace('#', '', $hex);
+
+	// Convert shorthand hex color (e.g., #abc) to full hex color (e.g., #aabbcc)
+	if (strlen($hex) == 3) {
+		$hex = str_split($hex);
+		$hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+	}
+
+	// Convert hex to RGB
+	$r = hexdec(substr($hex, 0, 2));
+	$g = hexdec(substr($hex, 2, 2));
+	$b = hexdec(substr($hex, 4, 2));
+
+	// Return RGB values as an associative array
+	return "rgb($r, $g, $b)";
 }
 
-function weekly_counts($user_id, $schedule) {
-	$start = new DateTime($schedule['start_date']);
-	$end = new DateTime($schedule['end_date']);
-
-	$interval = $start->diff($end);
-	$days_between = abs(intval($interval->format('%a')));
-	$week_count = ceil($days_between / 7);
-
-	$counts = select("
-		SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
-		FROM (
-				WITH RECURSIVE week_sequence AS (
-								SELECT date('now', 'localtime') AS cdate
-								UNION ALL
-								SELECT date(cdate, '-7 days') 
-									FROM week_sequence
-									LIMIT $week_count
-						)
-						SELECT strftime('%Y-%W', cdate) AS week,
-						strftime('%Y-%m-%d', cdate, 'weekday 0') AS start_of_week
-							FROM week_sequence
-				)
-				sd
-				LEFT JOIN
-				(
-						SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', 'localtime')) AS week,
-										COUNT(rd.user_id) count
-							FROM read_dates rd
-							WHERE rd.user_id = $user_id
-							GROUP BY week, rd.user_id
-				)
-				rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', 'localtime') ) 
-		ORDER BY sd.week ASC
-		LIMIT $week_count");
-
-		return [
-			'week' => array_column($counts, 'week'),
-			'counts' => array_column($counts, 'count'),
-			'start_of_week' => array_column($counts, 'start_of_week')
-		];
-}
-
-function deviation_for_user($user_id, $schedule) {
-	$weekly_counts = weekly_counts($user_id, $schedule)['counts'];
+function rgb_to_hex($rgb) {
+	preg_match('/^rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)$/', $rgb, $matches);
+	if (!$matches) {
+		return '';
+	}
+	$r = (int)$matches[1];
+	$g = (int)$matches[2];
+	$b = (int)$matches[3];
+	// Ensure that RGB values are within valid range (0-255)
+	$r = clamp($r, 0, 255);
+	$g = clamp($g, 0, 255);
+	$b = clamp($b, 0, 255);
 	
-	// standard deviation
-	$n = count($weekly_counts);
-	if ($n === 0) {
-		return null;
-	}
-	$mean = array_sum($weekly_counts) / $n;
-	$variance = 0.0;
-	foreach ($weekly_counts as $val) {
-			$variance += pow($val - $mean, 2);
-	}
-	$variance /= $n;
-
-	return round(sqrt($variance), 3);
+	// Convert RGB to hex
+	$hex = sprintf("#%02x%02x%02x", $r, $g, $b);
+	
+	return $hex;
 }
 
-function weekly_progress_canvas($user_id, $schedule) {
-	$counts = weekly_counts($user_id, $schedule);
-	$data = json_encode($counts['counts']);
-	return "<canvas title='$data' data-graph='$data'></canvas>";
+function format_phone($phone) {
+	return substr($phone, 0, 3).'-'.substr($phone, 3, 3).'-'.substr($phone, 6, 4);
 }
 
-function weekly_progress_js($width, $height) {
+function clamp($value, $min, $max) {
+	return max($min, min($max, $value));
+}
+
+function chartjs_js() {
+	global $add_to_foot;
 	return "
-	const canvas = document.querySelectorAll('canvas');
-	canvas.forEach(c => {
-		const data = JSON.parse(c.getAttribute('data-graph'));
-		const ctx = c.getContext('2d');
-		
-		// Set the canvas dimensions
-		c.width = $width;
-		c.height = $height;
-		
-		// Calculate the scale factors
-		const maxDataValue = Math.max(...data);
-		const scaleFactor = c.height / maxDataValue;
-		
-		// Draw the sparkline
-		ctx.beginPath();
-		ctx.moveTo(0, c.height - data[0] * scaleFactor);
-		for (let i = 1; i < data.length; i++) {
-			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
-			const y = c.height - data[i] * scaleFactor;
-			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
-			const prevY = c.height - data[i - 1] * scaleFactor;
-			const cpx = (prevX + x) / 2;
-			const cpy = (prevY + y) / 2;
-			
-			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
-		}
-		
-		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
-		gradient.addColorStop(0, 'rgb(63, 70, 143)');
-		gradient.addColorStop(1, 'rgb(219, 184, 100)');
-		ctx.strokeStyle = gradient;
-		
-		ctx.lineWidth = 1;
-		ctx.stroke();
+	<script src='/js/lib/chart.min.js'></script>
+  <script src='/js/lib/chartjs-adapter-date-fns.min.js'></script>
+  <script src='/js/lib/chart.inc.js'></script>";
 
-		// Draw left border
-		ctx.beginPath();
-		ctx.strokeStyle = 'rgb(63, 70, 143)';
-		ctx.lineWidth = 2;
-		ctx.moveTo(0, 0);
-		ctx.lineTo(0, $height);
-		ctx.stroke();
-
-		// Draw top number
-		ctx.lineWidth = 1;
-		ctx.fillStyle = gradient;
-		ctx.font = '16px Arial'; 
-		ctx.textAlign = 'center';
-		ctx.fillText(maxDataValue.toString(), 10, 20); // Adjust position as needed
-
-		// Draw bottom border
-		ctx.beginPath();
-		ctx.moveTo(0, $height);
-		ctx.lineTo($width, $height);
-		ctx.stroke();
-
-		// Draw bottom number
-		ctx.textAlign = 'center';
-		ctx.fillText('0', 10, $height - 10); // Adjust position as needed
-
-	})";
 }

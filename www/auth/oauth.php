@@ -9,35 +9,27 @@ if (!$_POST['g_csrf_token'] || $_POST['g_csrf_token'] != $_COOKIE['g_csrf_token'
   $_SESSION['error'] = "Invalid CSRF token";
 }
 else {
-  $client = new Google_Client(['client_id' => GOOGLE_CLIENT_ID]);
+  $client = new Google_Client(['client_id' => $site->env('GOOGLE_CLIENT_ID')]);
   $payload = $client->verifyIdToken($_POST['credential']);
   if (!$payload) {
     $_SESSION['error'] = "Problem with Google Sign in";
   } else {
     $payload['email'] = strtolower($payload['email']);
-    $user_row = row("SELECT * FROM users WHERE email = '".db_esc($payload['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
-      $id = insert("users", [ 
-        'uuid' => uniqid(),
-        'name' => $payload['name'],
-        'email' => $payload['email'],
-        'password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), // assign random password until the user changes it himself
-        'email_verified' => 1,
-        'trans_pref' => 'rcv',
-        'date_created' => $time,
-        'email_verify_token' => uniqid("", true).uniqid("", true),
-        'emoji' => '😄'
-      ]);
+      $ret = $site->create_user($payload['email'], $payload['name']);
+      $_SESSION['succes'] = "Welcome to the challenge!";
     }
     else {
       // account exists
       $id = $user_row['id'];
       if (!$user_row['email_verified']) {
-        update('users', [
+        $db->update('users', [
           'email_verified' => 1
         ], 'id = '.$user_row['id']);
       }
+      $_SESSION['succes'] = "Welcome back!";
     }
 
     log_user_in($id);

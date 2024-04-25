@@ -13,18 +13,19 @@ console.log(`server listening on port ${PORT}`)
 const people = new Map()
 
 function removeUser(connectionId) {
+  const p = people.get(connectionId)
   people.delete(connectionId)
   broadcast({
       type: 'remove-user',
       id: connectionId
-    })
+    }, -1, p.site_id)
 }
 
-// broadcasts to all websockets (optionally, except one) of an event
-function broadcast (obj, exceptId) {
+// broadcasts to all websockets (optionally, except one) of an event to a specific site
+function broadcast (obj, exceptId, siteId) {
   for(let [userId, person] of people) {
     if (exceptId) {
-      if (userId !== exceptId) {
+      if (userId !== exceptId && person.site_id === siteId) {
         person.ws.send(JSON.stringify(obj))
       }
     }
@@ -41,6 +42,7 @@ server.on('connection', ws => {
   function setupListeners(connectionId, userRow) {
     const newUser = {
       id: connectionId,
+      site_id: userRow.site_id,
       ws,
       position: `0px`,
       emoji: userRow.emoji,
@@ -54,6 +56,7 @@ server.on('connection', ws => {
       id: connectionId,
       people: [ ...people.values() ]
         .filter(p => p.id !== connectionId) // everyone but ourself
+        .filter(p => p.site_id === newUser.site_id) // only people in our same system
         .map(p => ({ 
           id: p.id,
           position: p.position,
@@ -68,7 +71,7 @@ server.on('connection', ws => {
         position: `0px`,
         emoji: userRow.emoji,
         name: userRow.name
-      }, connectionId)
+      }, connectionId, userRow.site_id)
     
     // Handle incoming messages from clients
     ws.addEventListener('message', event => {
@@ -108,14 +111,14 @@ server.on('connection', ws => {
               type: 'move-user',
               id: data.id,
               position: data.position,
-            }, connectionId)
+            }, connectionId, user.site_id)
           break
       }
     });
   
   
     // prune on close
-    ws.addEventListener('close', event => {
+    ws.addEventListener('close', () => {
       console.log(`${(new Date()).toLocaleString()} Client disconnected: ${connectionId}`);
       removeUser(connectionId)
     }, { once: true })
@@ -124,7 +127,7 @@ server.on('connection', ws => {
   ws.addEventListener('message', event => {
     const [ init, nonce ] = event.data.split('|')
     if (init === 'init' && nonce) {
-      db.get(`SELECT id, name, emoji FROM users WHERE websocket_nonce = ?`, [ nonce ], (err, row) => {
+      db.get(`SELECT id, site_id, name, emoji FROM users WHERE websocket_nonce = ?`, [ nonce ], (err, row) => {
         if (row) {
           setupListeners(connectionId, row)
         }

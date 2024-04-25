@@ -3,60 +3,54 @@
 namespace Email;
 
 class MailSenderSendgrid implements MailSender {
-  public function send_daily_verse_email($email, $name, $subject, $content, $streak) {
-    $body = [
-			"from" => [
-				"email" => "daily@uoficoc.com",
-				"name" => "U of I Christians on Campus"
-			],
-			"template_id" => SENDGRID_DAILY_EMAIL_TEMPLATE,
-			"personalizations" => [
-				[
-					"to" => [[ "email" => $email ]],
-					"dynamic_template_data" => [
-						"subject" => $subject,
-						"name" => $name,
-						"html" => $content,
-						"streak" => $streak
-					]
-				]
-			]
-		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body);
-  }
+	private readonly string $daily_email_template;
+	private readonly string $register_email_template;
+	private readonly string $forgot_password_template;
+	private readonly string $api_key;
 
-  function send_register_email($to, $link) {		
+	public function __construct(
+			$sendgrid_api_key, 
+			$sendgrid_daily_email_template, 
+			$sendgrid_register_email_template, 
+			$sendgrid_forgot_password_template)
+	{
+		$this->api_key = $sendgrid_api_key;
+		$this->daily_email_template = $sendgrid_daily_email_template;
+		$this->register_email_template = $sendgrid_register_email_template;
+		$this->forgot_password_template = $sendgrid_forgot_password_template;
+	}
+
+	public function daily_email_template()
+	{
+		return $this->daily_email_template;
+	}
+	
+	public function register_email_template()
+	{
+		return $this->register_email_template;
+	}
+
+	public function forgot_password_template()
+	{
+		return $this->forgot_password_template;
+	}
+
+	public function send_dynamic_email($to, $template, $dynamic_data)
+	{
 		$body = [
 			"from" => [
 				"email" => "accounts@uoficoc.com",
 				"name" => "U of I Christians on Campus Accounts"
 			],
-			"template_id" => SENDGRID_REGISTER_EMAIL_TEMPLATE,
+			"template_id" => $template,
 			"personalizations" => [
 				[
 					"to" => [[ "email" => $to ]],
-					"dynamic_template_data" => [ "confirm_link" => $link ]
+					"dynamic_template_data" => $dynamic_data
 				]
 			]
 		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body);
-  }
-  
-	function send_forgot_password_email($to, $link) {
-		$body = [
-			"from" => [
-				"email" => "accounts@uoficoc.com",
-				"name" => "U of I Christians on Campus Accounts"
-			],
-			"template_id" => SENDGRID_FORGOT_PASSWORD_TEMPLATE,
-			"personalizations" => [
-				[
-					"to" => [[ "email" => $to ]],
-					"dynamic_template_data" => [ "reset_link" => $link ]
-				]
-			]
-		];
-		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.SENDGRID_API_KEY], $body); 
+		curl_post_json("https://api.sendgrid.com/v3/mail/send", [ 'Authorization: Bearer '.$this->api_key], $body); 
 	}
 
 }

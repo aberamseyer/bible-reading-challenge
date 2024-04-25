@@ -3,7 +3,7 @@
 
   if ($_REQUEST['get_dates']) {
     print_json(
-      select("
+      $db->select("
       SELECT sd.id, sd.date, sd.passage, rd.id read
       FROM schedule_dates sd
       LEFT JOIN (
@@ -20,7 +20,8 @@
   // Generate the calendar for the current month and year
   echo generate_schedule_calendar($schedule);
             
-  echo "<script>
+  $add_to_foot .= "
+  <script>
   const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
   fetch(`?get_dates=1`).then(rsp => rsp.json())
   .then(data => {

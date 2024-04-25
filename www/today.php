@@ -3,8 +3,8 @@
 require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
 // this key is used by the websocket client to authenticate as the current user
-update('users', [
-  'websocket_nonce' => $me['websocket_nonce'] = bin2hex(random_bytes(32))
+$db->update('users', [
+  'websocket_nonce' => $me['websocket_nonce'] = bin2hex(random_bytes(24))
 ], 'id = '.$me['id']);
 
 // set translation, update it if the select box changed
@@ -14,13 +14,12 @@ if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST))
   if (!in_array($new_trans, $tranlsations)) {
     $new_trans = 'rcv';
   }
-  $me['trans_pref'] = $new_trans;
   
   $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
     ? $_REQUEST['change_email_me']
     : 0;
-  update("users", [
-    'trans_pref' => $new_trans,
+  $db->update("users", [
+    'trans_pref' => $me['trans_pref'] = $new_trans,
     'email_verses' => $me['email_verses']
   ], "id = ".$my_id);
 }
@@ -36,31 +35,62 @@ if (strtotime($_GET['today'])) {
 }
 $scheduled_reading = get_reading($today, $schedule['id']);
 
-// determine if today's reading and the entire schedule have been completed
+$reading_timer_wpm = (int)$site->data('reading_timer_wpm');
+if ($reading_timer_wpm) {
+  $saved_start_time = (int)$_SESSION['reading_start_time'];
+  $saved_reading_id = $_SESSION['reading_id'];
+  if ($saved_reading_id != $scheduled_reading['id']) {
+    $saved_start_time = $_SESSION['reading_start_time'] = time();
+    $saved_reading_id = $_SESSION['reading_id'] = $scheduled_reading['id'];
+  }
+}
+
+// determine if today's reading
 $today_completed = day_completed($my_id, $scheduled_reading['id'] ?: 0);
 $schedule_completed = schedule_completed($my_id, $schedule['id']);
 $schedule_just_completed = false; // only true on the day we finish the schedule
 // "Done!" clicked
-if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
-  $_REQUEST['complete_key'] == $scheduled_reading['complete_key']) {
-  insert("read_dates", [
-    'user_id' => $my_id,
-    'schedule_date_id' => $scheduled_reading['id'],
-    'timestamp' => $time
-  ]);
-  $today_completed = true;
+if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
+  $valid = true;
+  if ($_REQUEST['complete_key']) {
+    // we need a way to bypass the wpm check from an email.
+    // when the email is generated, a '-e' is appended to the complete key (see daily-verse-email.php)
+    list($complete_key, $e) = explode('-', $_REQUEST['complete_key']);
+    $valid = $complete_key === $scheduled_reading['complete_key'];
+  }
+  if ($e !== 'e' && $reading_timer_wpm) {
+    $words_per_second = round($reading_timer_wpm / 60.0, 4);
+    $elapsed = time() - $saved_start_time;
+    $words_on_page = (int)$db->col("
+      SELECT SUM(word_count)
+      FROM schedule_dates sd
+      JOIN JSON_EACH(passage_chapter_ids)
+      JOIN chapters c on c.id = value
+      WHERE sd.id = $scheduled_reading[id]");
+    if ($elapsed * $words_per_second < $words_on_page) {
+      $valid = false;
+      $_SESSION['error'] = "You read ".number_format($words_on_page)." words in ".round($elapsed)." second".xs($elapsed)."! Thats pretty fast.";
+    }
+  }
 
-  $schedule_completed = schedule_completed($my_id, $schedule['id']);
-  $schedule_just_completed = true;
+  if ($valid) {
+    $db->insert("read_dates", [
+      'user_id' => $my_id,
+      'schedule_date_id' => $scheduled_reading['id'],
+      'timestamp' => time()
+    ]);
+    $today_completed = true;
+    $schedule_just_completed = $schedule_completed = schedule_completed($my_id, $schedule['id']);
+  }
 }
 
 $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 if ($schedule_completed) {
-  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
-  echo "
-    <script src='https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js'></script>
+  echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+  $add_to_foot .= "
+    <script src='/js/lib/js-confetti.js'></script>
     <script>
       const jsConfetti = new JSConfetti()
       function party() {
@@ -91,7 +121,7 @@ if ($today_completed) {
       break;
     }
   }
-  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
+  echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
 }
 // header with translation selector and email pref
 echo "<div id='date-header'>
@@ -121,7 +151,7 @@ echo "<div id='date-header'>
 
 if ($scheduled_reading) {
   // how many have read today
-  $total_readers = col("SELECT COUNT(*)
+  $total_readers = $db->col("SELECT COUNT(*)
     FROM read_dates rd
     JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
     WHERE sd.id = ".$scheduled_reading['id']);
@@ -143,10 +173,10 @@ if ($scheduled_reading) {
   echo "</small></p>";
 }
 
-echo html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
+echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
 
 if ($scheduled_reading) {
-  echo "<style>
+  $add_to_foot .= "<style>
     article {
       position: relative;
     }
@@ -182,7 +212,7 @@ if ($scheduled_reading) {
     }
   </style>
   <script>
-    const WS_URL = 'ws".(PROD ? 's' : '')."://".SOCKET_DOMAIN."'
+    const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
     const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'
   </script>
   <script src='/js/client.js'></script>";

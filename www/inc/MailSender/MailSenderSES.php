@@ -3,15 +3,16 @@
 namespace Email;
 
 class MailSenderSES implements MailSender {
-  public function send_daily_verse_email($email, $name, $subject, $content, $streak) {
-		throw new Exception("Unimplemented MailSenderSES->send_daily_verse_email");
+  public function send_dynamic_email(string $to, string $template, array $dynamic_data) {
+		throw new \Exception("Unimplemented MailSenderSES->send_dynamic_email");
   }
-
-  function send_register_email($to, $link) {		
-		throw new Exception("Unimplemented MailSenderSES->send_register_email");
+  public function daily_email_template() {
+    throw new \Exception("Unimplemented MailSenderSES->daily_email_template");
   }
-  
-	function send_forgot_password_email($to, $link) {
-		throw new Exception("Unimplemented MailSenderSES->send_forgot_password_email");
-	}
+  public function register_email_template() {
+    throw new \Exception("Unimplemented MailSenderSES->register_email_template");
+  }
+  public function forgot_password_template() {
+    throw new \Exception("Unimplemented MailSenderSES->forgot_password_template");
+  }
 }
