@@ -3,5 +3,4 @@ brc.db
 .DS_Store
 node_modules
 
-.env
-*.ical
+**/img/upload-*

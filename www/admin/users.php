@@ -63,6 +63,7 @@ $hide_title = true;
 $add_to_head .= "
 <link rel='stylesheet' href='/css/admin.css' media='screen'>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+  echo admin_navigation();
   
 if ($_GET['user_id'] &&
   $user = row("
@@ -71,7 +72,6 @@ if ($_GET['user_id'] &&
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  echo admin_navigation();
   $deviation = deviation_for_user($user['id'], $schedule);
 
   echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
@@ -135,7 +135,6 @@ if ($_GET['user_id'] &&
 }
 else {
   // regular landing
-  echo admin_navigation();
   
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {

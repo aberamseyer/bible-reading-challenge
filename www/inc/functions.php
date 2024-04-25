@@ -326,7 +326,8 @@
 		foreach([
 			['users', 'Users'],
 			['progress', 'Progress'],
-			['schedules', 'Schedules']
+			['schedules', 'Schedules'],
+			['customize', 'Customize']
 		] as list($link, $title)) {
 			$nav .= "<a class='nav-item ".active_navigation_class($link)."' href='/admin/$link'>$title</a>";
 		}
@@ -1070,4 +1071,58 @@ function weekly_progress_js($width, $height) {
 		ctx.fillText('0', 10, $height - 10); // Adjust position as needed
 
 	})";
+}
+
+function hex_to_rgb($hex) {
+	if (!preg_match('/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex)) {
+		return false;
+	}
+	// Remove any '#' characters
+	$hex = str_replace('#', '', $hex);
+
+	// Convert shorthand hex color (e.g., #abc) to full hex color (e.g., #aabbcc)
+	if (strlen($hex) == 3) {
+		$hex = str_split($hex);
+		$hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+	}
+
+	// Convert hex to RGB
+	$r = hexdec(substr($hex, 0, 2));
+	$g = hexdec(substr($hex, 2, 2));
+	$b = hexdec(substr($hex, 4, 2));
+
+	// Return RGB values as an associative array
+	return "rgb($r, $g, $b)";
+}
+
+function rgb_to_hex($rgb) {
+	preg_match('/^rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)$/', $rgb, $matches);
+	if (!$matches) {
+		return '';
+	}
+	$r = (int)$matches[1];
+	$g = (int)$matches[2];
+	$b = (int)$matches[3];
+	// Ensure that RGB values are within valid range (0-255)
+	$r = max(0, min(255, $r));
+	$g = max(0, min(255, $g));
+	$b = max(0, min(255, $b));
+	
+	// Convert RGB to hex
+	$hex = sprintf("#%02x%02x%02x", $r, $g, $b);
+	
+	return $hex;
+}
+
+function format_phone($phone) {
+	return substr($phone, 0, 3).'-'.substr($phone, 3, 3).'-'.substr($phone, 6, 4);
+}
+
+function resolve_img_src($img_id) {
+	global $site;
+	$img = col("
+		SELECT uploads_dir_filename
+		FROM images
+		WHERE id = $img_id AND site_id = $site[id]");
+	return $img ? "/img/".$img : '';
 }

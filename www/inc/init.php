@@ -6,6 +6,24 @@ require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 // phpinfo();
 // die;
 
+// get site
+$escaped = db_esc($_SERVER['HTTP_HOST']);
+$site = row("SELECT * FROM sites WHERE domain_www = '$escaped' OR domain_www_test = '$escaped' LIMIT 1");
+if (!$site) {
+  die("nothing to see here: ".$_SERVER['HTTP_HOST']);
+}
+define('DOMAIN', PROD ? $site['domain_www'] : $url);
+define('SOCKET_DOMAIN', PROD ? $site['domain_socket'] : $site['domain_socket_test']);
+
+// read environment variables
+foreach (explode("\n", file_get_contents(ENV_DIR.$site['env_file'])) as $line) {
+  $line = trim($line);
+  if ($line && !preg_match("/^\/\/.*$/", $line)) { // line doesn't begin with a comment
+    list($key, $val) = explode("=", $line);
+    define($key, $val);
+  }
+}
+
 require_once "session.php";
 session_name("brc-sessid");
 

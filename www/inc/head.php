@@ -10,7 +10,7 @@
     <?= $add_to_head ?>
     <title>U of I CoC<?= $page_title ? " - ".$page_title : ""?></title>
   </head>
-  <body>
+  <body <?= $large ? 'style="max-width: 68em"' : '' ?>>
     <?php if ($me): ?>
     <div class='navigation-wrap'>
       <img class='logo' src='/img/coc-logo.svg' onclick='window.location = `/`'>

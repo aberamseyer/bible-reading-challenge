@@ -24,8 +24,8 @@
   }
   @media(prefers-color-scheme: light) {
     :root {
-      --color-blossom: #404892; /* buttons, horizontal lines, links */
-      --color-fade: #8086bf; /* accent color */
+      --color-blossom: rgb(64, 72, 146); /* buttons, horizontal lines, links */
+      --color-fade: rgb(128, 134, 191); /* accent color */
       
       --color-bg: #f9f9f9; /* background */
       --color-bg-alt: #eeeeee; /* background for info banners at the top, translation selector, etc */
