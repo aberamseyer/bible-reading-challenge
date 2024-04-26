@@ -876,7 +876,7 @@ function badges_html_for_user($user_id) {
     // [17, 5],
     // [22, 17],
     [39, 4],
-    [43, 22]
+    [43, 23]
   ] as $section) {
 		echo "<div class='badges'>";
 		foreach(array_slice($books, $section[0], $section[1]) as $book) {
