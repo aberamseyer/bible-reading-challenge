@@ -14,13 +14,13 @@ if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
     FROM schedule_dates sd
     LEFT JOIN (
       SELECT * FROM read_dates WHERE user_id = ".intval($_REQUEST['user_id'])."
-      ) rd ON rd.schedule_date_id = sd.id
-      WHERE schedule_id = $schedule[id]"));
+    ) rd ON rd.schedule_date_id = sd.id
+    WHERE schedule_id = $schedule[id]"));
 }
     
 // edit/delete user
 if ($_POST['user_id']) {
-  $to_change = row("SELECT * FROM users WHERE id = ".(int)$_POST['user_id']);
+  $to_change = row("SELECT * FROM users WHERE site_id = $site[id] AND id = ".(int)$_POST['user_id']);
   if ($to_change) {
     if ($_POST['delete']) {
       if ($to_change['staff']) {
@@ -28,7 +28,7 @@ if ($_POST['user_id']) {
       }
       else {
         query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
-        query("DELETE FROM users WHERE id = ".$to_change['id']);
+        query("DELETE FROM users WHERE site_id = $site[id] AND id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
@@ -68,7 +68,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 if ($_GET['user_id'] &&
   $user = row("
     SELECT * FROM users
-    WHERE id = ".intval($_GET['user_id'])."
+    WHERE site_id = $site[id] AND id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
   // specific user's stats
@@ -135,6 +135,18 @@ if ($_GET['user_id'] &&
 }
 else {
   // regular landing
+  $WEEK_ARR = [
+    0 => 'Sunday',
+    1 => 'Monday',
+    2 => 'Tuesday',
+    3 => 'Wednesday',
+    4 => 'Thursday',
+    5 => 'Friday',
+    6 => 'Saturday',
+    7 => 'Sunday',
+    8 => 'Monday'
+  ];
+  $starting_day_of_week = $WEEK_ARR[ (int)$site['start_of_week'] ];
   
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {
@@ -143,7 +155,7 @@ else {
     $user_end_date = new Datetime($end);
   }
 
-  $last_friday = $user_start_date ?: new Datetime('last friday');
+  $last_beginning = $user_start_date ?: new Datetime("last $starting_day_of_week");
   
   $schedule_start_date = new Datetime($schedule['start_date']);
   $schedule_end_date = new Datetime($schedule['end_date']);
@@ -157,24 +169,24 @@ else {
   );
 
   $today = new Datetime(date('Y-m-d'));
-  $is_friday = $today->format('N') == 5;
+  $is_special_day = $today->format('N') == (int)$site['start_of_week'];
   $today_for_disabled_check = clone($today);
-  if ($is_friday) {
-    $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be friday because that's confusing
+  if ($is_special_day) {
+    $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be the special day because that's confusing
   }
 
   echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
   $opt_group_year = null; $i = 0; $total_periods = iterator_count($period);
   foreach($period as $date) {
-    if ($date->format('N') == 5) {
+    if ($date->format('N') == $site['start_of_week']) {
       $week_start = clone($date);
     }
     else {
-      $week_start = date_create_from_format('U', strtotime('last friday', $date->format('U')));
+      $week_start = date_create_from_format('U', strtotime("last $starting_day_of_week", $date->format('U')));
     }
     $week_start->setTime(0, 0, 0, 0);
 
-    $week_end = date_create_from_format('U', strtotime('next thursday', $week_start->format('U')));
+    $week_end = date_create_from_format('U', strtotime("next ".$WEEK_ARR[ intval($site['start_of_week']) - 1 ], $week_start->format('U')));
     $week_end->setTime(23, 59, 59, 999999);
     if ($week_start->format('Y') !== $opt_group_year) {
       $opt_group_year = $week_start->format('Y');
@@ -198,19 +210,19 @@ else {
   echo "</select>";
 
   $this_week = [
-    [ $last_friday,                                'F' ],
-    [ date_modify(clone($last_friday), '+1 day'),  'S' ],
-    [ date_modify(clone($last_friday), '+2 day'),  'S' ],
-    [ date_modify(clone($last_friday), '+3 days'), 'M' ],
-    [ date_modify(clone($last_friday), '+4 days'), 'T' ],
-    [ date_modify(clone($last_friday), '+5 days'), 'W' ],
-    [ date_modify(clone($last_friday), '+6 days'), 'T' ]
+    [ $last_beginning,                                        substr($WEEK_ARR[ (int)$last_beginning->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+1 day'),  substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+2 day'),  substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+3 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+4 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+5 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
+    [ $next = date_modify(clone($last_beginning), '+6 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ]
   ];
       
-  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until Saturday"))."</h5>";
+  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site['start_of_week'] + 1 ]))."</h5>";
   $where = "
-    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                          // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
-    " AND '".$last_friday->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_friday ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
+    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = col("
     SELECT COUNT(*)
     FROM schedule_dates sd
@@ -227,7 +239,7 @@ else {
       
   if ($fully_equipped) {
     echo "
-    <ol>";
+    <ol style='columns: 2'>";
     foreach($fully_equipped as $name) {
       echo "<li>".html($name)."</li>";
     }
@@ -242,7 +254,7 @@ else {
   $all_users = all_users($_GET['stale']);
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
-  echo "<h5>All users</h5>";
+  echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";
   echo "<p>Click a user's name to see more details</p>";
   echo toggle_all_users($user_count);
 
@@ -265,7 +277,7 @@ else {
             4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This chart always begins with \"last friday\"")."
+            Read this period ".help("This chart always begins with \"last $starting_day_of_week\"")."
           </th>
         </tr>
         </thead>
@@ -306,10 +318,10 @@ else {
   echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
-    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
+    echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
   }
   else {
-    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_friday->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
+    echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
 }
 

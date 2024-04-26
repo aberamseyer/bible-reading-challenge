@@ -1,6 +1,6 @@
 <?php
 
-  $calendar_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_REQUEST['calendar_id']);
+  $calendar_sched = row("SELECT * FROM schedules WHERE site_id = $site[id] AND id = ".(int)$_REQUEST['calendar_id']);
   if (!$calendar_sched) {
     redirect('/admin/schedules');
   }
@@ -136,7 +136,7 @@
     <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
     <h6>Instructions</h6>
     <small>Double-click white-space to add/edit/remove a day's reading<br>
-    Hover mouse on the left side for a reference of how many chapters are in each book<br>
+    Hover mouse on the left edge of the screen for a reference of how many chapters are in each book<br>
     Use format: <b>\"Matthew 28; John 1-2\"</b><br>
     Only <b>future</b> days can be edited</small>";
 

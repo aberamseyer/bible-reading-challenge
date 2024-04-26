@@ -8,11 +8,11 @@
 
   // all actions from the 'manage schedules' table actions column
   if ($_POST['schedule_id']) {
-    $change_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_POST['schedule_id']);
+    $change_sched = row("SELECT * FROM schedules WHERE site_id = $site[id] AND id = ".(int)$_POST['schedule_id']);
     if ($change_sched) {
       if ($_POST['set_active']) {
-        query("UPDATE schedules SET active = 0");
-        query("UPDATE schedules SET active = 1 WHERE id = $change_sched[id]");
+        query("UPDATE schedules SET active = 0 WHERE site_id = $site[id]");
+        query("UPDATE schedules SET active = 1 WHERE site_id = $site[id] AND id = $change_sched[id]");
       }
       else if ($_POST['delete']) {
         if ($change_sched['active']) {
@@ -23,13 +23,14 @@
             SELECT id FROM schedule_dates WHERE schedule_id = $change_sched[id]
           )");
           query("DELETE FROM schedule_dates WHERE schedule_id = $change_sched[id]");
-          query("DELETE FROM schedules WHERE id  = $change_sched[id]");
+          query("DELETE FROM schedules WHERE site_id = $site[id] AND id  = $change_sched[id]");
           $_SESSION['success'] = 'Schedule deleted';
           redirect('?');
         }
       }
       else if ($_POST['duplicate']) {
         $new_id = insert("schedules", [
+          'site_id' => $site['id'],
           'name' => "Copy of ".$change_sched['name'],
           'start_date' => $change_sched['start_date'],
           'end_date' => $change_sched['end_date'],
@@ -95,6 +96,7 @@
     }
     else {
       $new_id = insert('schedules', [
+        'site_id' => $site['id'],
         'name' => $_POST['name'],
         'start_date' => date('Y-m-d', $start_date),
         'end_date' => date('Y-m-d', $end_date),
@@ -150,7 +152,7 @@
     }
     else {
       // all schedules summary
-      $schedules = select("SELECT * FROM schedules ORDER BY active DESC, start_date DESC");
+      $schedules = select("SELECT * FROM schedules WHERE site_id = $site[id] ORDER BY active DESC, start_date DESC");
       echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
       <p>Click a Schedule's name to edit its start and end dates</p>";
       echo "<table>

@@ -35,11 +35,10 @@ const emojis = document.querySelectorAll('.emoji')
 const mountains = document.querySelectorAll('.mountain')
 
 mountains.forEach(mountain => {
-  const yRange = [0, Math.floor(mountain.clientHeight / 250 * 100) - 12] // target % is 88
   emojis.forEach(em => {
     const progress = parseFloat(em.getAttribute('data-percent')) / 100
-    em.style.bottom = (yRange[1]*progress + (1-progress)*random(-0.5, 0.5)) + '%'
-    em.style.left = (50 + (1-progress)*random(-15, 15)) + '%'
+    em.style.bottom = (PROGRESS_Y_2*progress + (1-progress)*random(-0.5, 0.5)) + '%'
+    em.style.left = (PROGRESS_X_2 + (1-progress)*random(-5, 5)) + '%'
   })
 })
 

@@ -5,7 +5,7 @@ require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 // edit own profile
 if (isset($_POST['name'])) {
-  $to_change = row("SELECT * FROM users WHERE id = ".(int)$my_id);
+  $to_change = row("SELECT * FROM users WHERE site_id = $site[id] AND id = ".$my_id);
   if ($to_change) {
     $name = trim($_POST['name']);
     $emoji = trim($_POST['emoji']);

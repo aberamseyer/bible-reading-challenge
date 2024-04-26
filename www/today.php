@@ -46,7 +46,7 @@ if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
   insert("read_dates", [
     'user_id' => $my_id,
     'schedule_date_id' => $scheduled_reading['id'],
-    'timestamp' => $time
+    'timestamp' => time()
   ]);
   $today_completed = true;
 

@@ -4,36 +4,12 @@
  * Project: https://github.com/oxalorg/sakura/
  */
  :root {
-   --font-size-base: 1.5rem;
-   --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-   --font-family-heading: var(--font-family-base);
-   --mobile-breakpoint: 648px;
-   --tiny-breakpoint: 382px;
-  }
-  @media(prefers-color-scheme: dark) {
-    :root {
-      --color-blossom: #ffffff;
-      --color-fade: #c9c9c9;
-      
-      --color-bg: #222222;
-      --color-bg-alt: #4a4a4a;
-      
-      --color-text: #c9c9c9;
-      --color-success: rgb(73, 138, 73);
-    }
-  }
-  @media(prefers-color-scheme: light) {
-    :root {
-      --color-blossom: rgb(64, 72, 146); /* buttons, horizontal lines, links */
-      --color-fade: rgb(128, 134, 191); /* accent color */
-      
-      --color-bg: #f9f9f9; /* background */
-      --color-bg-alt: #eeeeee; /* background for info banners at the top, translation selector, etc */
-      
-      --color-text: #4a4a4a; /* text color */
-      --color-success: rgb(153, 205, 153); /* currently selected schedule, completed days */
-    }
- }
+  --font-size-base: 1.5rem;
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-family-heading: var(--font-family-base);
+  --mobile-breakpoint: 648px;
+  --tiny-breakpoint: 382px;
+}
 
 /* Body */
 html {
@@ -49,6 +25,11 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   padding: 15px 25px;
+}
+@media(min-width: 1095px) {
+  body {
+    max-width: 68em;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {

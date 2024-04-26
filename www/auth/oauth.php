@@ -19,15 +19,16 @@ else {
     // account doesn't exist, create
     if (!$user_row) {
       $id = insert("users", [ 
+        'site_id' => $site['id'],
         'uuid' => uniqid(),
         'name' => $payload['name'],
         'email' => $payload['email'],
         'password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT), // assign random password until the user changes it himself
         'email_verified' => 1,
         'trans_pref' => 'rcv',
-        'date_created' => $time,
+        'date_created' => time(),
         'email_verify_token' => uniqid("", true).uniqid("", true),
-        'emoji' => '😄'
+        'emoji' => $site['default_emoji']
       ]);
     }
     else {

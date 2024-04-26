@@ -9,7 +9,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 ?>
 
-<p><img style='width: 150px' src='/img/coc-logo.svg' onclick='window.location = `/`'></p>
+<p><img style='width: 150px' src='<?= resolve_img_src($site, 'logo') ?>' onclick='window.location = `/`'></p>
 
 <p>Effective Date: 2023-07-13</p>
 <p>Thank you for visiting the University of Illinois Christians on Campus Bible Reading Challenge website. This Privacy Policy outlines how we collect, use, disclose, and protect your personal information when you interact with our website. We value your privacy and are committed to safeguarding your personal data.</p>

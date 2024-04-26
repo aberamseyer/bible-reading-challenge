@@ -357,7 +357,8 @@
 	}
 
 	function get_active_schedule() {
-		return row("SELECT * FROM schedules WHERE active = 1");
+		global $site;
+		return row("SELECT * FROM schedules WHERE site_id = $site[id] AND active = 1");
 	}
 
 	function allowed_schedule_date(Datetime $date) {
@@ -585,7 +586,7 @@
 	/*
 	 * @param scheduled_reading array the return value of get_reading()
 	 * @param trans string one of the translations
-	 * @param complete_key string the key to complete the reading from a row in the user's table
+	 * @param complete_key string the key to complete the reading from a row in the schedule_dates's table
 	 * @param schedule the schedule from which we are generating a reading
 	 * @param email bool whether this is going in an email or not
 	 * @return the html of all the verses we are reading
@@ -694,6 +695,7 @@ function four_week_trend_canvas($user_id) {
 }
 
 function four_week_trend_data($user_id) {
+	global $site_tz_offset;
 	// reach back 5 weeks so that we don't count the current week in the graph
 	return cols("
 		SELECT COALESCE(count, 0) count
@@ -701,7 +703,7 @@ function four_week_trend_data($user_id) {
 			-- generates last 4 weeks to join what we read to
 			WITH RECURSIVE week_sequence AS (
 				SELECT
-					date('now', 'localtime') AS cdate
+					date('now', '".$site_tz_offset." hours') AS cdate -- timezone offset
 				UNION ALL
 				SELECT date(cdate, '-7 days')
 				FROM week_sequence
@@ -717,7 +719,7 @@ function four_week_trend_data($user_id) {
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', 'localtime'))
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', '".$site_tz_offset." hours'))
 		ORDER BY sd.week ASC
 		LIMIT 4");
 }
@@ -780,6 +782,7 @@ function number_chapters_in_book_read($book_id, $user_id) {
 }
 
 function all_users($stale = false) {
+	global $site;
   $nine_mo = strtotime('-9 months');
   if ($stale) {
     $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
@@ -792,7 +795,7 @@ function all_users($stale = false) {
     SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
     FROM users u
     LEFT JOIN read_dates rd ON rd.user_id = u.id
-    WHERE $where
+    WHERE site_id = $site[id] AND ($where)
     GROUP BY u.id
     ORDER BY LOWER(name) ASC");
 }
@@ -924,7 +927,20 @@ function total_words_in_schedule($schedule_id) {
 }
 
 function mountain_for_emojis($emojis, $my_id = 0, $hidden = false) {
+	global $site;
+	$coords = json_decode($site['progress_image_coordinates'], true);
+
   echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
+	echo "<style>
+	.mountain-wrap .emoji {
+		bottom: $coords[1]%;
+		left: $coords[0]%;
+	}
+	</style>
+	<script>
+		const PROGRESS_X_2 = $coords[2];
+		const PROGRESS_Y_2 = $coords[3];
+	</script>";
 
 	foreach($emojis as $i => $datum) {
 		$style = '';
@@ -937,11 +953,12 @@ function mountain_for_emojis($emojis, $my_id = 0, $hidden = false) {
 		</span>";
 	}
   
-  echo "<img src='/img/mountain-num.png' class='mountain'>";
+  echo "<img src='".resolve_img_src($site, 'progress')."' class='mountain'>";
   echo "</div>";
 }
 
 function weekly_counts($user_id, $schedule) {
+	global $site_tz_offset;
 	$start = new DateTime($schedule['start_date']);
 	$end = new DateTime($schedule['end_date']);
 
@@ -953,7 +970,7 @@ function weekly_counts($user_id, $schedule) {
 		SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
 		FROM (
 				WITH RECURSIVE week_sequence AS (
-								SELECT date('now', 'localtime') AS cdate
+								SELECT date('now', '".$site_tz_offset." hours') AS cdate
 								UNION ALL
 								SELECT date(cdate, '-7 days') 
 									FROM week_sequence
@@ -966,14 +983,14 @@ function weekly_counts($user_id, $schedule) {
 				sd
 				LEFT JOIN
 				(
-						SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', 'localtime')) AS week,
+						SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', '".$site_tz_offset." hours')) AS week,
 										COUNT(rd.user_id) count
 							FROM read_dates rd
 							WHERE rd.user_id = $user_id
 							GROUP BY week, rd.user_id
 				)
 				rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', 'localtime') ) 
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', '".$site_tz_offset." hours') ) 
 		ORDER BY sd.week ASC
 		LIMIT $week_count");
 
@@ -985,6 +1002,7 @@ function weekly_counts($user_id, $schedule) {
 }
 
 function deviation_for_user($user_id, $schedule) {
+	global $site_tz_offset;
 	$weekly_counts = weekly_counts($user_id, $schedule)['counts'];
 	
 	// standard deviation
@@ -1003,6 +1021,7 @@ function deviation_for_user($user_id, $schedule) {
 }
 
 function weekly_progress_canvas($user_id, $schedule) {
+	global $site_tz_offset;
 	$counts = weekly_counts($user_id, $schedule);
 	$data = json_encode($counts['counts']);
 	return "<canvas title='$data' data-graph='$data'></canvas>";
@@ -1095,6 +1114,10 @@ function hex_to_rgb($hex) {
 	return "rgb($r, $g, $b)";
 }
 
+function clamp($value, $min, $max) {
+	return max($min, min($max, $value));
+}
+
 function rgb_to_hex($rgb) {
 	preg_match('/^rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)$/', $rgb, $matches);
 	if (!$matches) {
@@ -1104,9 +1127,9 @@ function rgb_to_hex($rgb) {
 	$g = (int)$matches[2];
 	$b = (int)$matches[3];
 	// Ensure that RGB values are within valid range (0-255)
-	$r = max(0, min(255, $r));
-	$g = max(0, min(255, $g));
-	$b = max(0, min(255, $b));
+	$r = clamp($r, 0, 255);
+	$g = clamp($g, 0, 255);
+	$b = clamp($b, 0, 255);
 	
 	// Convert RGB to hex
 	$hex = sprintf("#%02x%02x%02x", $r, $g, $b);
@@ -1118,11 +1141,14 @@ function format_phone($phone) {
 	return substr($phone, 0, 3).'-'.substr($phone, 3, 3).'-'.substr($phone, 6, 4);
 }
 
-function resolve_img_src($img_id) {
+function resolve_img_src($site, $type) {
 	global $site;
-	$img = col("
-		SELECT uploads_dir_filename
-		FROM images
-		WHERE id = $img_id AND site_id = $site[id]");
-	return $img ? "/img/".$img : '';
+	static $pictures;
+	if ($picutres[$type]) {
+		return '/img/'.$pictures[$type];
+	}
+	else {
+		$pictures[$type] = $site[$type.'_image_id'] ? col("SELECT uploads_dir_filename FROM images WHERE id = ".$site[$type.'_image_id']) : '';
+	}
+	return '/img/'.$pictures[$type];
 }

@@ -41,18 +41,19 @@ else if ($_POST['email']) {
     $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
     insert("users", [ 
+      'site_id' => $site['id'],
       'uuid' => $uuid,
       'name' => $_POST['name'],
       'email' => $_POST['email'],
       'password' => $hash,
       'trans_pref' => 'rcv',
-      'date_created' => $time,
+      'date_created' => time(),
       'email_verify_token' => $verify_token,
-      'emoji' => '😄'
+      'emoji' => $site['default_emoji']
     ]);
     $ms = new Email\MailSenderSendgrid();
     $ms->send_register_email($_POST['email'], SCHEME."://".DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
-    $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!";
+    $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!"; // TODO email image
   }
 }
 

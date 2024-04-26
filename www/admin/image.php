@@ -7,16 +7,17 @@ if (!$staff) {
   redirect('/');
 }
 
-$file = $_GET['f'];
-if (file_exists(UPLOAD_DIR.$file)) {
-  $mime = mime_content_type(UPLOAD_DIR.$file);
+ini_set('open_basedir', $_SERVER['DOCUMENT_ROOT']."../upload");
+
+if ($fp = fopen(UPLOAD_DIR.$_GET['f'], 'r')) {
+  $mime = mime_content_type(UPLOAD_DIR.$_GET['f']);
   if ($mime == 'text/plain') {
-    if (pathinfo(UPLOAD_DIR.$file, PATHINFO_EXTENSION) === 'svg') {
+    if (pathinfo(UPLOAD_DIR.$_GET['f'], PATHINFO_EXTENSION) === 'svg') {
       $mime = 'image/svg+xml';
     }
   }
-  header("Content-Length: ".filesize(UPLOAD_DIR.$file));
+  header("Content-Length: ".filesize(UPLOAD_DIR.$_GET['f']));
   header("Content-Type: ".$mime);
-  readfile(UPLOAD_DIR.$file);
+  fpassthru($fp);
   die;
 }

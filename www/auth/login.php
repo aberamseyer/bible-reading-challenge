@@ -39,7 +39,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <img src='/img/login-page.svg' style='width: 280px'>
+      <img src='<?= resolve_img_src($site, 'login') ?>' style='width: 280px'>
     </div>
     <div>
       <img src='/img/start-reading.svg' style='width: 240px'>

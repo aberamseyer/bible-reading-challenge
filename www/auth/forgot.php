@@ -16,7 +16,7 @@ if ($_POST['email']) {
   }
   else {
     $user_row = row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."'");
-    if ($user_row['forgot_password_expires'] && $time <= date('U', $user_row['forgot_password_expires'])) {
+    if ($user_row['forgot_password_expires'] && time() <= date('U', $user_row['forgot_password_expires'])) {
       $_SESSION['error'] = "Email already sent.";
     }
     else if ($user_row) {
@@ -50,7 +50,7 @@ else if ($_REQUEST['reset']) {
       else if (strlen($_POST['password']) < 8) {
         $_SESSION['error'] = "Password too short.";
       }
-      else if ($time > date('U', $user_row['forgot_password_expires'])) {
+      else if (time() > date('U', $user_row['forgot_password_expires'])) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
@@ -63,7 +63,7 @@ else if ($_REQUEST['reset']) {
       }
     }
     else {
-      if ($time > date('U', $user_row['forgot_password_expires'])) {
+      if (time() > date('U', $user_row['forgot_password_expires'])) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {

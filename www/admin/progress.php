@@ -15,7 +15,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 echo admin_navigation();
 
-echo "<h5>Monthly Reading</h5>";
+echo "<h5>Group Monthly Progress</h5>";
 $start = new Datetime($schedule['start_date']);
 $end_date = new Datetime($schedule['end_date']);
 $next = clone($start); $next->modify('+1 month');
@@ -69,7 +69,7 @@ foreach($graphs as $i => $graph) {
 }
 
 
-echo "<h5>User Progress</h5>";
+echo "<h5>Individual User Progress</h5>";
 $all_users = all_users($_GET['stale']);
 $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
 echo toggle_all_users($user_count);
