@@ -182,7 +182,7 @@ if ($scheduled_reading) {
     }
   </style>
   <script>
-    const WS_URL = 'ws".(PROD ? 's' : '')."://".SOCKET_DOMAIN."'
+    const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
     const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'
   </script>
   <script src='/js/client.js'></script>";
