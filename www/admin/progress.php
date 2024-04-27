@@ -65,12 +65,12 @@ foreach($graphs as $i => $graph) {
 echo "</optgroup>";
 echo "</select>";
 foreach($graphs as $i => $graph) {
-  mountain_for_emojis($graph['data'], 0, $i !== count($graphs)-1); // one of the mountains must start visible in order for the js that measures its height to function
+  $site->mountain_for_emojis($graph['data'], 0, $i !== count($graphs)-1); // one of the mountains must start visible in order for the js that measures its height to function
 }
 
 
 echo "<h5>Individual User Progress</h5>";
-$all_users = all_users($_GET['stale']);
+$all_users = $site->all_users($_GET['stale']);
 $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
 echo toggle_all_users($user_count);
 

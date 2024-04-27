@@ -20,7 +20,7 @@ if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
     
 // edit/delete user
 if ($_POST['user_id']) {
-  $to_change = row("SELECT * FROM users WHERE site_id = $site[id] AND id = ".(int)$_POST['user_id']);
+  $to_change = row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['user_id']);
   if ($to_change) {
     if ($_POST['delete']) {
       if ($to_change['staff']) {
@@ -28,7 +28,7 @@ if ($_POST['user_id']) {
       }
       else {
         query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
-        query("DELETE FROM users WHERE site_id = $site[id] AND id = ".$to_change['id']);
+        query("DELETE FROM users WHERE site_id = ".$site->ID." AND id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
@@ -68,11 +68,11 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 if ($_GET['user_id'] &&
   $user = row("
     SELECT * FROM users
-    WHERE site_id = $site[id] AND id = ".intval($_GET['user_id'])."
+    WHERE site_id = ".$site->ID." AND id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  $deviation = deviation_for_user($user['id'], $schedule);
+  $deviation = $site->deviation_for_user($user['id'], $schedule);
 
   echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
@@ -87,7 +87,7 @@ if ($_GET['user_id'] &&
   echo "<p>
   <h6 class='text-center'>Days read each week</h6>
   <div class='center'>";
-  echo weekly_progress_canvas($user['id'], $schedule);
+  echo $site->weekly_progress_canvas($user['id'], $schedule);
   echo "<script>".weekly_progress_js(300, 150)."</script>";
   echo "</div>
   </p>";
@@ -146,7 +146,7 @@ else {
     7 => 'Sunday',
     8 => 'Monday'
   ];
-  $starting_day_of_week = $WEEK_ARR[ (int)$site['start_of_week'] ];
+  $starting_day_of_week = $WEEK_ARR[ (int)$site->data('start_of_week') ];
   
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {
@@ -169,7 +169,7 @@ else {
   );
 
   $today = new Datetime(date('Y-m-d'));
-  $is_special_day = $today->format('N') == (int)$site['start_of_week'];
+  $is_special_day = $today->format('N') == (int)$site->data('start_of_week');
   $today_for_disabled_check = clone($today);
   if ($is_special_day) {
     $today->modify('-1 day'); // for the purpose of figuring out which week we're on, it can never be the special day because that's confusing
@@ -178,7 +178,7 @@ else {
   echo "<form>Viewing week of&nbsp;&nbsp;<select name='week_range' onchange='this.form.submit();'>";
   $opt_group_year = null; $i = 0; $total_periods = iterator_count($period);
   foreach($period as $date) {
-    if ($date->format('N') == $site['start_of_week']) {
+    if ($date->format('N') == $site->data('start_of_week')) {
       $week_start = clone($date);
     }
     else {
@@ -186,7 +186,7 @@ else {
     }
     $week_start->setTime(0, 0, 0, 0);
 
-    $week_end = date_create_from_format('U', strtotime("next ".$WEEK_ARR[ intval($site['start_of_week']) - 1 ], $week_start->format('U')));
+    $week_end = date_create_from_format('U', strtotime("next ".$WEEK_ARR[ intval($site->data('start_of_week')) - 1 ], $week_start->format('U')));
     $week_end->setTime(23, 59, 59, 999999);
     if ($week_start->format('Y') !== $opt_group_year) {
       $opt_group_year = $week_start->format('Y');
@@ -219,7 +219,7 @@ else {
     [ $next = date_modify(clone($last_beginning), '+6 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ]
   ];
       
-  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site['start_of_week'] + 1 ]))."</h5>";
+  echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ]))."</h5>";
   $where = "
     WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
     " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
@@ -251,7 +251,7 @@ else {
   }
       
   $nine_mo = strtotime('-9 months');
-  $all_users = all_users($_GET['stale']);
+  $all_users = $site->all_users($_GET['stale']);
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";

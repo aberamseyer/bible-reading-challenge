@@ -143,7 +143,7 @@ if ($scheduled_reading) {
   echo "</small></p>";
 }
 
-echo html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
+echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
 
 if ($scheduled_reading) {
   echo "<style>

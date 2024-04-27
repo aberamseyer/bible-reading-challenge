@@ -1,12 +1,13 @@
 <?php
 
-	require_once __DIR__."/MailSender/MailSender.php";
-	require_once __DIR__."/MailSender/MailSenderSES.php";
-	require_once __DIR__."/MailSender/MailSenderSendgrid.php";
+require_once __DIR__."/MailSender/MailSender.php";
+require_once __DIR__."/MailSender/MailSenderSES.php";
+require_once __DIR__."/MailSender/MailSenderSendgrid.php";
+require_once __DIR__."/Site.php";
 
 	function db($alt_db = null) {
 		static $db;
-		if (!$db) {
+		if (!$db && !$alt_db) {
 			$db = new SQLite3(DB_FILE);
 			$db->busyTimeout(250);
 		}
@@ -356,11 +357,6 @@
 		return $nav."</div>";
 	}
 
-	function get_active_schedule() {
-		global $site;
-		return row("SELECT * FROM schedules WHERE site_id = $site[id] AND active = 1");
-	}
-
 	function allowed_schedule_date(Datetime $date) {
 		global $staff;
 		return $staff || (new Datetime()) > $date;
@@ -583,81 +579,6 @@
 		return $days;
 	}
 
-	/*
-	 * @param scheduled_reading array the return value of get_reading()
-	 * @param trans string one of the translations
-	 * @param complete_key string the key to complete the reading from a row in the schedule_dates's table
-	 * @param schedule the schedule from which we are generating a reading
-	 * @param email bool whether this is going in an email or not
-	 * @return the html of all the verses we are reading
-	 */ 
-	function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $email=false) {
-		ob_start();
-		$article_style = "";
-		if ($email) {
-			$article_style = "style='line-height: 1.618; font-size: 1.1rem;'";
-		}
-		echo "<article $article_style>";
-		if ($scheduled_reading) {
-			$style = "";
-			if ($email) {
-				$style = "style='text-align: center; font-size: 1.4rem;'";
-			}
-			foreach($scheduled_reading['passages'] as $passage) {
-				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
-				$book = $passage['book'];
-				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
-	
-				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
-
-				$ref_style = "class='ref'";
-				$verse_style = "class='verse-text'";
-				if ($email) {
-					$ref_style = "style='font-weight: bold; user-select: none;'";
-					$verse_style = "style='margin-left: 1rem;'";
-				}
-				foreach($verses as $verse_row) {
-					echo "
-						<div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
-				}
-			}
-			$btn_style = "";
-			$form_style = "id='done' class='center'";
-			if ($email) {
-				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
-				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
-			}
-			$copyright_text = json_decode(file_get_contents(__DIR__."/../../copyright.json"), true);
-			$copyright_style = "";
-			if ($email) {
-				$copyright_style = "font-size: 75%;";
-			}
-			echo "
-			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
-			<form action='".SCHEME."://".DOMAIN."/today' method='get' $form_style>
-				<input type='hidden' name='complete_key' value='$complete_key'>
-				<input type='hidden' name='today' value='$scheduled_reading[date]'>
-				<button type='submit' name='done' value='1' $btn_style>Done!</button>
-			</form>";
-		}
-		else {
-			echo "<p>Nothing to read today!</p>";
-	
-			// look for the next time to read in the schedule.
-			$days = get_schedule_days($schedule['id']);
-			$today = new Datetime();
-			foreach($days as $day) {
-				$dt = new Datetime($day['date']);
-				if ($today < $dt) {
-					echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
-					break;
-				}
-			}
-		}
-		echo "</article>";
-		return ob_get_clean();
-	}
-
 	function schedule_completed($user_id, $schedule_id) {
 		return col("SELECT COUNT(*)
 			FROM read_dates rd
@@ -779,25 +700,6 @@ function number_chapters_in_book_read($book_id, $user_id) {
       WHERE json_each.value IN (SELECT id FROM chapters WHERE book_id = $book_id)
         AND user_id = $user_id
       GROUP BY json_each.value");
-}
-
-function all_users($stale = false) {
-	global $site;
-  $nine_mo = strtotime('-9 months');
-  if ($stale) {
-    $where = "last_seen < '$nine_mo' OR (last_seen IS NULL AND date_created < '$nine_mo')";
-  }
-  else {
-    // all users
-    $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
-  }
-  return select("
-    SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
-    FROM users u
-    LEFT JOIN read_dates rd ON rd.user_id = u.id
-    WHERE site_id = $site[id] AND ($where)
-    GROUP BY u.id
-    ORDER BY LOWER(name) ASC");
 }
 
 function toggle_all_users($initial_count) {
@@ -926,107 +828,6 @@ function total_words_in_schedule($schedule_id) {
 			WHERE sd.schedule_id = $schedule_id");
 }
 
-function mountain_for_emojis($emojis, $my_id = 0, $hidden = false) {
-	global $site;
-	$coords = json_decode($site['progress_image_coordinates'], true);
-
-  echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
-	echo "<style>
-	.mountain-wrap .emoji {
-		bottom: $coords[1]%;
-		left: $coords[0]%;
-	}
-	</style>
-	<script>
-		const PROGRESS_X_2 = $coords[2];
-		const PROGRESS_Y_2 = $coords[3];
-	</script>";
-
-	foreach($emojis as $i => $datum) {
-		$style = '';
-		if ($datum['id'] == $my_id) {
-			$style = "style='z-index: 10'";
-		}
-		echo "
-		<span class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
-			<span class='inner'>$datum[emoji]</span>
-		</span>";
-	}
-  
-  echo "<img src='".resolve_img_src($site, 'progress')."' class='mountain'>";
-  echo "</div>";
-}
-
-function weekly_counts($user_id, $schedule) {
-	global $site_tz_offset;
-	$start = new DateTime($schedule['start_date']);
-	$end = new DateTime($schedule['end_date']);
-
-	$interval = $start->diff($end);
-	$days_between = abs(intval($interval->format('%a')));
-	$week_count = ceil($days_between / 7);
-
-	$counts = select("
-		SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
-		FROM (
-				WITH RECURSIVE week_sequence AS (
-								SELECT date('now', '".$site_tz_offset." hours') AS cdate
-								UNION ALL
-								SELECT date(cdate, '-7 days') 
-									FROM week_sequence
-									LIMIT $week_count
-						)
-						SELECT strftime('%Y-%W', cdate) AS week,
-						strftime('%Y-%m-%d', cdate, 'weekday 0') AS start_of_week
-							FROM week_sequence
-				)
-				sd
-				LEFT JOIN
-				(
-						SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', '".$site_tz_offset." hours')) AS week,
-										COUNT(rd.user_id) count
-							FROM read_dates rd
-							WHERE rd.user_id = $user_id
-							GROUP BY week, rd.user_id
-				)
-				rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', '".$site_tz_offset." hours') ) 
-		ORDER BY sd.week ASC
-		LIMIT $week_count");
-
-		return [
-			'week' => array_column($counts, 'week'),
-			'counts' => array_column($counts, 'count'),
-			'start_of_week' => array_column($counts, 'start_of_week')
-		];
-}
-
-function deviation_for_user($user_id, $schedule) {
-	global $site_tz_offset;
-	$weekly_counts = weekly_counts($user_id, $schedule)['counts'];
-	
-	// standard deviation
-	$n = count($weekly_counts);
-	if ($n === 0) {
-		return null;
-	}
-	$mean = array_sum($weekly_counts) / $n;
-	$variance = 0.0;
-	foreach ($weekly_counts as $val) {
-			$variance += pow($val - $mean, 2);
-	}
-	$variance /= $n;
-
-	return round(sqrt($variance), 3);
-}
-
-function weekly_progress_canvas($user_id, $schedule) {
-	global $site_tz_offset;
-	$counts = weekly_counts($user_id, $schedule);
-	$data = json_encode($counts['counts']);
-	return "<canvas title='$data' data-graph='$data'></canvas>";
-}
-
 function weekly_progress_js($width, $height) {
 	return "
 	const canvas = document.querySelectorAll('canvas');
@@ -1114,10 +915,6 @@ function hex_to_rgb($hex) {
 	return "rgb($r, $g, $b)";
 }
 
-function clamp($value, $min, $max) {
-	return max($min, min($max, $value));
-}
-
 function rgb_to_hex($rgb) {
 	preg_match('/^rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)$/', $rgb, $matches);
 	if (!$matches) {
@@ -1141,14 +938,6 @@ function format_phone($phone) {
 	return substr($phone, 0, 3).'-'.substr($phone, 3, 3).'-'.substr($phone, 6, 4);
 }
 
-function resolve_img_src($site, $type) {
-	global $site;
-	static $pictures;
-	if ($picutres[$type]) {
-		return '/img/'.$pictures[$type];
-	}
-	else {
-		$pictures[$type] = $site[$type.'_image_id'] ? col("SELECT uploads_dir_filename FROM images WHERE id = ".$site[$type.'_image_id']) : '';
-	}
-	return '/img/'.$pictures[$type];
+function clamp($value, $min, $max) {
+	return max($min, min($max, $value));
 }

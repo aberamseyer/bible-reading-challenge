@@ -10,11 +10,9 @@ require __DIR__."/../www/inc/functions.php";
 
 $db = new SQLite3(DB_FILE);
 
-foreach(select("SELECT * FROM sites") as $site) {
-  query("UPDATE users SET streak=0, max_streak=0 WHERE site_id = $site[id]");
-
-  $tz = new DateTimeZone($site['time_zone_id']);
-  $site_tz_offset = intval($tz->getOffset(new DateTime('UTC')) / 3600);
+foreach(cols("SELECT * FROM sites") as $site_id) {
+  $site = Site::get_site($site_id);
+  query("UPDATE users SET streak=0, max_streak=0 WHERE site_id = ".$site->ID);
   
   $period = new DatePeriod(
     new Datetime(CHANGE_ME_TO_START_DATE), // e.g., '2023-08-21', the first day of the reading challenge schedule (or whatever you want)
@@ -22,21 +20,21 @@ foreach(select("SELECT * FROM sites") as $site) {
     new Datetime(CHANGE_ME_TO_CURRENT_DATE), // probably today's date
     DatePeriod::INCLUDE_END_DATE
   );
-  $schedule = get_active_schedule();
+  $schedule = $site->get_active_schedule();
   
   foreach($period as $day) {
-    $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')));
+    $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')), $site->TZ);
     
     $scheduled_reading = get_reading($yesterday, $schedule['id']);
   
     if ($scheduled_reading) {
-      foreach(select("SELECT * FROM users WHERE site_id = $site[id]") as $user) {
+      foreach(select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {
         $current_streak = $user['streak'];
         $read_yesterday = col("
           SELECT id
           FROM read_dates
           WHERE user_id = $user[id] AND
-            DATE(timestamp, 'unixepoch', '".$site_tz_offset." hours') = '".$yesterday->format('Y-m-d')."'");
+            DATE(timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') = '".$yesterday->format('Y-m-d')."'");
             
         update('users', [
           'streak' => $read_yesterday

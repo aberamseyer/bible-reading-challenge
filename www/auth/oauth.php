@@ -19,7 +19,7 @@ else {
     // account doesn't exist, create
     if (!$user_row) {
       $id = insert("users", [ 
-        'site_id' => $site['id'],
+        'site_id' => $site->ID,
         'uuid' => uniqid(),
         'name' => $payload['name'],
         'email' => $payload['email'],
@@ -28,7 +28,7 @@ else {
         'trans_pref' => 'rcv',
         'date_created' => time(),
         'email_verify_token' => uniqid("", true).uniqid("", true),
-        'emoji' => $site['default_emoji']
+        'emoji' => $site->data('default_emoji')
       ]);
     }
     else {

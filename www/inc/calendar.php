@@ -1,6 +1,6 @@
 <?php
 
-  $calendar_sched = row("SELECT * FROM schedules WHERE site_id = $site[id] AND id = ".(int)$_REQUEST['calendar_id']);
+  $calendar_sched = row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_REQUEST['calendar_id']);
   if (!$calendar_sched) {
     redirect('/admin/schedules');
   }

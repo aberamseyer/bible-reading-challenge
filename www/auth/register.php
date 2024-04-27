@@ -41,7 +41,7 @@ else if ($_POST['email']) {
     $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
     insert("users", [ 
-      'site_id' => $site['id'],
+      'site_id' => $site->ID,
       'uuid' => $uuid,
       'name' => $_POST['name'],
       'email' => $_POST['email'],
@@ -49,10 +49,9 @@ else if ($_POST['email']) {
       'trans_pref' => 'rcv',
       'date_created' => time(),
       'email_verify_token' => $verify_token,
-      'emoji' => $site['default_emoji']
+      'emoji' => $site->data('default_emoji')
     ]);
-    $ms = new Email\MailSenderSendgrid();
-    $ms->send_register_email($_POST['email'], SCHEME."://".DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
+    $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
     $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!"; // TODO email image
   }
 }
@@ -84,7 +83,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-client_id="<?= GOOGLE_CLIENT_ID ?>"
         data-context="signup"
         data-ux_mode="popup"
-        data-login_uri="https://<?= DOMAIN ?>/auth/oauth"
+        data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"

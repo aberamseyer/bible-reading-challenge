@@ -10,29 +10,28 @@ require __DIR__."/../www/inc/functions.php";
 
 $db = new SQLite3(DB_FILE);
 
-foreach(select("SELECT * FROM sites") as $site) {
-  $tz = new DateTimeZone($site['time_zone_id']);
-  $dt = new DateTime('now', $tz);
+foreach(cols("SELECT id FROM sites") as $site_id) {
+  $site = Site::get_site($site_id);
+  $dt = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to update the sites who's local time is 3:50 AM
   if ($dt->format('G') !== 3) {
     continue;
   }
-  $site_tz_offset = intval($tz->getOffset(new DateTime('UTC')) / 3600);
 
-  $schedule = get_active_schedule();
+  $schedule = $site->get_active_schedule();
 
-  $yesterday = new Datetime('@'.strtotime('yesterday'));
+  $yesterday = new Datetime('@'.strtotime('yesterday'), $site->TZ);
   $scheduled_reading = get_reading($yesterday, $schedule['id']);
 
   if ($scheduled_reading) {
-    foreach(select("SELECT * FROM users WHERE site_id = $site[id]") as $user) {
+    foreach(select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {
       $current_streak = $user['streak'];
       
       $read_yesterday = col("
         SELECT id
         FROM read_dates
         WHERE user_id = $user[id] AND
-          DATE(timestamp, 'unixepoch', '".$site_tz_offset." hours') = '".$yesterday->format('Y-m-d')."'"); // irrespective of schedule
+          DATE(timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') = '".$yesterday->format('Y-m-d')."'"); // irrespective of schedule within a site
 
       update('users', [
         'streak' => $read_yesterday

@@ -9,8 +9,6 @@ require __DIR__."/../www/inc/functions.php";
 
 $db = new SQLite3(DB_FILE);
 
-$schedule = get_active_schedule();
-
 foreach(select("
   SELECT SUM(
     LENGTH(rcv) - LENGTH(REPLACE(rcv, ' ', '')) + 1

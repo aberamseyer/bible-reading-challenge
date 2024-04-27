@@ -8,31 +8,24 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_FILE);
-
-
-foreach(select("SELECT * FROM sites WHERE enabled = 1") as $site) {
-  $ms = new Email\MailSenderSendgrid(); // TODO the credentials this uses must come from the right place
-  
-  $tz = new DateTimeZone($site['time_zone_id']);
-  $today = new DateTime('now', $tz);
+foreach(cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
+  $site = BibleReadingChallenge\Site::get_site($site_id);
+  $today = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
   if ($today->format('G') !== 7) {
     continue;
   }
-  $site_tz_offset = intval($tz->getOffset(new DateTime('UTC')) / 3600);
-
   
-  $schedule = get_active_schedule();
+  $schedule = $site->get_active_schedule();
   $recently = new Datetime($schedule['start_date']);
-  $recently->modify('-1 month');
+  $recently->modify('-3 months');
   
   $scheduled_reading = get_reading($today, $schedule['id']);
   
   if (!$scheduled_reading) {
     die("nothing to do today!");
   }
-  foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users WHERE email_verses = 1") as $user) {
+  foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users WHERE site_id = ".$site->ID." AND email_verses = 1") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
     $last_seen_date = new Datetime('@'.$user['last_seen']);
     if ($last_seen_date < $recently) {
@@ -44,7 +37,7 @@ foreach(select("SELECT * FROM sites WHERE enabled = 1") as $site) {
       continue;
     }
     
-    // make the user's name by using everything but the last name
+    // format the user's name by using everything but the last name
     $name_arr = explode(' ', $user['name']);
     $name = array_pop($name_arr);
     if ($name_arr) {
@@ -64,12 +57,12 @@ foreach(select("SELECT * FROM sites WHERE enabled = 1") as $site) {
     /* the banner image at the top of the email is part of the email template in Sendgrid */
   
     /* chapter contents */
-    $html = html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $scheduled_reading['complete_key'], $schedule, true);
+    $html = $site->html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $scheduled_reading['complete_key'], $schedule, true);
     /* unsubscribe */
-    $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
+    $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
     
     $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
     
-    $ms->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
+    $site->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
   }
 }

@@ -2,10 +2,9 @@
 
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
-
 // edit own profile
 if (isset($_POST['name'])) {
-  $to_change = row("SELECT * FROM users WHERE site_id = $site[id] AND id = ".$my_id);
+  $to_change = row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".$my_id);
   if ($to_change) {
     $name = trim($_POST['name']);
     $emoji = trim($_POST['emoji']);
@@ -95,12 +94,12 @@ $emojis = select("
 echo "
   <h5 class='text-center'>Top 20 Readers (and you)</h5>";
 
-  mountain_for_emojis($emojis, $me['id']);
+  $site->mountain_for_emojis($emojis, $me['id']);
 
   echo "<p>
   <h6 class='text-center'>Days read each week</h6>
   <div class='center'>";
-  echo weekly_progress_canvas($me['id'], $schedule);
+  echo $site->weekly_progress_canvas($me['id'], $schedule);
   echo "<script>".weekly_progress_js(300, 150)."</script>";
   echo "</div>
   </p>";

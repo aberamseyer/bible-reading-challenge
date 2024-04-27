@@ -3,17 +3,17 @@
   <head>
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta charset="utf-8">
-    <link rel="icon" type="image/x-icon" href="<?= resolve_img_src($site, 'favico') ?>">
+    <link rel="icon" type="image/x-icon" href="<?= $site->resolve_img_src('favico') ?>">
     <link rel="stylesheet" href="/css/normalize.css" media="screen" />
     <link rel="stylesheet" href="/css/sakura-coc.css" media="screen" />
     <link rel="stylesheet" href="/css/style.css" media="screen" />
     <?= $add_to_head ?>
-    <title><?= $site['short_name'] ?><?= $page_title ? " - ".$page_title : ""?></title>
+    <title><?= html($site->data('short_name')) ?><?= $page_title ? " - ".$page_title : ""?></title>
     <style>
       @media(prefers-color-scheme: dark) {
         :root {
           --color-blossom: #ffffff;
-          --color-secondary: <?= $site['color_secondary']?>;
+          --color-secondary: <?= $site->data('color_secondary') ?>;
           --color-fade: #c9c9c9;
           
           --color-bg: #222222;
@@ -25,9 +25,9 @@
       }
       @media(prefers-color-scheme: light) {
         :root {
-          --color-blossom: <?= $site['color_primary']?>; /* buttons, horizontal lines, links */
-          --color-secondary: <?= $site['color_secondary']?>;
-          --color-fade: <?= $site['color_fade']?>;
+          --color-blossom: <?= $site->data('color_primary') ?>; /* buttons, horizontal lines, links */
+          --color-secondary: <?= $site->data('color_secondary') ?>;
+          --color-fade: <?= $site->data('color_fade') ?>;
           
           --color-bg: #f9f9f9; /* background */
           --color-bg-alt: #eeeeee; /* background for info banners at the top, translation selector, etc */
@@ -41,7 +41,7 @@
   <body>
     <?php if ($me): ?>
     <div class='navigation-wrap'>
-      <img class='logo' src='<?= resolve_img_src($site, 'logo') ?>' onclick='window.location = `/`'>
+      <img class='logo' src='<?= $site->resolve_img_src('logo') ?>' onclick='window.location = `/`'>
       <?= navigation() ?>
     </div>
     <hr>

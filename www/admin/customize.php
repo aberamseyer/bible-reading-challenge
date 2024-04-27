@@ -21,7 +21,7 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
     $realpath = tempnam(UPLOAD_DIR, "upload-");
     unlink($realpath); // delete bc we're going to move the file there ourself later
     insert('images', [
-      'site_id' => $site['id'],
+      'site_id' => $site->ID,
       'uploaded_by_id' => $me['id'],
       'uploaded_name' => $_FILES['upload']['name'],
       'md5' => md5_file($_FILES['upload']['tmp_name']),
@@ -37,7 +37,7 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
 // Pictures handler
 if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POST['set_favico'] || $_POST['delete_photo']) {
   $img_id = (int)$_POST['image_id'];
-  $new_image = row("SELECT id, uploads_dir_filename FROM images WHERE id = $img_id AND site_id = $site[id]");
+  $new_image = row("SELECT id, uploads_dir_filename FROM images WHERE id = $img_id AND site_id = ".$site->ID);
   if (!$img_id) {
     $_SESSION['error'] = 'Please provide an image';
   }
@@ -64,15 +64,15 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
       // find the key we updated
       if ($_POST['set_'.$key]) {
         // if the site has this image set
-        if ($site[$key.'_image_id']) {
+        if ($site->data($key.'_image_id')) {
           // determine if this photo is being used as something else before deleting it
           $img_to_del = row("
             SELECT id, uploads_dir_filename FROM images
-            WHERE id = ".$site[$key.'_image_id']);
+            WHERE id = ".$site->data($key.'_image_id'));
           $valid = true;
-          // loop through the other keys and see if the $site is using it
+          // loop through the other keys and see if the site is using it
           foreach(array_diff($image_keys, [$key]) as $other_key) {
-            $valid = $valid && $site[$other_key.'_image_id'] != $img_to_del['id'];
+            $valid = $valid && $site->data($other_key.'_image_id') != $img_to_del['id'];
           }
           if ($img_to_del && $valid) {
             // delete old image out of the public serve directory
@@ -82,7 +82,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
         // copy the new image into the public serve directory from the uploads folder
         copy(UPLOAD_DIR.$new_image['uploads_dir_filename'], IMG_DIR.$new_image['uploads_dir_filename']);
         // activate the new image
-        update('sites', [ $key.'_image_id' => $img_id ], 'id = '.$site['id']);
+        update('sites', [ $key.'_image_id' => $img_id ], 'id = '.$site->ID);
         $_SESSION['success'] = ucwords($key).' image updated';
         break;
       }
@@ -100,14 +100,14 @@ if ($_POST['x_1'] !== null && $_POST['y_2'] !== null && $_POST['x_2'] !== null &
 
   update('sites', [
     'progress_image_coordinates' => "[$x1,$y1,$x2,$y2]"
-  ], 'id = '.$site['id']);
+  ], 'id = '.$site->ID);
   $_SESSION['success'] = 'Progress image coordinates updated';
 
   redirect();
 }
 
 // Color form handler
-if ($_POST['color_primary'] && $_POST['color_secondary'] && $_POST['color_fade']) {
+if ($_POST['color_primary'] && $_POST['color_secondary']) {
   $error = null;
   $colors = [];
   foreach (['primary', 'secondary', 'fade'] as $color) {
@@ -125,7 +125,7 @@ if ($_POST['color_primary'] && $_POST['color_secondary'] && $_POST['color_fade']
       'color_primary' => $colors['primary'],
       'color_secondary' => $colors['secondary'],
       'color_fade' => $colors['fade']
-    ], 'id = '.$site['id']);
+    ], 'id = '.$site->ID);
     $_SESSION['success'] = 'Theme updated';
   }
   redirect();
@@ -175,7 +175,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'default_emoji' => $default_emoji,
       'start_of_week' => $start_of_week,
       'time_zone_id' => $timezone
-    ], 'id = '.$site['id']);
+    ], 'id = '.$site->ID);
     $_SESSION['success'] = 'Site Configuration updated';
   }
 
@@ -198,13 +198,13 @@ echo "
   <fieldset>
   <legend>Theming</legend>
     <label>
-      Primary Color: <input type='color' name='color_primary' value='".rgb_to_hex($site['color_primary'])."'> <button type='button'>Example</button>
+      Primary Color: <input type='color' name='color_primary' value='".rgb_to_hex($site->data('color_primary'))."'> <button type='button'>Example</button>
     </label>
     <label>
-      Secondary Color: <input type='color' name='color_secondary' value='".rgb_to_hex($site['color_secondary'])."'> <button type='' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
+      Secondary Color: <input type='color' name='color_secondary' value='".rgb_to_hex($site->data('color_secondary'))."'> <button type='' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
     </label>
     <label>
-      Faded Color ".help('Used for disabled and hovered buttons').": <input type='color' name='color_fade' value='".rgb_to_hex($site['color_fade'])."'> <button type='button' style='background-color: var(--color-fade); border-color: var(--color-fade);'>Example</button>
+      Faded Color ".help('The color of buttons when hovered over').": <input type='color' name='color_fade' value='".rgb_to_hex($site->data('color_fade'))."'> <button type='button' style='background-color: var(--color-fade); border-color: var(--color-fade);'>Example</button>
     </label>
     <button type='submit'>Save Theme</button>
   </fieldset>
@@ -216,33 +216,33 @@ echo "
   <fieldset>
   <legend>Site Configuration</legend>
     <label>
-    Site name ".help('Title of your club')." <input type='text' name='site_name' value='".html($site['site_name'])."' style='width: 440px'>
+    Site name ".help('Title of your club')." <input type='text' name='site_name' value='".html($site->data('site_name'))."' style='width: 440px'>
     </label>
     <label>
-    Title ".help('Used in the title bar of the web browser')." <input type='text' name='short_name' value='".html($site['short_name'])."'>
+    Title ".help('Used in the title bar of the web browser')." <input type='text' name='short_name' value='".html($site->data('short_name'))."'>
     </label>
     <label>
-    Contact Person ".help('Who talks to Abe')." <input type='text' name='contact_name' value='".html($site['contact_name'])."'>
+    Contact Person ".help('Who talks to Abe')." <input type='text' name='contact_name' value='".html($site->data('contact_name'))."'>
     </label>
     <label>
-    Contact Email ".help('Email of the one who talks to Abe')." <input type='text' name='contact_email' value='".html($site['contact_email'])."'>
+    Contact Email ".help('Email of the one who talks to Abe')." <input type='text' name='contact_email' value='".html($site->data('contact_email'))."'>
     </label>
     <label>
-    Contact Phone # ".help('Phone # of the one who talks to Abe')." <input type='text' name='contact_phone' value='".html(format_phone($site['contact_phone']))."' placeholder='No country code'>
+    Contact Phone # ".help('Phone # of the one who talks to Abe')." <input type='text' name='contact_phone' value='".html(format_phone($site->data('contact_phone')))."' placeholder='No country code'>
     </label>
     <label>
-    Default Emoji ".help('What emoji new users will have by default')." <input type='text' name='default_emoji' minlength='1' maxlength='6' value='".html($site['default_emoji'])."' style='width: 70px'>
+    Default Emoji ".help('What emoji new users will have by default')." <input type='text' name='default_emoji' minlength='1' maxlength='6' value='".html($site->data('default_emoji'))."' style='width: 70px'>
     </label>
     <label>
     Start of week ".help('What day the weekly reading stats begin on. It might be the date of your weekly campus meeting.')."
       <select name='start_of_week'>
-        <option value='7' ".($site['start_of_week'] == '7' ? 'selected' : '').">Sunday</option>
-        <option value='1' ".($site['start_of_week'] == '1' ? 'selected' : '').">Monday</option>
-        <option value='2' ".($site['start_of_week'] == '2' ? 'selected' : '').">Tuesday</option>
-        <option value='3' ".($site['start_of_week'] == '3' ? 'selected' : '').">Wednesday</option>
-        <option value='4' ".($site['start_of_week'] == '4' ? 'selected' : '').">Thursday</option>
-        <option value='5' ".($site['start_of_week'] == '5' ? 'selected' : '').">Friday</option>
-        <option value='6' ".($site['start_of_week'] == '6' ? 'selected' : '').">Saturday</option>
+        <option value='7' ".($site->data('start_of_week') == '7' ? 'selected' : '').">Sunday</option>
+        <option value='1' ".($site->data('start_of_week') == '1' ? 'selected' : '').">Monday</option>
+        <option value='2' ".($site->data('start_of_week') == '2' ? 'selected' : '').">Tuesday</option>
+        <option value='3' ".($site->data('start_of_week') == '3' ? 'selected' : '').">Wednesday</option>
+        <option value='4' ".($site->data('start_of_week') == '4' ? 'selected' : '').">Thursday</option>
+        <option value='5' ".($site->data('start_of_week') == '5' ? 'selected' : '').">Friday</option>
+        <option value='6' ".($site->data('start_of_week') == '6' ? 'selected' : '').">Saturday</option>
       </select>
     </label>
     <label>
@@ -251,7 +251,7 @@ echo "
       $timezones = timezone_identifiers_list(DateTimeZone::PER_COUNTRY, 'US');
       sort($timezones);
       foreach($timezones as $id) {
-        echo "<option value='$id' ".($id == $site['time_zone_id'] ? 'selected' : '').">$id</option>";
+        echo "<option value='$id' ".($id == $site->data('time_zone_id') ? 'selected' : '').">".str_replace('_', ' ', str_replace('America/', '', $id))."</option>";
       }
 echo "  </select>
     </label>
@@ -290,11 +290,11 @@ echo "
       </thead>
       <tbody>
       ";
-foreach(select("SELECT * FROM images WHERE site_id = $site[id]") as $image) {
-  $logo_disabled = $site['logo_image_id'] == $image['id'] ? 'disabled' : '';
-  $login_disabled = $site['login_image_id'] == $image['id'] ? 'disabled' : '';
-  $progress_disabled = $site['progress_image_id'] == $image['id'] ? 'disabled' : '';
-  $favico_disabled = $site['favico_image_id'] == $image['id'] ? 'disabled' : '';
+foreach(select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
+  $logo_disabled = $site->data('logo_image_id') == $image['id']? 'disabled' : '';
+  $login_disabled = $site->data('login_image_id') == $image['id'] ? 'disabled' : '';
+  $progress_disabled = $site->data('progress_image_id') == $image['id'] ? 'disabled' : '';
+  $favico_disabled = $site->data('favico_image_id') == $image['id'] ? 'disabled' : '';
   $delete_disabled = $logo_disabled || $login_disabled || $progress_disabled || $favico_disabled ? 'disabled' : '';
   echo "<tr>
     <td><small>".html($image['uploaded_name'])."</small></td>
@@ -317,14 +317,14 @@ echo "      </tbody>
     </table>
 
     <h5 class='text-center'>Progress Photo Positioning</h5>";
-    if (!$site['progress_image_id']) {
+    if (!$site->data('progress_image_id')) {
       echo "<p><small>Please specify an image to use as the progress photo</small></p>";
     }
     else {
-      $coords = json_decode($site['progress_image_coordinates'], true);
+      $coords = json_decode($site->data('progress_image_coordinates'), true) ?: [0,0,0,0];
       echo "
       <form id='coord-controls' method='post'>
-        <small>Use arrow keys to adjust beginning and ending positions of emoji progress</small>
+        <small>Use arrow keys to adjust beginning and ending positions of emoji progress. They will go from ▶️ to ⏹️</small>
         <div class='two-columns'>
           <div>
             <label>Begin x
@@ -350,7 +350,7 @@ echo "      </tbody>
           <span class='emoji' style='z-index: 1;' id='end'>
             <span class='inner'>⏹️</span>
           </span>
-          <img src='".resolve_img_src($site, 'progress')."' class='mountain'>
+          <img src='".$site->resolve_img_src('progress')."' class='mountain'>
         </div>
         <button type='submit'>Save Positions</button>
         <script>
@@ -375,24 +375,27 @@ echo "
 <form method='post'>
   <fieldset>
     <legend>Domain Configuration</legend>
-    <h4>These values are read-only</h4>
-    <h5><small>Contact Abe (abe@ramseyer.dev) if they dont look right to you</small></h5>
+    <h4>The following values are not editable</h4>
+    <h5><small>Contact Abe (<a href='mailto:abe@ramseyer.dev?subject=Update%20Site%20Configuration&body=I%20need%20help%20updating%20the%20site%20configuration%20for%20".$site->data('site_name').".'>abe@ramseyer.dev</a>) if you think they need to be changed</small></h5>
     <label>
     <div><small>Ensure you have a DNS (A or CNAME) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
-    Site Domain ".help('The url in the address bar the students go to')." <input type='text' name='domain_www' value='".html($site['domain_www'])."' readonly='true'>
+    Site Domain ".help('The url in the address bar the students go to')." <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' readonly='true'>
     </label>
     <label>
-    Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site['domain_www_test'])."' readonly='true'>
+    Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' readonly='true'>
     </label>
     <label>
     <div><small>Ensure you have a DNS (A or CNAME) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
-    Socket Server Domain ".help('The url the socket server connects to')." <input type='text' name='domain_socket' value='".html($site['domain_socket'])."' readonly='true'>
+    Socket Server Domain ".help('The url the socket server connects to')." <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' readonly='true'>
     </label>
     <label>
-    Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site['domain_socket_test'])."' readonly='true'>
+    Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' readonly='true'>
     </label>
     <label>
-    Site Environment File ".help('The file to load configuration values from (Sendgrid API keys, Google Auth tokens, etc.)')." <input type='text' name='env_file' value='".html($site['env_file'])."' readonly>
+    <details>
+      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google')." </summary>
+      <pre>".html($site->data('env'))."</pre>
+    </details>
     </label>
   </fieldset>
 </form>";

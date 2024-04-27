@@ -39,7 +39,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <img src='<?= resolve_img_src($site, 'login') ?>' style='width: 280px'>
+      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
       <img src='/img/start-reading.svg' style='width: 240px'>
@@ -58,7 +58,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-client_id="<?= GOOGLE_CLIENT_ID ?>"
         data-context="signin"
         data-ux_mode="popup"
-        data-login_uri="https://<?= DOMAIN ?>/auth/oauth"
+        data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"
