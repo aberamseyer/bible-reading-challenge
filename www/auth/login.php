@@ -42,7 +42,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
-      <img src='/img/start-reading.svg' style='width: 240px'>
+      <img src='/img/static/start-reading.svg' style='width: 240px'>
       <p></p>
       <form action='' method='post'>
         <input type='hidden' name='csrf' value='<?= $csrf ?>'>

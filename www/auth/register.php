@@ -52,7 +52,7 @@ else if ($_POST['email']) {
       'emoji' => $site->data('default_emoji')
     ]);
     $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
-    $_SESSION['info'] = "<img class='icon' src='/img/email.svg'>Registration email sent. Check your inbox!"; // TODO email image
+    $_SESSION['info'] = "<img class='icon' src='/img/static/email.svg'>Registration email sent. Check your inbox!";
   }
 }
 

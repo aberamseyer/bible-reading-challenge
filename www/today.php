@@ -91,7 +91,7 @@ if ($today_completed) {
       break;
     }
   }
-  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
+  echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
 }
 // header with translation selector and email pref
 echo "<div id='date-header'>
