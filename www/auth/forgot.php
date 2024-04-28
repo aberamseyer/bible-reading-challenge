@@ -30,13 +30,14 @@ if ($_POST['email']) {
     }
     else {
       // ambiguous message given to people trying to game the system
-      $_SESSION['info'] = "If ".html($_POST['email'])." email has been registered with us, an email with instructions has been sent to it.";
+      $_SESSION['email'] = "If ".html($_POST['email'])." email has been registered with us, an email with instructions has been sent to it.";
     }
   }
+  redirect("/auth/login");
 }
 else if ($_REQUEST['reset']) {
   // check password reset link
-  $user_row = row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['reset'])."'");
+  $user_row = $db->row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['reset'])."'");
   if (!$user_row || $user_row['forgot_password_token'] != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid reset link.";
   }
@@ -58,6 +59,7 @@ else if ($_REQUEST['reset']) {
           'forgot_password_token' => '',
           'forgot_password_expires' => ''
         ], "id = ".$user_row['id']);
+        $_SESSION['success'] = "Welcome back";
         log_user_in($user_row['id']);
       }
     }
@@ -66,39 +68,60 @@ else if ($_REQUEST['reset']) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
+        $hide_title = true;
         $page_title = "Reset Password";
         require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         ?>
-            <p>Or <a href='login'>log in</a></p>
-            <form action='' method='post'>
-              <input type='hidden' name='reset' value='<?= $_REQUEST['reset'] ?>'>
-              <input type='hidden' name='key' value='<?= $_REQUEST['key'] ?>'>
-              <p>
-                <input name='password' type='password' placeholder="New Password" required>
-                <small>At least 8 characters.</small>
-              </p>
-              <p>
-                <input name='password_confirm' type='password' placeholder="Confirm Password" required>
-              </p>
-              <button type="submit">Submit</button>
-            </form>
+          <div id='auth-wrap'>
+            <div>
+              <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+            </div>
+            <div>
+              <h4>Reset Password</h4>
+              <p></p>
+              <p>Or <a href='login'>log in</a></p>
+              <form action='' method='post'>
+                <input type='hidden' name='reset' value='<?= $_REQUEST['reset'] ?>'>
+                <input type='hidden' name='key' value='<?= $_REQUEST['key'] ?>'>
+                <p>
+                  <input name='password' type='password' placeholder="New Password" required>
+                  <small>At least 8 characters.</small>
+                </p>
+                <p>
+                  <input name='password_confirm' type='password' placeholder="Confirm Password" required>
+                </p>
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          </div>
         <?php
         require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
         die;
       }
     }
   }
+  redirect();
 }
 
+$hide_title = true;
 $page_title = "Forgot Password";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
-    <p>Or <a href='login'>log in</a> here.</p>
-    <form action='' method='post'>
-      <p>
-        <input name='email' type='text' placeholder="Email" required>
-      </p>
-      <button type="submit">Submit</button>
-    </form>
+  <div id='auth-wrap'>
+    <div>
+      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+    </div>
+    <div>
+      <h4>Forgot Password</h4>
+      <p></p>
+      <p>Or <a href='login'>log in</a> here.</p>
+      <form action='' method='post'>
+        <p>
+          <input name='email' type='text' placeholder="Email" required>
+        </p>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
 <?php
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

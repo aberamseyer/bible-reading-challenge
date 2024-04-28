@@ -67,7 +67,7 @@ function initWeeklyCountsChart(element, labels, values) {
     data: {
       labels: labels,
       datasets: [{
-        label: 'chapters read each week',
+        label: 'Days read each week',
         data: values,
         tension: 0.4,
         borderColor: COLORS.secondary
@@ -80,6 +80,12 @@ function initWeeklyCountsChart(element, labels, values) {
         }
       },
       scales: {     
+        y: {
+          min: 0,
+          ticks: {
+            stepSize: 1
+          },
+        },
         x: {
           type: 'time',
           time: {
@@ -132,7 +138,7 @@ function initFourWeekTrendChart(element, labels, values) {
         },
         x: {
           ticks: {
-            display: false
+            display: false,
           },
           grid: {
             display: false,

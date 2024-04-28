@@ -85,7 +85,7 @@ class Site extends SiteRegistry {
       }
     }
 
-    $this->$ms = new \Email\MailSenderSendgrid(
+    $this->ms = new \Email\MailSenderSendgrid(
       $this->env('SENDGRID_API_KEY'), 
       $this->env('SENDGRID_DAILY_EMAIL_TEMPLATE'), 
       $this->env('SENDGRID_REGISTER_EMAIL_TEMPLATE'), 
@@ -230,7 +230,7 @@ class Site extends SiteRegistry {
 			}
 			echo "
 			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
-			<form action='".SCHEME."://".$site->DOMAIN."/today' method='get' $form_style>
+			<form action='".SCHEME."://".$this->DOMAIN."/today' method='get' $form_style>
 				<input type='hidden' name='complete_key' value='$complete_key'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>

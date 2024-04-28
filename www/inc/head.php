@@ -71,21 +71,19 @@
       </style>
     <?php endif; ?>
     <?php
-      if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['info']) {
+      if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['email']) {
         echo "
           <blockquote id='message'>";
         if ($_SESSION['error']) {
           echo "<img class='icon' src='/img/static/circle-x.svg'>&nbsp;<small>".$_SESSION['error']."</small>";
-          $_SESSION['error'] = '';
         }
         else if ($_SESSION['success']) {
           echo "<img class='icon' src='/img/static/circle-check.svg'>&nbsp;<small>".$_SESSION['success']."</small>";
-          $_SESSION['success'] = '';
         }
-        else if ($_SESSION['info']) {
-          echo "<small>".$_SESSION['info']."</small>";
-          $_SESSION['info'] = '';
+        else if ($_SESSION['email']) {
+          echo "<img class='icon' src='/img/static/email.svg'>&nbsp;<small>".$_SESSION['email']."</small>";
         }
+        $_SESSION['error'] = $_SESSION['success'] = $_SESSION['email'] = '';
         echo "
           </blockquote>";
       }

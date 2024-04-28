@@ -18,7 +18,9 @@ if ($_REQUEST['confirm']) {
     $db->update("users", [
       "email_verified" => 1
     ], "id = ".$user_row['id']);
-    redirect("/auth/login");
+    $_SESSION['success'] = "Email verified, welcome!";
+    log_user_in($user_row['id']);
+    redirect("/today");
   }
 }
 else if ($_POST['email']) {
@@ -52,7 +54,8 @@ else if ($_POST['email']) {
       'emoji' => $site->data('default_emoji')
     ]);
     $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
-    $_SESSION['info'] = "<img class='icon' src='/img/static/email.svg'>Registration email sent. Check your inbox!";
+    $_SESSION['email'] = "Registration email sent. Check your inbox!";
+    redirect("/auth/login");
   }
 }
 
