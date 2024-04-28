@@ -28,61 +28,9 @@ const compareRows = (a, b, currentSortColumn) => {
 }
 initTable(compareRows, 'period')
 
-const milestoneCanvas = document.getElementById('milestone-chart')
-const msData = JSON.parse(milestoneCanvas.dataset.graph)
-new Chart(milestoneCanvas, {
-  type: 'line',
-  data: {
-    labels: Object.values(msData),
-    datasets: [{
-      label: '% complete',
-      data: Object.keys(msData),
-      borderWidth: 1,
-      fill: true,
-    }],
-  },
-  options: {
-    scales: {     
-      x: {
-        type: 'time',
-        time: {
-          unit: 'day',
-          tooltipFormat: 'MMM d'
-        }
-      },
-      y: {
-        min: 0,
-        max: 100,
-        ticks: {
-          callback: value => `${value}%`
-        }
-      }
-    }
-  }
-})
 
-const weeklycountsCanvas = document.getElementById('weekly-counts')
-const weeklycountsData = JSON.parse(weeklycountsCanvas.dataset.graph)
-new Chart(weeklycountsCanvas, {
-  type: 'line',
-  data: {
-    labels: Object.keys(weeklycountsData),
-    datasets: [{
-      label: 'chapters read each week',
-      data: Object.values(weeklycountsData),
-      fill: false,
-      tension: 0.1
-    }]
-  },
-  options: {
-    scales: {     
-      x: {
-        type: 'time',
-        time: {
-          unit: 'day',
-          tooltipFormat: 'MMM d'
-        }
-      }
-    }
-  }
+
+document.querySelectorAll('canvas[data-graph]').forEach(canvas => {
+  const fourWeekData = JSON.parse(canvas.dataset.graph)
+  initFourWeekTrendChart(canvas, Object.keys(fourWeekData), Object.values(fourWeekData))
 })

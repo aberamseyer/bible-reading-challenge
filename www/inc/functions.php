@@ -438,25 +438,26 @@ function help($tip) {
 
 function four_week_trend_canvas($user_id) {
 	$data = json_encode(four_week_trend_data($user_id));
-	return "<canvas title='$data' data-graph='$data'></canvas>";
+	return "<canvas title='$data' data-graph='$data' width='200'></canvas>";
 }
 
 function four_week_trend_data($user_id) {
+	$site = BibleReadingChallenge\Site::get_site();
 	$db = BibleReadingChallenge\Database::get_instance();
 	// reach back 5 weeks so that we don't count the current week in the graph
-	return $db->cols("
-		SELECT COALESCE(count, 0) count
+	$values = $db->select("
+		SELECT COALESCE(count, 0) count, day_start
 		FROM (
 			-- generates last 4 weeks to join what we read to
 			WITH RECURSIVE week_sequence AS (
 				SELECT
-					date('now', '".$site_tz_offset." hours') AS cdate -- timezone offset
+					date('now', '".$site->TZ_OFFSET." hours') AS cdate
 				UNION ALL
 				SELECT date(cdate, '-7 days')
 				FROM week_sequence
 				LIMIT 5
 			)
-			SELECT strftime('%Y-%W', cdate) AS week FROM week_sequence      
+			SELECT strftime('%Y-%W', cdate) AS week, strftime('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
 		) sd
 		LEFT JOIN (
 			-- gives the number of days we have read each week
@@ -466,53 +467,15 @@ function four_week_trend_data($user_id) {
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', '".$site_tz_offset." hours'))
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', '".$site->TZ_OFFSET." hours'))
 		ORDER BY sd.week ASC
 		LIMIT 4");
-}
-
-function four_week_trend_js($width, $height) {
-	return "
-	const canvas = document.querySelectorAll('canvas');
-	canvas.forEach(c => {
-		const data = JSON.parse(c.getAttribute('data-graph'));
-		const ctx = c.getContext('2d');
-		
-		// Set the canvas dimensions
-		c.width = $width;
-		c.height = $height;
-		
-		// Calculate the scale factors
-		const maxDataValue = 8;
-		const scaleFactor = c.height / maxDataValue;
-		
-		// Draw the sparkline
-		ctx.beginPath();
-		ctx.moveTo(0, c.height - data[0] * scaleFactor);
-		for (let i = 1; i < data.length; i++) {
-			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
-			const y = c.height - data[i] * scaleFactor;
-			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
-			const prevY = c.height - data[i - 1] * scaleFactor;
-			const cpx = (prevX + x) / 2;
-			const cpy = (prevY + y) / 2;
-			
-			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
-		}
-		
-		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
-		gradient.addColorStop(0, 'rgb(63, 70, 143)');
-		gradient.addColorStop(1, 'rgb(219, 184, 100)');
-		ctx.strokeStyle = gradient;
-		
-		ctx.lineWidth = 1;
-		ctx.stroke();
-	})";
+		return array_column($values, 'count', 'day_start');
 }
 
 function day_completed($my_id, $schedule_date_id) {
 	$db = BibleReadingChallenge\Database::get_instance();
-	return $db->insert("
+	return $db->num_rows("
 		SELECT id
 		FROM read_dates
 		WHERE schedule_date_id = $schedule_date_id
@@ -531,6 +494,7 @@ function number_chapters_in_book_read($book_id, $user_id) {
 }
 
 function toggle_all_users($initial_count) {
+	global $add_to_foot;
 
   echo "<div id='toggle-all-wrap'><div><b id='all-count'>$initial_count</b> reader".xs($initial_count)."</div>
 		<label>
@@ -549,7 +513,7 @@ function toggle_all_users($initial_count) {
 			justify-content: space-between;
 		}
 	</style>";
-	echo "<script>
+	$add_to_foot .= "<script>
 
 	document.addEventListener('DOMContentLoaded', function() {
 		// search box
@@ -660,71 +624,6 @@ function total_words_in_schedule($schedule_id) {
 			WHERE sd.schedule_id = $schedule_id");
 }
 
-function weekly_progress_js($width, $height) {
-	return "
-	const canvas = document.querySelectorAll('canvas');
-	canvas.forEach(c => {
-		const data = JSON.parse(c.getAttribute('data-graph'));
-		const ctx = c.getContext('2d');
-		
-		// Set the canvas dimensions
-		c.width = $width;
-		c.height = $height;
-		
-		// Calculate the scale factors
-		const maxDataValue = Math.max(...data);
-		const scaleFactor = c.height / maxDataValue;
-		
-		// Draw the sparkline
-		ctx.beginPath();
-		ctx.moveTo(0, c.height - data[0] * scaleFactor);
-		for (let i = 1; i < data.length; i++) {
-			const x = (c.width / (data.length - 2)) * i; // changed from (data.length - 1)
-			const y = c.height - data[i] * scaleFactor;
-			const prevX = (c.width / (data.length - 2)) * (i - 1); // changed from (data.length - 1)
-			const prevY = c.height - data[i - 1] * scaleFactor;
-			const cpx = (prevX + x) / 2;
-			const cpy = (prevY + y) / 2;
-			
-			ctx.quadraticCurveTo(prevX, prevY, cpx, cpy);
-		}
-		
-		let gradient = ctx.createLinearGradient(0, 0, 200, 0);
-		gradient.addColorStop(0, 'rgb(63, 70, 143)');
-		gradient.addColorStop(1, 'rgb(219, 184, 100)');
-		ctx.strokeStyle = gradient;
-		
-		ctx.lineWidth = 1;
-		ctx.stroke();
-
-		// Draw left border
-		ctx.beginPath();
-		ctx.strokeStyle = 'rgb(63, 70, 143)';
-		ctx.lineWidth = 2;
-		ctx.moveTo(0, 0);
-		ctx.lineTo(0, $height);
-		ctx.stroke();
-
-		// Draw top number
-		ctx.lineWidth = 1;
-		ctx.fillStyle = gradient;
-		ctx.font = '16px Arial'; 
-		ctx.textAlign = 'center';
-		ctx.fillText(maxDataValue.toString(), 10, 20); // Adjust position as needed
-
-		// Draw bottom border
-		ctx.beginPath();
-		ctx.moveTo(0, $height);
-		ctx.lineTo($width, $height);
-		ctx.stroke();
-
-		// Draw bottom number
-		ctx.textAlign = 'center';
-		ctx.fillText('0', 10, $height - 10); // Adjust position as needed
-
-	})";
-}
-
 function hex_to_rgb($hex) {
 	if (!preg_match('/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex)) {
 		return false;
@@ -772,4 +671,13 @@ function format_phone($phone) {
 
 function clamp($value, $min, $max) {
 	return max($min, min($max, $value));
+}
+
+function chartjs_js() {
+	global $add_to_foot;
+	return "
+	<script src='https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js'></script>
+  <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js'></script>
+  <script src='/js/chart.inc.js'></script>";
+
 }

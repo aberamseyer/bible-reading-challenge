@@ -10,6 +10,9 @@
     <?= $add_to_head ?>
     <title><?= html($site->data('short_name')) ?><?= $page_title ? " - ".$page_title : ""?></title>
     <style>
+      <?php 
+      $coords = json_decode($site->data('progress_image_coordinates'), true);
+      ?>
       @media(prefers-color-scheme: dark) {
         :root {
           --color-blossom: #ffffff;
@@ -36,7 +39,22 @@
           --color-success: rgb(153, 205, 153); /* currently selected schedule, completed days */
         }
       }
+      .mountain-wrap .emoji {
+        bottom: <?= $coords['1'] ?>%;
+        left: <?= $coords['0'] ?>%;
+      }
     </style>
+    <script>
+      window.COLORS = {
+        primary: '<?= $site->data('color_primary') ?>',
+        secondary: '<?= $site->data('color_secondary') ?>',
+        fade: '<?= $site->data('color_fade') ?>'
+      }
+      <?php
+        echo "window.PROGRESS_X_2 = $coords[2]
+        window.PROGRESS_Y_2 = $coords[3]";
+        ?>
+    </script>
   </head>
   <body>
     <?php if ($me): ?>

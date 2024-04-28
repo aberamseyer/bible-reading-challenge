@@ -201,7 +201,7 @@ echo "
       Primary Color: <input type='color' name='color_primary' value='".rgb_to_hex($site->data('color_primary'))."'> <button type='button'>Example</button>
     </label>
     <label>
-      Secondary Color: <input type='color' name='color_secondary' value='".rgb_to_hex($site->data('color_secondary'))."'> <button type='' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
+      Secondary Color: <input type='color' name='color_secondary' value='".rgb_to_hex($site->data('color_secondary'))."'> <button type='button' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
     </label>
     <label>
       Faded Color ".help('The color of buttons when hovered over').": <input type='color' name='color_fade' value='".rgb_to_hex($site->data('color_fade'))."'> <button type='button' style='background-color: var(--color-fade); border-color: var(--color-fade);'>Example</button>
@@ -246,7 +246,7 @@ echo "
       </select>
     </label>
     <label>
-    Time zone ".help('What time zone do you live in? Please select appropriately based on whether where you are observes Daylight Savings Time or not.')."
+    Time zone ".help('What time zone do you live in? Please select appropriately based on whether where your location observes Daylight Savings Time or not.')."
       <select name='time_zone_id'>";
       $timezones = timezone_identifiers_list(DateTimeZone::PER_COUNTRY, 'US');
       sort($timezones);
@@ -265,7 +265,7 @@ echo "
   <fieldset>
     <legend>Image Management</legend>
     <label>
-    Upload a new photo here to use as a logo or anything else. PNG files are best:
+    Upload photos here to use as logos or anything else. PNG files are best:
       <div>
         <small>
         Logos should be: 1033px by 404px<br>
@@ -290,7 +290,7 @@ echo "
       </thead>
       <tbody>
       ";
-foreach($db->$db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
+foreach($db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
   $logo_disabled = $site->data('logo_image_id') == $image['id']? 'disabled' : '';
   $login_disabled = $site->data('login_image_id') == $image['id'] ? 'disabled' : '';
   $progress_disabled = $site->data('progress_image_id') == $image['id'] ? 'disabled' : '';
@@ -308,7 +308,7 @@ foreach($db->$db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $
           <button type='submit' name='set_progress' value='1' $progress_disabled>Set Progress Photo</button>
           <button type='submit' name='set_favico' value='1' $favico_disabled>Set Favico Photo</button>
           <button type='submit' name='delete_photo' value='1' $delete_disabled onclick='return confirm(`Are you sure you want to delete this photo?`)'>
-            Delete Photo".($delete_disabled ? ' '.help("This photo is being used and can't be deleted") : '')."
+            Delete Photo".($delete_disabled ? ' '.help("This photo is being used and cannot be deleted") : '')."
           </button>
         </small>
       </form>
@@ -326,7 +326,7 @@ echo "      </tbody>
       $coords = json_decode($site->data('progress_image_coordinates'), true) ?: [0,0,0,0];
       echo "
       <form id='coord-controls' method='post'>
-        <small>Use arrow keys to adjust beginning and ending positions of emoji progress. They will go from ▶️ to ⏹️</small>
+        <small>Use arrow keys to adjust beginning and ending positions of emoji progress. They will move from ▶️ to ⏹️ on the <a target='_blank' href='/profile'>\"Profile\"</a> page</small>
         <div class='two-columns'>
           <div>
             <label>Begin x
@@ -355,6 +355,8 @@ echo "      </tbody>
           <img src='".$site->resolve_img_src('progress')."' class='mountain'>
         </div>
         <button type='submit'>Save Positions</button>
+      </form>";
+      $add_to_foot .= "
         <script>
           const coordInputs = document.querySelectorAll('#coord-controls input')
           const updatePositions = () => {
@@ -365,9 +367,7 @@ echo "      </tbody>
           }
           coordInputs.forEach(input => input.addEventListener('change', updatePositions))
           updatePositions()
-        </script>
-      </form>
-      ";
+        </script>";
     }
 echo "  </fieldset>
 </div>";
@@ -380,14 +380,14 @@ echo "
     <h4>The following values are not editable</h4>
     <h5><small>Contact Abe (<a href='mailto:abe@ramseyer.dev?subject=Update%20Site%20Configuration&body=I%20need%20help%20updating%20the%20site%20configuration%20for%20".$site->data('site_name').".'>abe@ramseyer.dev</a>) if you think they need to be changed</small></h5>
     <label>
-    <div><small>Ensure you have a DNS (A or CNAME) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
+    <div><small>Ensure you have a DNS (A, or CNAME for a subdomain) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
     Site Domain ".help('The url in the address bar the students go to')." <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' readonly='true'>
     </label>
     <label>
     Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' readonly='true'>
     </label>
     <label>
-    <div><small>Ensure you have a DNS (A or CNAME) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
+    <div><small>Ensure you have a DNS (A, or CNAME for a subdomain) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
     Socket Server Domain ".help('The url the socket server connects to')." <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' readonly='true'>
     </label>
     <label>

@@ -152,7 +152,7 @@
     }
     else {
       // all schedules summary
-      $schedules = $db->$db->select("SELECT * FROM schedules WHERE site_id = ".$site->ID." ORDER BY active DESC, start_date DESC");
+      $schedules = $db->select("SELECT * FROM schedules WHERE site_id = ".$site->ID." ORDER BY active DESC, start_date DESC");
       echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
       <p>Click a Schedule's name to edit its start and end dates</p>";
       echo "<table>
@@ -194,7 +194,7 @@
         </tbody>
       </table>";
 
-      echo "
+      $add_to_foot .= "
       <script src='/js/tableSort.js'></script>
       <script src='/js/schedules.js'></script>";
     }

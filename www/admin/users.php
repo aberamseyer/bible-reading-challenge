@@ -87,46 +87,15 @@ if ($_GET['user_id'] &&
   echo "<p>
   <div class='two-columns'>
     <div>
-    <h6 class='text-center'>Milestones</h6>
-    <ul>";
-    $total_words_in_schedule = total_words_in_schedule($schedule['id']);
-    $threshholds = [];
-    for($i = 1; $i <= 100; $i++) {
-      $threshholds[ $i ] = floor($total_words_in_schedule / 100 * $i);
-    }
-    $milestones = [];
-    $read_dates = $db->select("
-      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') date, c.word_count
-      FROM read_dates rd
-      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-      JOIN JSON_EACH(sd.passage_chapter_ids)
-      JOIN chapters c ON c.id = value
-      WHERE sd.schedule_id = $schedule[id] and rd.user_id = $user[id]
-      ORDER BY timestamp");
-    $sum = 0;
-    foreach($read_dates as $rd) {
-      $sum += (int)$rd['word_count'];
-      foreach ($threshholds as $thresh => $words) {
-        if ($sum >= (int)$words && !$milestones[ $thresh ]) {
-          $dt = new Datetime($rd['date']);
-          $milestones [ $thresh ] = $dt->format('Y-m-d');
-        }
-      }
-    }
-    echo "<canvas data-graph='".json_encode($milestones)."' id='milestone-chart' width='400'></canvas>";
-    // foreach($milestones as $thresh => $ms) {
-    //   echo "<li>Reached $thresh% on: <b>".$ms."</b></li>";
-    // }
-  echo "  
-        </ul>
-      </div>
+      <h6 class='text-center'>Progress</h6>
+     ".$site->progress_canvas($user['id'], $schedule['id'])."
+    </div>
     <div>
-      <h6 class='text-center'>Days read each week</h6>";
-    echo $site->weekly_progress_canvas($user['id'], $schedule);
-    // echo "<script>".weekly_progress_js(300, 150)."</script>";
-  echo "</div>
-  </div>";
-  echo "<form method='post'>
+      <h6 class='text-center'>Days read each week</h6>
+      ".$site->weekly_progress_canvas($user['id'], $schedule)."
+    </div>
+  </div>
+  <form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
     <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
     <div>
@@ -151,7 +120,10 @@ if ($_GET['user_id'] &&
   </form> ";
   echo "<h5>Progress</h5>";
   echo generate_schedule_calendar($schedule);
-  echo "<script>
+  $add_to_foot .= chartjs_js();
+  $add_to_foot .= "
+  <script src='/js/user.js'></script>
+  <script>
     const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
     fetch(`?get_dates=1&user_id=".$user['id']."`).then(rsp => rsp.json())
     .then(data => {
@@ -350,7 +322,6 @@ else {
       </tbody>
     </table>
   </div>";
-  // echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
     echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
@@ -358,11 +329,11 @@ else {
   else {
     echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
+
+  $add_to_foot .= chartjs_js()."
+  <script src='/js/tableSort.js'></script>
+  <script src='/js/users.js'></script>";
 }
 
-echo "
-<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js'></script>
-<script src='/js/tableSort.js'></script>
-<script src='/js/users.js'></script>";
+
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

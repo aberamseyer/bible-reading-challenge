@@ -49,3 +49,8 @@ function toggleMountains() {
   })
 }
 toggleMountains()
+
+document.querySelectorAll('.progress-canvas').forEach(canvas => {
+  const progressData = JSON.parse(canvas.dataset.graph)
+  initProgressChart(canvas, Object.values(progressData), Object.keys(progressData), true)
+})

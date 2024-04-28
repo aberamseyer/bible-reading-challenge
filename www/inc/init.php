@@ -29,7 +29,7 @@ if ($me) {
   ], 'id = '.$my_id);
 }
 $staff = $me['staff'];
-$schedule =$site->get_active_schedule();
+$schedule = $site->get_active_schedule();
 
 if (!$insecure && !$me) {
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];

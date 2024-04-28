@@ -174,7 +174,7 @@
   </div>";
   echo generate_schedule_calendar($calendar_sched, true);
 
-  echo "
+  $add_to_foot .= "
   <script>
     const CALENDAR_ID = ".$calendar_sched['id']."
     const BOOK_CHAPTERS = ".json_encode($book_chapters)."

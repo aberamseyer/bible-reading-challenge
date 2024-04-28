@@ -94,7 +94,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-size="large"
         data-logo_alignment="left">
       </div>
-      <script src="https://accounts.google.com/gsi/client" async></script>
+      <?php $add_to_foot .= '<script src="https://accounts.google.com/gsi/client" async></script>'; ?>
     </div>
     <div></div>
   </div>

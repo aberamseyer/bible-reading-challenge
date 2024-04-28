@@ -45,26 +45,24 @@ class Site extends SiteRegistry {
   public readonly string $ID;
 
   private array $data;
-  private \SQLite3 $db;
+  private Database $db;
   private array $env;
 
   private \Email\MailSender $ms;
 
   protected function __construct($id)
   {
-    $this->db = new \SQLite3(DB_FILE);
-    $this->db->busyTimeout(250);
+    $this->db = Database::get_instance();
     // either a passed $id gets a specific site, or we default to the site that matches the server HOST value
     if ($id) {
-      $stmt = $this->db->prepare('SELECT * FROM sites WHERE enabled = 1 AND id =:id LIMIT 1');
+      $stmt = $this->db->get_db()->prepare('SELECT * FROM sites WHERE enabled = 1 AND id =:id LIMIT 1');
       $stmt->bindValue(':id', $id);
     }
     else {
-      $stmt = $this->db->prepare('SELECT * FROM sites WHERE ENABLED = 1 AND domain_www = :domain OR domain_www_test = :domain LIMIT 1');
+      $stmt = $this->db->get_db()->prepare('SELECT * FROM sites WHERE ENABLED = 1 AND domain_www = :domain OR domain_www_test = :domain LIMIT 1');
       $stmt->bindValue(':domain', $_SERVER['HTTP_HOST']);
     }
-    $this->data = $this->db->querySingle($stmt->getSQL(true), true);
-    $this->db->close();
+    $this->data = $this->db->get_db()->querySingle($stmt->getSQL(true), true);
 
     $this->ID = $this->data('id');
 
@@ -127,7 +125,7 @@ class Site extends SiteRegistry {
 
 	public function get_active_schedule()
   {
-		return $db->row("SELECT * FROM schedules WHERE site_id = ".$this->ID." AND active = 1");
+		return $this->db->row("SELECT * FROM schedules WHERE site_id = ".$this->ID." AND active = 1");
 	}
 
   public function all_users($stale = false) {
@@ -149,20 +147,8 @@ class Site extends SiteRegistry {
   }
 
   public function mountain_for_emojis($emojis, $my_id = 0, $hidden = false)
-  {
-    $coords = json_decode($this->data('progress_image_coordinates'), true);
-  
+  {  
     echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
-    echo "<style>
-    .mountain-wrap .emoji {
-      bottom: $coords[1]%;
-      left: $coords[0]%;
-    }
-    </style>
-    <script>
-      const PROGRESS_X_2 = $coords[2];
-      const PROGRESS_Y_2 = $coords[3];
-    </script>";
   
     foreach($emojis as $i => $datum) {
       $style = '';
@@ -186,7 +172,7 @@ class Site extends SiteRegistry {
       return '/img/'.$pictures[$type];
     }
     else {
-      $pictures[$type] = $this->data($type.'_image_id') ? $db->col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id')) : '';
+      $pictures[$type] = $this->data($type.'_image_id') ? $this->db->col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id')) : '';
     }
     return '/img/'.$pictures[$type];
   }
@@ -269,25 +255,25 @@ class Site extends SiteRegistry {
 	}
 
 
-function deviation_for_user($user_id, $schedule)
-{
-	$weekly_counts = $this->weekly_counts($user_id, $schedule)['counts'];
-	// standard deviation
-	$n = count($weekly_counts);
-	if ($n === 0) {
-		return null;
-	}
-	$mean = array_sum($weekly_counts) / $n;
-	$variance = 0.0;
-	foreach ($weekly_counts as $val) {
-			$variance += pow($val - $mean, 2);
-	}
-	$variance /= $n;
+  public function deviation_for_user($user_id, $schedule)
+  {
+    $weekly_counts = $this->weekly_counts($user_id, $schedule)['counts'];
+    // standard deviation
+    $n = count($weekly_counts);
+    if ($n === 0) {
+      return null;
+    }
+    $mean = array_sum($weekly_counts) / $n;
+    $variance = 0.0;
+    foreach ($weekly_counts as $val) {
+        $variance += pow($val - $mean, 2);
+    }
+    $variance /= $n;
 
-	return round(sqrt($variance), 3);
-}
+    return round(sqrt($variance), 3);
+  }
 
-  function weekly_progress_canvas($user_id, $schedule)
+  public function weekly_progress_canvas($user_id, $schedule, $size=400)
   {
     $counts = $this->weekly_counts($user_id, $schedule);
     $week_starts = array_map(function($value) {
@@ -296,10 +282,10 @@ function deviation_for_user($user_id, $schedule)
       return date('Y-m-d', strtotime($year.'-01-01 +'.(intval($week)*7).' days'));
     }, $counts['week']);
     $data = json_encode(array_combine($week_starts, $counts['counts']));
-    return "<canvas data-graph='$data' id='weekly-counts' width='400'></canvas>";
+    return "<canvas data-graph='$data' class='weekly-counts-canvas' width='$size'></canvas>";
   }
 
-  function weekly_counts($user_id, $schedule)
+  public function weekly_counts($user_id, $schedule)
   {
     $start = new \DateTime($schedule['start_date']);
     $end = new \DateTime($schedule['end_date']);
@@ -341,5 +327,43 @@ function deviation_for_user($user_id, $schedule)
         'counts' => array_column($counts, 'count'),
         'start_of_week' => array_column($counts, 'start_of_week')
       ];
+  }
+
+  public function progress_canvas($user_id, $schedule_id, $size=400)
+  {
+    $progress = $this->progress($user_id, $schedule_id);
+    return "<canvas data-graph='".json_encode($progress)."' class='progress-canvas' width='$size'></canvas>";
+  }
+
+  public function progress($user_id, $schedule_id)
+  {   
+    $total_words_in_schedule = total_words_in_schedule($schedule_id);
+
+    $threshholds = [];
+    for($i = 1; $i <= 100; $i++) {
+      $threshholds[ $i ] = floor($total_words_in_schedule / 100 * $i);
+    }
+
+    $progress = [];
+    $read_dates = $this->db->select("
+      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, c.word_count
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      JOIN JSON_EACH(sd.passage_chapter_ids)
+      JOIN chapters c ON c.id = value
+      WHERE sd.schedule_id = $schedule_id and rd.user_id = $user_id
+      ORDER BY timestamp");
+    
+      $sum = 0;
+    foreach($read_dates as $rd) {
+      $sum += (int)$rd['word_count'];
+      foreach ($threshholds as $thresh => $words) {
+        if ($sum >= (int)$words && !$progress[ $thresh ]) {
+          $dt = new \Datetime($rd['date']);
+          $progress [ $thresh ] = $dt->format('Y-m-d');
+        }
+      }
+    }
+    return $progress;
   }
 }

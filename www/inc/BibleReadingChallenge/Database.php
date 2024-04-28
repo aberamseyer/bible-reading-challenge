@@ -27,7 +27,7 @@ class Database {
 		$options = array_merge([
 			"source" => $_POST
 		], $options);
-		return map_assoc(function ($col, $val) use ($options) {
+		return $this->map_assoc(function ($col, $val) use ($options) {
 
 			// Was a value provided for this column ("col" => "val") or not ("col")?
 			$no_value_provided = is_int($col);
@@ -45,7 +45,7 @@ class Database {
 				$col = substr($col, 2);
 
 			// Keep track of whether each modifier is present (true) or not
-			$modifiers = map_assoc(function ($name, $symbol) use ($matches) {
+			$modifiers = $this->map_assoc(function ($name, $symbol) use ($matches) {
 				return [$name => $matches && $matches[1] == $symbol];
 			}, $modifiers);
 
@@ -70,7 +70,7 @@ class Database {
 
   public function get_db()
   {
-    return $this->$db;
+    return $this->db;
   }
 
 	public function query ($query, $return = "")
@@ -81,9 +81,9 @@ class Database {
 			debug($query);
 		}
 		if ($return == "insert_id")
-			return $db->lastInsertRowID();
+			return $this->db->lastInsertRowID();
 		if ($return == "num_rows")
-			return $db->changes();
+			return $this->db->changes();
 		return $result;
 	}
 
@@ -175,5 +175,24 @@ class Database {
 			["\\\\", "\\_", "\\%"],
 			$string
 		));
+	}
+
+	private function map_assoc (callable $callback, array $arr) {
+		$ret = [];
+		foreach($arr as $k => $v) {
+			$u =
+				$this->get_num_params($callback) == 1
+					? $callback($v)
+					: $callback($k, $v);
+			$ret[key($u)] = current($u);
+		}
+		return $ret;
+	}
+
+  private function get_num_params (callable $callback) {
+		try {
+			return (new \ReflectionFunction($callback))->getNumberOfParameters();
+		}
+		catch (\ReflectionException $e) {}
 	}
 }

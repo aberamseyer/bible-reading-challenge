@@ -59,7 +59,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 if ($schedule_completed) {
   echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
-  echo "
+  $add_to_foot .= "
     <script src='https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js'></script>
     <script>
       const jsConfetti = new JSConfetti()
@@ -146,7 +146,7 @@ if ($scheduled_reading) {
 echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
 
 if ($scheduled_reading) {
-  echo "<style>
+  $add_to_foot .= "<style>
     article {
       position: relative;
     }

@@ -48,7 +48,6 @@ $words_read = words_read($me, $schedule['id']);
 
 $total_words_in_challenge = total_words_in_schedule($schedule['id']);
 
-$canvas_width = 225;
 echo "</div>
 <div class='two-columns'>
   <div>
@@ -97,11 +96,16 @@ echo "
   $site->mountain_for_emojis($emojis, $me['id']);
 
   echo "<p>
-  <h6 class='text-center'>Days read each week</h6>
-  <div class='center'>";
-  echo $site->weekly_progress_canvas($me['id'], $schedule);
-  echo "<script>".weekly_progress_js(300, 150)."</script>";
-  echo "</div>
+  <div class='two-columns'>
+    <div>
+      <h6 class='text-center'>Progress</h6>
+      ".$site->progress_canvas($me['id'], $schedule['id'])."
+    </div>
+    <div>
+      <h6 class='text-center'>Days read each week</h6>
+      ".$site->weekly_progress_canvas($me['id'], $schedule)."
+    </div>
+  </div>
   </p>";
 
 echo "<h2>Edit Profile</h2>";
@@ -120,6 +124,7 @@ echo "<form method='post'>
 </form>";
 
 
-echo "<script src='/js/profile.js'></script>";
+$add_to_foot .= chartjs_js()."
+  <script src='/js/profile.js'></script>";
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
