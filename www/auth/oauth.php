@@ -15,10 +15,10 @@ else {
     $_SESSION['error'] = "Problem with Google Sign in";
   } else {
     $payload['email'] = strtolower($payload['email']);
-    $user_row = row("SELECT * FROM users WHERE email = '".db_esc($payload['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
-      $id = insert("users", [ 
+      $id = $db->insert("users", [ 
         'site_id' => $site->ID,
         'uuid' => uniqid(),
         'name' => $payload['name'],
@@ -35,7 +35,7 @@ else {
       // account exists
       $id = $user_row['id'];
       if (!$user_row['email_verified']) {
-        update('users', [
+        $db->update('users', [
           'email_verified' => 1
         ], 'id = '.$user_row['id']);
       }

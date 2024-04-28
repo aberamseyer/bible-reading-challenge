@@ -10,12 +10,12 @@ if ($me) {
 
 // confirm user from email link
 if ($_REQUEST['confirm']) {
-  $user_row = row("SELECT * FROM users WHERE uuid = '".db_esc($_REQUEST['confirm'])."'");
+  $user_row = $db->row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['confirm'])."'");
   if (!$user_row || $user_row['email_verify_token'] != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid confirmation link.";
   }
   else {
-    update("users", [
+    $db->update("users", [
       "email_verified" => 1
     ], "id = ".$user_row['id']);
     redirect("/auth/login");
@@ -33,14 +33,14 @@ else if ($_POST['email']) {
   else if (strlen($_POST['password']) < 8) {
     $_SESSION['error'] = "Password too short.";
   }
-  else if (row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."'")) {
+  else if ($db->row("SELECT * FROM users WHERE email = '".$db->esc($_POST['email'])."'")) {
     $_SESSION['error'] = "Email already registered.";
   }
   else {
     $uuid = uniqid();
     $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
-    insert("users", [ 
+    $db->insert("users", [ 
       'site_id' => $site->ID,
       'uuid' => $uuid,
       'name' => $_POST['name'],

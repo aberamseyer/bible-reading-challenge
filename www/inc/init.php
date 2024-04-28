@@ -10,20 +10,21 @@ require_once "session.php";
 session_name("brc-sessid");
 
 $site = BibleReadingChallenge\Site::get_site();
+$db = BibleReadingChallenge\Database::get_instance();
 
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
 ini_set('session.gc_maxlifetime', SESSION_LENGTH);
 session_set_cookie_params(SESSION_LENGTH, "/", $site->DOMAIN, PROD, true);
-session_set_save_handler(new MySessionHandler(), true);
+session_set_save_handler(new MySessionHandler($db), true);
 session_start();
 
 // GLOBAL VARIABLES
 
 $my_id = (int)$_SESSION['my_id'] ?: 0;
-$me = row("SELECT * FROM users WHERE id = ".(int) $my_id);
+$me = $db->row("SELECT * FROM users WHERE id = ".(int) $my_id);
 if ($me) {
-  update("users", [
+  $db->update("users", [
     'last_seen' => time()
   ], 'id = '.$my_id);
 }

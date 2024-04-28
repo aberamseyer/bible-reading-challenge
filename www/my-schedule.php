@@ -3,7 +3,7 @@
 
   if ($_REQUEST['get_dates']) {
     print_json(
-      select("
+      $db->select("
       SELECT sd.id, sd.date, sd.passage, rd.id read
       FROM schedule_dates sd
       LEFT JOIN (

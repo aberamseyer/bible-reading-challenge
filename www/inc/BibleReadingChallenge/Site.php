@@ -4,7 +4,7 @@ namespace BibleReadingChallenge;
 
 class SiteRegistry
 {
-  private static $sites = [];
+  private static array $sites = [];
 
   protected function __construct()
   {
@@ -127,7 +127,7 @@ class Site extends SiteRegistry {
 
 	public function get_active_schedule()
   {
-		return row("SELECT * FROM schedules WHERE site_id = ".$this->ID." AND active = 1");
+		return $db->row("SELECT * FROM schedules WHERE site_id = ".$this->ID." AND active = 1");
 	}
 
   public function all_users($stale = false) {
@@ -139,7 +139,7 @@ class Site extends SiteRegistry {
       // all users
       $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
     }
-    return select("
+    return $this->db->select("
       SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
       FROM users u
       LEFT JOIN read_dates rd ON rd.user_id = u.id
@@ -186,7 +186,7 @@ class Site extends SiteRegistry {
       return '/img/'.$pictures[$type];
     }
     else {
-      $pictures[$type] = $this->data($type.'_image_id') ? col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id')) : '';
+      $pictures[$type] = $this->data($type.'_image_id') ? $db->col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id')) : '';
     }
     return '/img/'.$pictures[$type];
   }
@@ -216,7 +216,7 @@ class Site extends SiteRegistry {
 			foreach($scheduled_reading['passages'] as $passage) {
 				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
 				$book = $passage['book'];
-				$verses = select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
+				$verses = $this->db->select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
 	
 				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
 
@@ -290,8 +290,13 @@ function deviation_for_user($user_id, $schedule)
   function weekly_progress_canvas($user_id, $schedule)
   {
     $counts = $this->weekly_counts($user_id, $schedule);
-    $data = json_encode($counts['counts']);
-    return "<canvas title='$data' data-graph='$data'></canvas>";
+    $week_starts = array_map(function($value) {
+      // because date_create_from_format can't handle the week number, we do this manually
+      list($year, $week) = explode('-', $value);
+      return date('Y-m-d', strtotime($year.'-01-01 +'.(intval($week)*7).' days'));
+    }, $counts['week']);
+    $data = json_encode(array_combine($week_starts, $counts['counts']));
+    return "<canvas data-graph='$data' id='weekly-counts' width='400'></canvas>";
   }
 
   function weekly_counts($user_id, $schedule)
@@ -303,7 +308,7 @@ function deviation_for_user($user_id, $schedule)
     $days_between = abs(intval($interval->format('%a')));
     $week_count = ceil($days_between / 7);
   
-    $counts = select("
+    $counts = $this->db->select("
       SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
       FROM (
           WITH RECURSIVE week_sequence AS (

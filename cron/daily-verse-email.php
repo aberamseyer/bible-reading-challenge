@@ -8,7 +8,9 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-foreach(cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
+$db = \BibleReadingChallenge\Database::get_instance();
+
+foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $site = BibleReadingChallenge\Site::get_site($site_id);
   $today = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
@@ -25,7 +27,7 @@ foreach(cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   if (!$scheduled_reading) {
     die("nothing to do today!");
   }
-  foreach(select("SELECT id, name, email, trans_pref, last_seen, streak FROM users WHERE site_id = ".$site->ID." AND email_verses = 1") as $user) {
+  foreach($db->select("SELECT id, name, email, trans_pref, last_seen, streak FROM users WHERE site_id = ".$site->ID." AND email_verses = 1") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
     $last_seen_date = new Datetime('@'.$user['last_seen']);
     if ($last_seen_date < $recently) {
@@ -47,7 +49,7 @@ foreach(cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     // total up the words in this day's reading
     $word_length = array_reduce(
       $scheduled_reading['passages'], 
-      fn($acc, $cur) => intval(col("
+      fn($acc, $cur) => intval($db->col("
         SELECT word_count
         FROM chapters
         WHERE id = ".$cur['chapter']['id'])) + $acc);

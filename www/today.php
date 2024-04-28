@@ -3,7 +3,7 @@
 require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
 // this key is used by the websocket client to authenticate as the current user
-update('users', [
+$db->update('users', [
   'websocket_nonce' => $me['websocket_nonce'] = bin2hex(random_bytes(32))
 ], 'id = '.$me['id']);
 
@@ -19,7 +19,7 @@ if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST))
   $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
     ? $_REQUEST['change_email_me']
     : 0;
-  update("users", [
+  $db->update("users", [
     'trans_pref' => $new_trans,
     'email_verses' => $me['email_verses']
   ], "id = ".$my_id);
@@ -43,7 +43,7 @@ $schedule_just_completed = false; // only true on the day we finish the schedule
 // "Done!" clicked
 if ($_REQUEST['done'] && !$today_completed && $scheduled_reading &&
   $_REQUEST['complete_key'] == $scheduled_reading['complete_key']) {
-  insert("read_dates", [
+  $db->insert("read_dates", [
     'user_id' => $my_id,
     'schedule_date_id' => $scheduled_reading['id'],
     'timestamp' => time()
@@ -121,7 +121,7 @@ echo "<div id='date-header'>
 
 if ($scheduled_reading) {
   // how many have read today
-  $total_readers = col("SELECT COUNT(*)
+  $total_readers = $db->col("SELECT COUNT(*)
     FROM read_dates rd
     JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
     WHERE sd.id = ".$scheduled_reading['id']);

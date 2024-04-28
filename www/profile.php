@@ -4,7 +4,7 @@ require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 // edit own profile
 if (isset($_POST['name'])) {
-  $to_change = row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".$my_id);
+  $to_change = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".$my_id);
   if ($to_change) {
     $name = trim($_POST['name']);
     $emoji = trim($_POST['emoji']);
@@ -19,7 +19,7 @@ if (isset($_POST['name'])) {
       $_SESSION['error'] = "Enter exactly 1 character for the emoji";
     }
     else {
-      update("users", [
+      $db->update("users", [
         'name' => $name,
         'emoji' => $emoji
       ], "id = $to_change[id]");
@@ -56,7 +56,7 @@ echo "</div>
     <ul>
       <li>".round($words_read / $total_words_in_challenge * 100, 2)."% Complete</li>
       <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
-      <li>Chapters I've read: ".number_format(col(
+      <li>Chapters I've read: ".number_format($db->col(
         ($chp_qry = 
           "SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
           FROM schedule_dates sd
@@ -69,7 +69,7 @@ echo "</div>
   <div>
     <h5>Cross Challenge Stats</h5>
     <ul>
-      <li>All-club chapters read: ".number_format(col($chp_qry))."</li>
+      <li>All-club chapters read: ".number_format($db->col($chp_qry))."</li>
       <li>All-club words read: ".number_format(words_read())."</li>
     </ul>
   </div>
@@ -77,7 +77,7 @@ echo "</div>
 
 // mountain
 $total_words_in_schedule = total_words_in_schedule($schedule['id']);
-$emojis = select("
+$emojis = $db->select("
   SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
   FROM schedule_dates sd
   JOIN JSON_EACH(passage_chapter_ids)

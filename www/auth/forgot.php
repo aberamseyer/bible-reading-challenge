@@ -15,13 +15,13 @@ if ($_POST['email']) {
     $_SESSION['error'] = "Invalid email.";
   }
   else {
-    $user_row = row("SELECT * FROM users WHERE email = '".db_esc($_POST['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($_POST['email'])."'");
     if ($user_row['forgot_password_expires'] && time() <= date('U', $user_row['forgot_password_expires'])) {
       $_SESSION['error'] = "Email already sent.";
     }
     else if ($user_row) {
       $reset_token = uniqid("", true).uniqid("", true);
-      update("users", [
+      $db->update("users", [
         'forgot_password_token' => $reset_token,
         'forgot_password_expires' => time() + 60 * 60 * 2 // expires in two hours
       ], "id = ".$user_row['id']);
@@ -36,7 +36,7 @@ if ($_POST['email']) {
 }
 else if ($_REQUEST['reset']) {
   // check password reset link
-  $user_row = row("SELECT * FROM users WHERE uuid = '".db_esc($_REQUEST['reset'])."'");
+  $user_row = row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['reset'])."'");
   if (!$user_row || $user_row['forgot_password_token'] != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid reset link.";
   }
@@ -53,7 +53,7 @@ else if ($_REQUEST['reset']) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
-        update("users", [
+        $db->update("users", [
           'password' => password_hash($_POST['password'], PASSWORD_BCRYPT),
           'forgot_password_token' => '',
           'forgot_password_expires' => ''

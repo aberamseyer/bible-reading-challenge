@@ -8,35 +8,36 @@
 
   // all actions from the 'manage schedules' table actions column
   if ($_POST['schedule_id']) {
-    $change_sched = row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['schedule_id']);
+    $change_sched = $db->row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['schedule_id']);
     if ($change_sched) {
       if ($_POST['set_active']) {
-        query("UPDATE schedules SET active = 0 WHERE site_id = ".$site->ID);
-        query("UPDATE schedules SET active = 1 WHERE site_id = ".$site->ID." AND id = $change_sched[id]");
+        $db->query("UPDATE schedules SET active = 0 WHERE site_id = ".$site->ID);
+        $db->query("UPDATE schedules SET active = 1 WHERE site_id = ".$site->ID." AND id = $change_sched[id]");
+        $_SESSION['success'] = "<b>".html($change_sched['name'])."</b> is now the active schedule";
       }
       else if ($_POST['delete']) {
         if ($change_sched['active']) {
           $_SESSION['error'] = "Can't delete the active schedule.";
         }
         else {
-          query("DELETE FROM read_dates WHERE schedule_date_id IN(
+          $db->query("DELETE FROM read_dates WHERE schedule_date_id IN(
             SELECT id FROM schedule_dates WHERE schedule_id = $change_sched[id]
           )");
-          query("DELETE FROM schedule_dates WHERE schedule_id = $change_sched[id]");
-          query("DELETE FROM schedules WHERE site_id = ".$site->ID." AND id  = $change_sched[id]");
+          $db->query("DELETE FROM schedule_dates WHERE schedule_id = $change_sched[id]");
+          $db->query("DELETE FROM schedules WHERE site_id = ".$site->ID." AND id  = $change_sched[id]");
           $_SESSION['success'] = 'Schedule deleted';
           redirect('?');
         }
       }
       else if ($_POST['duplicate']) {
-        $new_id = insert("schedules", [
+        $new_id = $db->insert("schedules", [
           'site_id' => $site->ID,
           'name' => "Copy of ".$change_sched['name'],
           'start_date' => $change_sched['start_date'],
           'end_date' => $change_sched['end_date'],
           'active' => 0
         ]);
-        query("
+        $db->query("
           INSERT INTO schedule_dates (schedule_id, date, passage)
             SELECT $new_id, date, passage
             FROM schedule_dates WHERE schedule_id = $change_sched[id]");
@@ -65,7 +66,7 @@
         }
         else if (
           ($change_sched['start_date'] != date('Y-m-d', $start_date) || $change_sched['end_date'] != date('Y-m-d', $end_date))
-           && col("
+           && $db->col("
                 SELECT COUNT(*)
                 FROM read_dates rd
                 JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
@@ -73,7 +74,7 @@
           $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
         }
         else {
-          update("schedules", [
+          $db->update("schedules", [
             'name' => $_POST['name'],
             'start_date' => date('Y-m-d', $start_date),
             'end_date' => date('Y-m-d', $end_date)
@@ -81,7 +82,6 @@
           $_SESSION['success'] = "Saved schedule";
         }   
       }
-      redirect("/admin/schedules?edit=".$change_sched['id']);
     }
     redirect();
   }
@@ -95,7 +95,7 @@
       $_SESSION['error'] = "Schedule must have a name.";
     }
     else {
-      $new_id = insert('schedules', [
+      $new_id = $db->insert('schedules', [
         'site_id' => $site->ID,
         'name' => $_POST['name'],
         'start_date' => date('Y-m-d', $start_date),
@@ -132,7 +132,7 @@
         <button type='submit'>Save</button>
       </form>";
     }
-    else if ($edit_sched = row("SELECT * FROM schedules WHERE id = ".(int)$_GET['edit'])) {
+    else if ($edit_sched = $db->row("SELECT * FROM schedules WHERE id = ".(int)$_GET['edit'])) {
       // viewing single schedule
       echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
 
@@ -152,7 +152,7 @@
     }
     else {
       // all schedules summary
-      $schedules = select("SELECT * FROM schedules WHERE site_id = ".$site->ID." ORDER BY active DESC, start_date DESC");
+      $schedules = $db->$db->select("SELECT * FROM schedules WHERE site_id = ".$site->ID." ORDER BY active DESC, start_date DESC");
       echo "<p><button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button></p>
       <p>Click a Schedule's name to edit its start and end dates</p>";
       echo "<table>

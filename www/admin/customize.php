@@ -20,7 +20,7 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
   else {
     $realpath = tempnam(UPLOAD_DIR, "upload-");
     unlink($realpath); // delete bc we're going to move the file there ourself later
-    insert('images', [
+    $db->insert('images', [
       'site_id' => $site->ID,
       'uploaded_by_id' => $me['id'],
       'uploaded_name' => $_FILES['upload']['name'],
@@ -37,7 +37,7 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
 // Pictures handler
 if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POST['set_favico'] || $_POST['delete_photo']) {
   $img_id = (int)$_POST['image_id'];
-  $new_image = row("SELECT id, uploads_dir_filename FROM images WHERE id = $img_id AND site_id = ".$site->ID);
+  $new_image = $db->row("SELECT id, uploads_dir_filename FROM images WHERE id = $img_id AND site_id = ".$site->ID);
   if (!$img_id) {
     $_SESSION['error'] = 'Please provide an image';
   }
@@ -54,7 +54,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
     }
     else {
       unlink(UPLOAD_DIR.$new_image['uploads_dir_filename']);
-      query("DELETE FROM images WHERE id = ".$new_image['id']);
+      $db->query("DELETE FROM images WHERE id = ".$new_image['id']);
       $_SESSION['success'] = "Image deleted";
     }
   }
@@ -66,7 +66,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
         // if the site has this image set
         if ($site->data($key.'_image_id')) {
           // determine if this photo is being used as something else before deleting it
-          $img_to_del = row("
+          $img_to_del = $db->row("
             SELECT id, uploads_dir_filename FROM images
             WHERE id = ".$site->data($key.'_image_id'));
           $valid = true;
@@ -82,7 +82,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
         // copy the new image into the public serve directory from the uploads folder
         copy(UPLOAD_DIR.$new_image['uploads_dir_filename'], IMG_DIR.$new_image['uploads_dir_filename']);
         // activate the new image
-        update('sites', [ $key.'_image_id' => $img_id ], 'id = '.$site->ID);
+        $db->update('sites', [ $key.'_image_id' => $img_id ], 'id = '.$site->ID);
         $_SESSION['success'] = ucwords($key).' image updated';
         break;
       }
@@ -98,7 +98,7 @@ if ($_POST['x_1'] !== null && $_POST['y_2'] !== null && $_POST['x_2'] !== null &
   $x2 = clamp((float)$_POST['x_2'], -2, 102);
   $y2 = clamp((float)$_POST['y_2'], -2, 102);
 
-  update('sites', [
+  $db->update('sites', [
     'progress_image_coordinates' => "[$x1,$y1,$x2,$y2]"
   ], 'id = '.$site->ID);
   $_SESSION['success'] = 'Progress image coordinates updated';
@@ -121,7 +121,7 @@ if ($_POST['color_primary'] && $_POST['color_secondary']) {
     $_SESSION['error'] = $error;
   }
   else {
-    update('sites', [
+    $db->update('sites', [
       'color_primary' => $colors['primary'],
       'color_secondary' => $colors['secondary'],
       'color_fade' => $colors['fade']
@@ -166,7 +166,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
     $_SESSION['error'] = 'Invalid time zone';
   }
   else {
-    update('sites', [
+    $db->update('sites', [
       'site_name' => $site_name,
       'short_name' => $short_name,
       'contact_name' => $contact_name,
@@ -290,7 +290,7 @@ echo "
       </thead>
       <tbody>
       ";
-foreach(select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
+foreach($db->$db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
   $logo_disabled = $site->data('logo_image_id') == $image['id']? 'disabled' : '';
   $login_disabled = $site->data('login_image_id') == $image['id'] ? 'disabled' : '';
   $progress_disabled = $site->data('progress_image_id') == $image['id'] ? 'disabled' : '';
@@ -307,7 +307,9 @@ foreach(select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image) {
           <button type='submit' name='set_login' value='1' $login_disabled>Set Login Photo</button>
           <button type='submit' name='set_progress' value='1' $progress_disabled>Set Progress Photo</button>
           <button type='submit' name='set_favico' value='1' $favico_disabled>Set Favico Photo</button>
-          <button type='submit' name='delete_photo' value='1' $delete_disabled onclick='return confirm(`Are you sure you want to delete this photo?`)'>Delete Photo</button>
+          <button type='submit' name='delete_photo' value='1' $delete_disabled onclick='return confirm(`Are you sure you want to delete this photo?`)'>
+            Delete Photo".($delete_disabled ? ' '.help("This photo is being used and can't be deleted") : '')."
+          </button>
         </small>
       </form>
     </td>
@@ -393,7 +395,7 @@ echo "
     </label>
     <label>
     <details>
-      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google')." </summary>
+      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google. DO NOT share these with anyone else.')." </summary>
       <pre>".html($site->data('env'))."</pre>
     </details>
     </label>

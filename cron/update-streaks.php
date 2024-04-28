@@ -8,9 +8,9 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = new SQLite3(DB_FILE);
+$db = \BibleReadingChallenge\Database::get_instance();
 
-foreach(cols("SELECT id FROM sites") as $site_id) {
+foreach($db->cols("SELECT id FROM sites") as $site_id) {
   $site = Site::get_site($site_id);
   $dt = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to update the sites who's local time is 3:50 AM
@@ -24,16 +24,16 @@ foreach(cols("SELECT id FROM sites") as $site_id) {
   $scheduled_reading = get_reading($yesterday, $schedule['id']);
 
   if ($scheduled_reading) {
-    foreach(select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {
+    foreach($db->select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {
       $current_streak = $user['streak'];
       
-      $read_yesterday = col("
+      $read_yesterday = $db->col("
         SELECT id
         FROM read_dates
         WHERE user_id = $user[id] AND
           DATE(timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') = '".$yesterday->format('Y-m-d')."'"); // irrespective of schedule within a site
 
-      update('users', [
+      $db->update('users', [
         'streak' => $read_yesterday
           ? $user['streak'] + 1
           : 0, 

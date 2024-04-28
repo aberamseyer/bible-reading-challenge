@@ -3,13 +3,17 @@ require_once "functions.php";
 
 class MySessionHandler implements SessionHandlerInterface
 {
-    private $s_db;
+    private BibleReadingChallenge\Database $s_db;
     private const DATE_FORMAT = 'Y-m-d H:i:s';
 
+    public function __construct(BibleReadingChallenge\Database $db)
+    {
+      $this->s_db = $db;
+    }
+    
     public function open($savePath, $sessionName): bool
     {
-        $this->s_db = db();
-        return true;
+      return true;
     }
 
     public function close(): bool
@@ -20,33 +24,33 @@ class MySessionHandler implements SessionHandlerInterface
 
     public function read($id): string|false
     {
-      $data = col("
+      $data = $this->s_db->col("
         SELECT data
         FROM sessions
-        WHERE id = '".db_esc($id, $this->s_db)."'", $this->s_db);
+        WHERE id = '".$this->s_db->esc($id)."'");
       return $data ?: '';
     }
 
     public function write($id, $data): bool
     {
-      query("
+      $this->s_db->query("
         INSERT INTO sessions (data, id, last_updated)
-        VALUES ('".db_esc($data, $this->s_db)."', '".db_esc($id, $this->s_db)."', '".date(MySessionHandler::DATE_FORMAT)."')
+        VALUES ('".$this->s_db->esc($data, $this->s_db)."', '".$this->s_db->esc($id)."', '".date(MySessionHandler::DATE_FORMAT)."')
         ON CONFLICT (id) DO UPDATE
         SET data=excluded.data, last_updated=excluded.last_updated
-      ", "", $this->s_db);
+      ", "");
       return true;
     }
 
     public function destroy($id): bool
     {
-      query("DELETE FROM sessions WHERE id = '".db_esc($id, $this->s_db)."'", $this->s_db);
+      $this->s_db->query("DELETE FROM sessions WHERE id = '".$this->s_db->esc($id)."'");
       return true;
     }
 
     public function gc($maxlifetime): int|false
     {
-      $rows_deleted = query("DELETE FROM sessions WHERE last_updated < '".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime)."'", "num_rows", $this->s_db);
+      $rows_deleted = $this->s_db->query("DELETE FROM sessions WHERE last_updated < '".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime)."'", "num_rows");
       error_log('Cleaned up '.$rows_deleted.' sessions.');
       return true;
     }

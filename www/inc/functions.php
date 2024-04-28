@@ -3,171 +3,8 @@
 require_once __DIR__."/MailSender/MailSender.php";
 require_once __DIR__."/MailSender/MailSenderSES.php";
 require_once __DIR__."/MailSender/MailSenderSendgrid.php";
-require_once __DIR__."/Site.php";
-
-	function db($alt_db = null) {
-		static $db;
-		if (!$db && !$alt_db) {
-			$db = new SQLite3(DB_FILE);
-			$db->busyTimeout(250);
-		}
-		return $alt_db ?: $db;
-	}
-	
-	function query ($query, $return = "", $db = null) {
-    if ($db = null) $db = db();
-
-		$db = db($db);
-		$result = $db->query($query);
-		if (!$result) {
-			echo "<p><b>Warning:</b> A sqlite3 error occurred: <b>" . $db->lastErrorMsg() . "</b></p>";
-			debug($query);
-		}
-		if ($return == "insert_id")
-			return $db->lastInsertRowID();
-		if ($return == "num_rows")
-			return $db->changes();
-		return $result;
-	}
-
-	function select ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$rows = query($query, null, $db);
-		for ($result = []; $row = $rows->fetchArray(); $result[] = $row) {
-			foreach(array_keys($row) as $key)
-				if (is_numeric($key))
-					unset($row[$key]);
-		}
-		return $result;
-	}
-
-	function row ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$results = select($query, $db);
-		return $results[0];
-	}
-
-	function col ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$row = query($query, null, $db)->fetchArray();
-		return $row ? $row[0] : null;
-	}
-
-	function cols ($query, $db = null) {
-    if ($db = null) $db = db();
-    
-		$rows = query($query, null, $db);
-		if ($rows) {
-			$results = [];
-			while ($row = $rows->fetchArray(SQLITE3_NUM))
-				$results[] = $row[0];
-			return $results;
-		}
-		return null;
-	}
-
-	function format_db_vals ($db_vals, array $options = []) {
-		$options = array_merge([
-			"source" => $_POST
-		], $options);
-		return map_assoc(function ($col, $val) use ($options) {
-
-			// Was a value provided for this column ("col" => "val") or not ("col")?
-			$no_value_provided = is_int($col);
-			if ($no_value_provided)
-				$col = $val;
-
-			// The modifiers should not contain regex special characters. If they do, then we will have to use preg_quote().
-			$modifiers = [
-				"nullable" => "__",
-				"literal" => "##"
-			];
-
-			// Check for column modifiers
-			if (preg_match("/^(" . implode("|", $modifiers) . ")/", $col,$matches))
-				$col = substr($col, 2);
-
-			// Keep track of whether each modifier is present (true) or not
-			$modifiers = map_assoc(function ($name, $symbol) use ($matches) {
-				return [$name => $matches && $matches[1] == $symbol];
-			}, $modifiers);
-
-			$val = $no_value_provided ? $options["source"][$col] : $val;
-			// If it's not literal, then transform the value
-			if (!$modifiers["literal"])
-				$val = $modifiers["nullable"] && ($val === null || $val === false || $val === 0 || !strlen($val))
-					? "NULL"
-					: ("'" . db_esc($val) . "'");
-
-			return [ $col => $val ];
-		}, $db_vals);
-	}
-
-	function get_num_params (callable $callback) {
-		try {
-			return (new ReflectionFunction($callback))->getNumberOfParameters();
-		}
-		catch (ReflectionException $e) {}
-	}
-
-	function map_assoc (callable $callback, array $arr) {
-		$ret = [];
-		foreach($arr as $k => $v) {
-			$u =
-				get_num_params($callback) == 1
-					? $callback($v)
-					: $callback($k, $v);
-			$ret[key($u)] = current($u);
-		}
-		return $ret;
-	}
-
-	/**
-	 * @param $table
-	 * @param $vals	array	An associative array of columns and values to update.
-	 * 						Each value will be converted to a string UNLESS its
-	 * 						corresponding column name begins with "__", in which
-	 *						case its literal value will be used.
-	 * @param $where
-	 */
-	function update ($table, $vals, $where, $db = null) {
-    if ($db = null) $db = db();
-
-		$SET = array();
-		foreach (format_db_vals($vals) as $col => $val) {
-			$col = preg_replace("/^__/", "", $col, 1, $use_literal);
-			$SET[] = "$col = $val";
-		}
-
-		query("
-			UPDATE $table
-			SET " . implode(",", $SET) . "
-			WHERE $where
-		", null, $db);
-	}
-
-	function insert ($table, array $db_vals, array $options = [], $db = null) {
-    if ($db = null) $db = db();
-
-		$db_vals = format_db_vals($db_vals, $options);
-		return query("
-			INSERT INTO $table (" . implode(", ", array_keys($db_vals)) . ")
-			VALUES (" . implode(", ", array_values($db_vals)) . ")
-		", "insert_id", $db);
-	}
-
-	function num_rows ($query, $db = null) {
-    if ($db = null) $db = db();
-
-		$i = 0;
-		$res = query($query, null, $db);
-		while ($res->fetchArray(SQLITE3_NUM))
-			$i++;
-		return $i;
-	}
+require_once __DIR__."/BibleReadingChallenge/Site.php";
+require_once __DIR__."/BibleReadingChallenge/Database.php";
 
 	function html ($str, $lang_flag = ENT_HTML5) {
 		return htmlspecialchars($str, ENT_QUOTES|$lang_flag);
@@ -220,19 +57,6 @@ require_once __DIR__."/Site.php";
 			die;
 	}
 
-	function db_esc ($string, $alt_db = null) {
-		$db = db($alt_db);
-		return $db->escapeString($string);
-	}
-
-	function db_esc_like ($string, $alt_db = null) {
-		return db_esc(str_replace(
-			["\\", "_", "%"],
-			["\\\\", "\\_", "\\%"],
-			$string
-		), $alt_db);
-	}
-
 	function redirect($url = false) {
 		header("Location: ".($url ?: $_SERVER['REDIRECT_URL']));
 		die;
@@ -251,28 +75,27 @@ require_once __DIR__."/Site.php";
 	}
 
 	function cors() {
-    
-	    // Allow from any origin
-	    if (isset($_SERVER['HTTP_ORIGIN'])) {
-	        // Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
-	        // you want to allow, and if so:
-	        header("Access-Control-Allow-Origin: $_SERVER[HTTP_ORIGIN]");
-	        header('Access-Control-Allow-Credentials: true');
-	        header('Access-Control-Max-Age: 86400');    // cache for 1 day
-	    }
-	    
-	    // Access-Control headers are received during OPTIONS requests
-	    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-        
-	        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
-	            // may also be using PUT, PATCH, HEAD etc
-	            header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-	        
-	        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-	            header("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
-	    
-	        die;
-	    }
+		// Allow from any origin
+		if (isset($_SERVER['HTTP_ORIGIN'])) {
+				// Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
+				// you want to allow, and if so:
+				header("Access-Control-Allow-Origin: $_SERVER[HTTP_ORIGIN]");
+				header('Access-Control-Allow-Credentials: true');
+				header('Access-Control-Max-Age: 86400');    // cache for 1 day
+		}
+		
+		// Access-Control headers are received during OPTIONS requests
+		if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+			
+				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+						// may also be using PUT, PATCH, HEAD etc
+						header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+				
+				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+						header("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
+		
+				die;
+		}
 	}
 
 	function curl_post_json($url, $headers, $arr) {
@@ -526,8 +349,9 @@ require_once __DIR__."/Site.php";
 			}
 			
 			// match the book and chapters to the database
-			$book_row = row("SELECT * FROM books WHERE name = '".db_esc($book_str)."'");
-			foreach(select("
+			$db = \BibleReadingChallenge\Database::get_instance();
+			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book_str)."'");
+			foreach($db->select("
 				SELECT *
 				FROM chapters
 				WHERE book_id = $book_row[id]
@@ -563,7 +387,8 @@ require_once __DIR__."/Site.php";
 			return $schedules[$schedule_id];
 		}
 
-		$schedule_dates = select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
+		$db = \BibleReadingChallenge\Database::get_instance();
+		$schedule_dates = $db->select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
 		$days = [];
 		foreach ($schedule_dates as $sd) {			
 			$days[] = [
@@ -580,11 +405,12 @@ require_once __DIR__."/Site.php";
 	}
 
 	function schedule_completed($user_id, $schedule_id) {
-		return col("SELECT COUNT(*)
+		$db = \BibleReadingChallenge\Database::get_instance();
+		return $db->col("SELECT COUNT(*)
 			FROM read_dates rd
 			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
 			WHERE user_id = $user_id AND schedule_id = $schedule_id")
-			== col("SELECT COUNT(*)
+			== $db->col("SELECT COUNT(*)
 				FROM schedule_dates WHERE schedule_id = $schedule_id");
 	}
 
@@ -616,9 +442,9 @@ function four_week_trend_canvas($user_id) {
 }
 
 function four_week_trend_data($user_id) {
-	global $site_tz_offset;
+	$db = BibleReadingChallenge\Database::get_instance();
 	// reach back 5 weeks so that we don't count the current week in the graph
-	return cols("
+	return $db->cols("
 		SELECT COALESCE(count, 0) count
 		FROM (
 			-- generates last 4 weeks to join what we read to
@@ -685,7 +511,8 @@ function four_week_trend_js($width, $height) {
 }
 
 function day_completed($my_id, $schedule_date_id) {
-	return num_rows("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->insert("
 		SELECT id
 		FROM read_dates
 		WHERE schedule_date_id = $schedule_date_id
@@ -693,7 +520,8 @@ function day_completed($my_id, $schedule_date_id) {
 }
 
 function number_chapters_in_book_read($book_id, $user_id) {
-	return num_rows("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->insert("
       SELECT json_each.value
       FROM read_dates rd
       JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
@@ -758,7 +586,8 @@ function toggle_all_users($initial_count) {
 }
 
 function badges_for_user($user_id) {
-	return cols("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->cols("
 		SELECT b.name, COUNT(*) unique_chapters_read
 		FROM
 		(SELECT json_each.value chapter_id, b.id book_id, c.number
@@ -774,7 +603,8 @@ function badges_for_user($user_id) {
 }
 
 function badges_html_for_user($user_id) {
-	$books = select("SELECT id, name FROM books ORDER BY id");
+	$db = BibleReadingChallenge\Database::get_instance();
+	$books = $db->select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
 	$badges = badges_for_user($user_id);
   foreach([
@@ -800,6 +630,7 @@ function last_read_attr($last_read) {
 }
 
 function words_read($user = 0, $schedule_id = 0) {
+	$db = BibleReadingChallenge\Database::get_instance();
 	$word_qry = "
 			SELECT SUM(word_count)
 			FROM schedule_dates sd
@@ -810,17 +641,18 @@ function words_read($user = 0, $schedule_id = 0) {
 	";
 	$schedule_where = $schedule_id ? " AND sd.schedule_id = ".$schedule_id : "";
 	if (!$user) {
-		$words_read = col(sprintf($word_qry, ''));
+		$words_read = $db->col(sprintf($word_qry, ''));
 	}
 	else {
-		$words_read = col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
+		$words_read = $db->col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
 	}
 
 	return $words_read;
 }
 
 function total_words_in_schedule($schedule_id) {
-	return col("
+	$db = BibleReadingChallenge\Database::get_instance();
+	return $db->col("
 			SELECT SUM(word_count)
 			FROM schedule_dates sd
 			JOIN JSON_EACH(passage_chapter_ids)

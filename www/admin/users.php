@@ -9,7 +9,7 @@ if (!$staff) {
 // get dates for single user's progress view
 if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
   print_json(
-    select("
+    $db->select("
     SELECT sd.id, sd.date, sd.passage, rd.id read
     FROM schedule_dates sd
     LEFT JOIN (
@@ -20,15 +20,15 @@ if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
     
 // edit/delete user
 if ($_POST['user_id']) {
-  $to_change = row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['user_id']);
+  $to_change = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['user_id']);
   if ($to_change) {
     if ($_POST['delete']) {
       if ($to_change['staff']) {
         $_SESSION['error'] = "Can't delete a staff member. Make them a student first.";
       }
       else {
-        query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
-        query("DELETE FROM users WHERE site_id = ".$site->ID." AND id = ".$to_change['id']);
+        $db->query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
+        $db->query("DELETE FROM users WHERE site_id = ".$site->ID." AND id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
@@ -45,7 +45,7 @@ if ($_POST['user_id']) {
         $_SESSION['error'] = "Enter exactly 1 character for your emoji";
       }
       else {
-        update("users", [
+        $db->update("users", [
           'name' => $_POST['name'],
           'email_verses' => array_key_exists('email_verses', $_POST) ? 1 : 0,
           'staff' => intval($_POST['staff']) ? 1 :0,
@@ -66,31 +66,66 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   echo admin_navigation();
   
 if ($_GET['user_id'] &&
-  $user = row("
+  $user = $db->row("
     SELECT * FROM users
     WHERE site_id = ".$site->ID." AND id = ".intval($_GET['user_id'])."
     ORDER BY name DESC")
 ) {
   // specific user's stats
   $deviation = $site->deviation_for_user($user['id'], $schedule);
-
+  
   echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
-  $last_read_ts = col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
+  $last_read_ts = $db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
   echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b>";
   echo badges_html_for_user($user['id'])."</p>";
   echo "<p>
-  <h6 class='text-center'>Days read each week</h6>
-  <div class='center'>";
-  echo $site->weekly_progress_canvas($user['id'], $schedule);
-  echo "<script>".weekly_progress_js(300, 150)."</script>";
+  <div class='two-columns'>
+    <div>
+    <h6 class='text-center'>Milestones</h6>
+    <ul>";
+    $total_words_in_schedule = total_words_in_schedule($schedule['id']);
+    $threshholds = [];
+    for($i = 1; $i <= 100; $i++) {
+      $threshholds[ $i ] = floor($total_words_in_schedule / 100 * $i);
+    }
+    $milestones = [];
+    $read_dates = $db->select("
+      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$site->TZ_OFFSET." hours') date, c.word_count
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      JOIN JSON_EACH(sd.passage_chapter_ids)
+      JOIN chapters c ON c.id = value
+      WHERE sd.schedule_id = $schedule[id] and rd.user_id = $user[id]
+      ORDER BY timestamp");
+    $sum = 0;
+    foreach($read_dates as $rd) {
+      $sum += (int)$rd['word_count'];
+      foreach ($threshholds as $thresh => $words) {
+        if ($sum >= (int)$words && !$milestones[ $thresh ]) {
+          $dt = new Datetime($rd['date']);
+          $milestones [ $thresh ] = $dt->format('Y-m-d');
+        }
+      }
+    }
+    echo "<canvas data-graph='".json_encode($milestones)."' id='milestone-chart' width='400'></canvas>";
+    // foreach($milestones as $thresh => $ms) {
+    //   echo "<li>Reached $thresh% on: <b>".$ms."</b></li>";
+    // }
+  echo "  
+        </ul>
+      </div>
+    <div>
+      <h6 class='text-center'>Days read each week</h6>";
+    echo $site->weekly_progress_canvas($user['id'], $schedule);
+    // echo "<script>".weekly_progress_js(300, 150)."</script>";
   echo "</div>
-  </p>";
+  </div>";
   echo "<form method='post'>
     <input type='hidden' name='user_id' value='$user[id]'>
     <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
@@ -223,11 +258,11 @@ else {
   $where = "
     WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
     " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
-  $schedule_days_this_week = col("
+  $schedule_days_this_week = $db->col("
     SELECT COUNT(*)
     FROM schedule_dates sd
     $where");
-  $fully_equipped = cols("
+  $fully_equipped = $db->cols("
     SELECT u.name
     FROM read_dates rd
     LEFT JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
@@ -283,7 +318,7 @@ else {
         </thead>
       <tbody>";
     foreach($all_users as $user) {
-      $days_read_this_week = cols("
+      $days_read_this_week = $db->cols("
         SELECT DATE(sd.date) d
         FROM read_dates rd
         JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
@@ -315,7 +350,7 @@ else {
       </tbody>
     </table>
   </div>";
-  echo "<script>".four_week_trend_js(100, 40)."</script>";
+  // echo "<script>".four_week_trend_js(100, 40)."</script>";
 
   if (!$_GET['stale']) {
     echo "<small>Only those who have been active in the past 9 months are shown. <a href='?stale=1".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see omitted users</a>.</small>";
@@ -326,6 +361,8 @@ else {
 }
 
 echo "
+<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js'></script>
 <script src='/js/tableSort.js'></script>
 <script src='/js/users.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

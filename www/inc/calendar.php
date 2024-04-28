@@ -1,13 +1,13 @@
 <?php
 
-  $calendar_sched = row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_REQUEST['calendar_id']);
+  $calendar_sched = $db->row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_REQUEST['calendar_id']);
   if (!$calendar_sched) {
     redirect('/admin/schedules');
   }
 
   if ($_REQUEST['get_dates']) {
     // get the reading dates for this schedule
-    print_json(select("SELECT id, date, passage FROM schedule_dates WHERE schedule_id = $calendar_sched[id]"));
+    print_json($db->select("SELECT id, date, passage FROM schedule_dates WHERE schedule_id = $calendar_sched[id]"));
   }
 
   if ($_POST['edit']) {
@@ -19,15 +19,15 @@
             parse_passage($day['passage']),
           'chapter'),
         'id');
-        update("schedule_dates", [
+        $db->update("schedule_dates", [
           'passage' => $day['passage'],
           'passage_chapter_ids' => json_encode($chp_ids)
         ], "id = ".(int)$day['id']);
       }
       else if ($day['id'] && !$day['passage']) {
         // delete
-        query("DELETE FROM schedule_dates WHERE id = ".(int)$day['id']);
-        query("DELETE FROM read_dates WHERE schedule_date_id = ".(int)$day['id']);
+        $db->query("DELETE FROM schedule_dates WHERE id = ".(int)$day['id']);
+        $db->query("DELETE FROM read_dates WHERE schedule_date_id = ".(int)$day['id']);
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
@@ -37,7 +37,7 @@
           'chapter'),
         'id');
 
-        insert("schedule_dates", [
+        $db->insert("schedule_dates", [
           'schedule_id' => $_POST['calendar_id'],
           'date' => $date,
           'passage' => $day['passage'],
@@ -75,14 +75,14 @@
         }
       }
       // the id to start AFTER
-      $starting_id = col("
+      $starting_id = $db->col("
         SELECT c.id
         FROM chapters c
         JOIN books b ON b.id = c.book_id
-        WHERE b.name = '".db_esc($_REQUEST['start_book'])."'
+        WHERE b.name = '".$db->esc($_REQUEST['start_book'])."'
           AND c.number = ".(int)$_REQUEST['start_chp']);
       // all the chapters we need, limited by the amount * the rate we are generating
-      $chapters = array_reverse(select("
+      $chapters = array_reverse($db->select("
         SELECT b.name book, c.number
         FROM chapters c
         JOIN books b ON b.id = c.book_id
@@ -141,7 +141,7 @@
     Only <b>future</b> days can be edited</small>";
 
   // sort books/chapters into some arrays for easier printing
-  $book_chapters = select("SELECT name, chapters FROM books");
+  $book_chapters = $db->select("SELECT name, chapters FROM books");
   
   // fixed editor
   echo "
