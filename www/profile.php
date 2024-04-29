@@ -93,7 +93,7 @@ $emojis = $db->select("
 echo "
   <h5 class='text-center'>Top 20 Readers (and you)</h5>";
 
-  $site->mountain_for_emojis($emojis, $me['id']);
+  echo $site->mountain_for_emojis($emojis, $me['id']);
 
   echo "<p>
   <div class='two-columns'>
@@ -108,12 +108,14 @@ echo "
   </div>
   </p>";
 
-echo "<h2>Edit Profile</h2>";
-echo "<p>Email: <b>".html($me['email'])."</b><br>";
-echo "Created: <b>".date('F j, Y', $me['date_created'])."</b><br>";
 echo "<form method='post'>
-  <label>Name <input type='text' name='name' minlength='1' value='".html($me['name'])."'></label>
-  <label>My emoji
+  <fieldset>
+    <legend>Edit Account</legend>";
+echo "<p>Email: <b>".html($me['email'])."</b><br>";
+echo "Created: <b>".date('F j, Y', $me['date_created'])."</b><br></p>";
+echo "
+  <label>My name: <input type='text' name='name' minlength='1' value='".html($me['name'])."'></label>
+  <label>My emoji: 
     <input type='text' name='emoji'
       minlength='1' maxlength='6'
       value='".html($me['emoji'])."'
@@ -121,6 +123,7 @@ echo "<form method='post'>
     >
   </label>
   <button type='submit'>Save</button>
+  </fieldset>
 </form>";
 
 

@@ -14,17 +14,23 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
   $ext = '.'.pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
   $mime = mime_content_type($_FILES['upload']['tmp_name']);
   $valid_mime = strpos($mime, 'image/') === 0 || ($mime == 'text/plain' && $ext == '.svg'); // svg files appear as text/plain sometimes
+  $md5 = md5_file($_FILES['upload']['tmp_name']);
   if (!$ext || !$valid_mime) {
     $_SESSION['error'] = "Please upload a regular image file";
+  }
+  else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '".$db->esc($md5)."' AND site_id = ".$site->ID)) { 
+    $_SESSION['error'] = "A file like that seems to already exist by the name '".html($existing_match)."'";
   }
   else {
     $realpath = tempnam(UPLOAD_DIR, "upload-");
     unlink($realpath); // delete bc we're going to move the file there ourself later
+    $realpath .= uniqid();
     $db->insert('images', [
       'site_id' => $site->ID,
       'uploaded_by_id' => $me['id'],
+      'uploaded_by_name' => $me['name'], // because users are hard deleted
       'uploaded_name' => $_FILES['upload']['name'],
-      'md5' => md5_file($_FILES['upload']['tmp_name']),
+      'md5' => $md5,
       'uploads_dir_filename' => basename($realpath).$ext,
       'extension' => $ext,
       'mime_type' => $mime
@@ -45,7 +51,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
     $_SESSION['error'] = "That's not your image";
   }
   else if ($_POST['delete_photo']) {
-    $using_row = row("
+    $using_row = $db->row("
       SELECT id FROM sites WHERE 
         logo_image_id = $img_id OR login_image_id = $img_id
         OR progress_image_id = $img_id OR favico_image_id = $img_id");
@@ -71,7 +77,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
             WHERE id = ".$site->data($key.'_image_id'));
           $valid = true;
           // loop through the other keys and see if the site is using it
-          foreach(array_diff($image_keys, [$key]) as $other_key) {
+          foreach(array_values(array_diff($image_keys, [$key])) as $other_key) {
             $valid = $valid && $site->data($other_key.'_image_id') != $img_to_del['id'];
           }
           if ($img_to_del && $valid) {
@@ -139,6 +145,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   $contact_email = filter_input(INPUT_POST, 'contact_email', FILTER_VALIDATE_EMAIL);
   $contact_phone = preg_replace('/[^\d]/', '', $_POST['contact_phone']);
   $default_emoji = $_POST['default_emoji'];
+  $reading_timer_wpm = (int)$_POST['reading_timer_wpm'];
   $start_of_week = (int)$_POST['start_of_week'];
   $timezone = $_POST['time_zone_id'];
   if (!$site_name) {
@@ -165,6 +172,9 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   else if(!in_array($timezone, timezone_identifiers_list(DateTimeZone::PER_COUNTRY, 'US'), true)) {
     $_SESSION['error'] = 'Invalid time zone';
   }
+  else if ($reading_timer_wpm < 0 || 800 < $reading_timer_wpm) {
+    $_SESSION['error'] = 'Choose a wpm value between 0 (off) and 800 (slow)';
+  }
   else {
     $db->update('sites', [
       'site_name' => $site_name,
@@ -173,6 +183,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'contact_email' => $contact_email,
       'contact_phone' => $contact_phone,
       'default_emoji' => $default_emoji,
+      'reading_timer_wpm' => $reading_timer_wpm,
       'start_of_week' => $start_of_week,
       'time_zone_id' => $timezone
     ], 'id = '.$site->ID);
@@ -198,13 +209,13 @@ echo "
   <fieldset>
   <legend>Theming</legend>
     <label>
-      Primary Color: <input type='color' name='color_primary' value='".rgb_to_hex($site->data('color_primary'))."'> <button type='button'>Example</button>
+      Primary Color <input type='color' name='color_primary' value='".rgb_to_hex($site->data('color_primary'))."'> <button type='button'>Example</button>
     </label>
     <label>
-      Secondary Color: <input type='color' name='color_secondary' value='".rgb_to_hex($site->data('color_secondary'))."'> <button type='button' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
+      Secondary Color <input type='color' name='color_secondary' value='".rgb_to_hex($site->data('color_secondary'))."'> <button type='button' style='background-color: var(--color-secondary); border-color: var(--color-secondary)'>Example</button>
     </label>
     <label>
-      Faded Color ".help('The color of buttons when hovered over').": <input type='color' name='color_fade' value='".rgb_to_hex($site->data('color_fade'))."'> <button type='button' style='background-color: var(--color-fade); border-color: var(--color-fade);'>Example</button>
+      Faded Color ".help('The color of buttons when hovered over')." <input type='color' name='color_fade' value='".rgb_to_hex($site->data('color_fade'))."'> <button type='button' style='background-color: var(--color-fade); border-color: var(--color-fade);'>Example</button>
     </label>
     <button type='submit'>Save Theme</button>
   </fieldset>
@@ -233,6 +244,19 @@ echo "
     <label>
     Default Emoji ".help('What emoji new users will have by default')." <input type='text' name='default_emoji' minlength='1' maxlength='6' value='".html($site->data('default_emoji'))."' style='width: 70px'>
     </label>
+    <div class='form-group'>
+      <label>
+        Reading Timer Words Per Minute (wpm) rate ".help('Readers will be unable to submit a reading from the website unless they have been on the page long enough to read all the words at the following rate in wpm. Disable this by setting this to 0.')." 
+        <div class='form-help'>
+          0: Disabled <br>
+          170: Audiobook spoken reading pace <br>
+          240: Average adult silent reading pace <br>
+          340: Quicker silent reading pace <br>
+          800: Maxmimum reading pace (very fast!)
+        </div>
+      </label>
+      <input type='number' name='reading_timer_wpm' min='0' max='800' step='10' value='".$site->data('reading_timer_wpm')."'>
+    </div>
     <label>
     Start of week ".help('What day the weekly reading stats begin on. It might be the date of your weekly campus meeting.')."
       <select name='start_of_week'>
@@ -264,21 +288,21 @@ echo "
 <div>
   <fieldset>
     <legend>Image Management</legend>
-    <label>
-    Upload photos here to use as logos or anything else. PNG files are best:
-      <div>
-        <small>
-        Logos should be: 1033px by 404px<br>
-        Login images should be: 502px by 639px<br>
-        Progress images should be: 723px by 397px<br>
-        Favico images should be: 32px by 32px
-        </small>
-      </div>
-    <form method='post' enctype='multipart/form-data'>
-      <input type='file' name='upload' accept='image/*'>
-      <button type='submit'>Upload</button>
-    </form>
-    </label>
+    <div class='form-group'>
+      <label>
+        Upload photos here to use as logos or anything else. PNG files are best:
+        <div class='form-help'>
+          Logo should be: <code>1033px</code> by <code>404px</code> <br>
+          Login image should be: <code>502px</code> by <code>639px</code> <br>
+          Progress image should be: <code>723px</code> by <code>397px</code> <br>
+          Favico image should be: <code>32px</code> by <code>32px</code>
+        </div>
+      </label>
+      <form method='post' enctype='multipart/form-data'>
+        <input type='file' name='upload' accept='image/*'>
+        <button type='submit'>Upload</button>
+      </form>
+    </div>
     <h5 class='text-center'>Uploaded photos</h5>
     <table>
       <thead>
@@ -379,19 +403,29 @@ echo "
     <legend>Domain Configuration</legend>
     <h4>The following values are not editable</h4>
     <h5><small>Contact Abe (<a href='mailto:abe@ramseyer.dev?subject=Update%20Site%20Configuration&body=I%20need%20help%20updating%20the%20site%20configuration%20for%20".$site->data('site_name').".'>abe@ramseyer.dev</a>) if you think they need to be changed</small></h5>
+    <div class='form-group'>
+      <label>
+        Site Domain ".help('The url in the address bar the students go to')."
+        <div class='form-help'>
+          Ensure you have a DNS Record (A, or CNAME for a subdomain) with this value pointing to <code>5.161.204.56</code>
+        </div>
+      </label>
+      <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' readonly='true'>
+    </div>
     <label>
-    <div><small>Ensure you have a DNS (A, or CNAME for a subdomain) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
-    Site Domain ".help('The url in the address bar the students go to')." <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' readonly='true'>
+      Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' readonly='true'>
     </label>
+    <div class='form-group'>
+      <label>
+        Socket Server Domain ".help('The url the socket server connects to')."
+        <div class='form-help'>
+          Ensure you have a DNS Record (A, or CNAME for a subdomain) with this value pointing to <code>5.161.204.56</code>
+        </div>
+      </label>
+      <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' readonly='true'>
+    </div>
     <label>
-    Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' readonly='true'>
-    </label>
-    <label>
-    <div><small>Ensure you have a DNS (A, or CNAME for a subdomain) Record with this value pointing to <code style='display: inline-block;'>5.161.204.56</code></small></div>
-    Socket Server Domain ".help('The url the socket server connects to')." <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' readonly='true'>
-    </label>
-    <label>
-    Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' readonly='true'>
+      Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' readonly='true'>
     </label>
     <label>
     <details>

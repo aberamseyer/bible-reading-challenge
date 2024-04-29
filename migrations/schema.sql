@@ -94,14 +94,19 @@ CREATE TABLE sites(
   logo_image_id INTEGER,
   login_image_id INTEGER,
   progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'),
-color_primary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_secondary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_fade TEXT DEFAULT('rgb(0, 0, 0)'),
-default_emoji TEXT,
-start_of_week INTEGER,
-time_zone_id TEXT,
-env TEXT
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER, time_zone_id TEXT, env TEXT
+);
+CREATE TABLE images(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id INTEGER,
+  uploaded_by_id INTEGER,
+  uploaded_by_name TEXT,
+  uploaded_name TEXT,
+  md5 TEXT,
+  uploads_dir_filename TEXT,
+  extension TEXT,
+  mime_type TEXT,
+  date_uploaded TEXT DEFAULT(CURRENT_TIMESTAMP)
 );
 CREATE INDEX "idx_books_name" ON "books"(`name`);
 CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
@@ -111,14 +116,3 @@ CREATE INDEX idx_verses_niv ON verses(niv);
 CREATE INDEX idx_verses_nlt ON verses(nlt);
 CREATE INDEX idx_verses_text ON verses(rcv);
 CREATE INDEX idx_chapters_book_id ON chapters(book_id);
-CREATE TABLE images(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  site_id INTEGER,
-  uploaded_by_id INTEGER,
-  uploaded_name TEXT,
-  md5 TEXT,
-  uploads_dir_filename TEXT,
-  extension TEXT,
-  mime_type TEXT,
-  date_uploaded TEXT DEFAULT(CURRENT_TIMESTAMP)
-);

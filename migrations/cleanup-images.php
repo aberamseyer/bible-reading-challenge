@@ -15,10 +15,10 @@ $all_files = [];
 
 foreach([UPLOAD_DIR, IMG_DIR] as $directory) {
   // keep things we aren't using
-  $files = array_diff(scandir($directory), $used_images);
+  $files = array_values(array_diff(scandir($directory), $used_images));
 
   // Filter out the "." and ".." entries
-  $files = array_diff($files, ['.', '..', '.gitignore']);
+  $files = array_values(array_diff($files, ['.', '..', '.gitignore']));
 
   // put the entire directory in there
   $files = array_map(function($file) use ($directory) {

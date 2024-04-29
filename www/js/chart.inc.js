@@ -50,11 +50,12 @@ function initProgressChart(element, labels, values, small) {
     }
   }
   if (small) {
-    // minimize rendering cost, drop 60% of points
     obj.options.scales.x.ticks = { display: false }
     obj.options.scales.x.grid = { display: false }
     obj.options.scales.y.grid = { display: false }
-    obj.data.animation = { duration: 0 }
+    obj.options.animation = { duration: 0 }
+    
+    // minimize rendering cost, drop 80% of points
     obj.data.labels = labels.filter((x, i) => i % 5 === 0)
     obj.data.datasets[0].data = values.filter((x, i) => i % 5 === 0)
   }
@@ -99,9 +100,9 @@ function initWeeklyCountsChart(element, labels, values) {
 }
 
 function initFourWeekTrendChart(element, labels, values) {
-  let gradient = element.getContext('2d').createLinearGradient(0, 0, 200, 0)
-  gradient.addColorStop(0, COLORS.secondary)
-  gradient.addColorStop(1, COLORS.primary)
+  const gradient = element.getContext('2d').createLinearGradient(0, 0, 200, 0)
+  gradient.addColorStop(0, COLORS.primary)
+  gradient.addColorStop(1, COLORS.secondary)
 
   new Chart(element, {
     type: 'line',

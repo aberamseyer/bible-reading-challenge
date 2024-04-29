@@ -198,3 +198,17 @@ th, td {
     bottom: 8px;
   }
 }
+
+.form-group {
+  display: flex;
+  align-items: flex-start;
+}
+.form-group .form-help {
+  font-size: 70%;
+  max-width: 300px;
+}
+.form-group input[type=number] {
+  width: 100px;
+  height: 50px;
+  margin-left: 14px;
+}

@@ -59,18 +59,21 @@ else if ($_POST['email']) {
   }
 }
 
+$hide_title = true;
 $page_title = "Register";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <p>Or <a href='login'>log in</a></p>
+      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+    </div>
+    <div>
       <form action='' method='post'>
         <p>
           <input name='name' type='text' placeholder="Name" value="<?= $_POST['name'] ?>" minlength='1' required>
         </p>
         <p>
-          <input name='email' type='text' placeholder="Email" value="<?= $_POST['email'] ?>">
+        <input name='email' type='text' placeholder="Email" value="<?= $_POST['email'] ?>">
         </p>
         <p>
           <input name='password' type='password' placeholder="Password" required><br>
@@ -79,6 +82,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         <p>
           <input name='password_confirm' type='password' placeholder="Confirm password" required><br>
         </p>
+        <p>Or <a href='login'>log in</a></p>
         <button type="submit">Submit</button>
       </form>
       <hr>
@@ -99,7 +103,6 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       </div>
       <?php $add_to_foot .= '<script src="https://accounts.google.com/gsi/client" async></script>'; ?>
     </div>
-    <div></div>
   </div>
 <?php
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

@@ -51,7 +51,10 @@
         fade: '<?= $site->data('color_fade') ?>'
       }
       <?php
-        echo "window.PROGRESS_X_2 = $coords[2]
+        echo "
+        window.PROGRESS_X_1 = $coords[0];
+        window.PROGRESS_Y_1 = $coords[1];
+        window.PROGRESS_X_2 = $coords[2];
         window.PROGRESS_Y_2 = $coords[3]";
         ?>
     </script>

@@ -18,8 +18,8 @@ const compareRows = (a, b, currentSortColumn) => {
       return a_email > b_email ? 1 : -1
   }
   else if (column === 'trend') {
-    const a_arr = JSON.parse(a.querySelector('[data-graph]').getAttribute('data-graph'))
-    const b_arr = JSON.parse(b.querySelector('[data-graph]').getAttribute('data-graph'))
+    const a_arr = Object.values(JSON.parse(a.querySelector('[data-graph]').dataset.graph))
+    const b_arr = Object.values(JSON.parse(b.querySelector('[data-graph]').dataset.graph))
     return a_arr.reduce((acc, curr) => acc + curr) > b_arr.reduce((acc, curr) => acc + curr) ? 1 : -1
   }
   else if (column === 'period') {
@@ -34,3 +34,4 @@ document.querySelectorAll('canvas[data-graph]').forEach(canvas => {
   const fourWeekData = JSON.parse(canvas.dataset.graph)
   initFourWeekTrendChart(canvas, Object.keys(fourWeekData), Object.values(fourWeekData))
 })
+

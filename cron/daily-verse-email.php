@@ -53,7 +53,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
         SELECT word_count
         FROM chapters
         WHERE id = ".$cur['chapter']['id'])) + $acc);
-    $minutes_to_read = ceil($word_length / 246); // words per minute
+    $minutes_to_read = ceil($word_length / ($site->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
   
     // BUILD EMAIL
     /* the banner image at the top of the email is part of the email template in Sendgrid */

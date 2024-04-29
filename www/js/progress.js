@@ -1,3 +1,4 @@
+// table
 const compareRows = (a, b, currentSortColumn) => {
   const column = currentSortColumn
   const tdA = a.querySelector(`td[data-${column}]`)
@@ -12,8 +13,8 @@ const compareRows = (a, b, currentSortColumn) => {
   else if (column === "streak") {
     return parseInt(tdA.getAttribute('data-streak')) > parseInt(tdB.getAttribute('data-streak')) ? 1 : -1
   }
-  else if (column === 'badges') {
-    return parseInt(tdA.getAttribute('data-badges')) > parseInt(tdB.getAttribute('data-badges')) ? 1 : -1
+  else if (column === 'progress') {
+    return parseFloat(tdA.getAttribute('data-progress')) > parseFloat(tdB.getAttribute('data-progress')) ? 1 : -1
   }
   else if (column == 'percent') {
     return parseFloat(tdA.getAttribute('data-percent')) > parseFloat(tdB.getAttribute('data-percent')) ? 1 : -1
@@ -21,35 +22,24 @@ const compareRows = (a, b, currentSortColumn) => {
 }
 initTable(compareRows, 'behind')
 
-
-
-
-
+// mountains
 function random(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
-const emojis = document.querySelectorAll('.emoji')
-const mountains = document.querySelectorAll('.mountain')
-
-mountains.forEach(mountain => {
-  emojis.forEach(em => {
-    const progress = parseFloat(em.getAttribute('data-percent')) / 100
-    em.style.bottom = (PROGRESS_Y_2*progress + (1-progress)*random(-0.5, 0.5)) + '%'
-    em.style.left = (PROGRESS_X_2 + (1-progress)*random(-5, 5)) + '%'
-  })
+document.querySelectorAll('.emoji').forEach(emoji => {
+  const progress = parseFloat(emoji.getAttribute('data-percent')) / 100
+  emoji.style.bottom = ((PROGRESS_Y_2 - PROGRESS_Y_1)*progress+PROGRESS_Y_1 + random(-1, 1)) + '%'
+  emoji.style.left = ((PROGRESS_X_2 - PROGRESS_X_1)*progress+PROGRESS_X_1 + random(-1, 1)) + '%'
 })
-
-const mountainSelect = document.getElementById('mountain-select')
-function toggleMountains() {
-  document.querySelectorAll('.mountain-wrap').forEach((el, i) => {
-    el.classList.toggle('hidden', i !== parseInt(mountainSelect.value))
+function toggleMountains(index) {
+  document.querySelectorAll('.historical-mountain').forEach((el, i) => {
+    el.classList.toggle('hidden', i !== parseInt(index))
   })
 }
-toggleMountains()
 
+// initialize progress charts
 document.querySelectorAll('.progress-canvas').forEach(canvas => {
   const progressData = JSON.parse(canvas.dataset.graph)
   initProgressChart(canvas, Object.values(progressData), Object.keys(progressData), true)

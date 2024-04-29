@@ -58,6 +58,47 @@ if ($_POST['user_id']) {
   }
 }
 
+// merge accounts
+if ($_POST['merge_from_account']) {
+  $merge_from_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_from_account']);
+  $merge_to_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_to_account']);
+
+  if (!$merge_from_account || !$merge_to_account) {
+    $_SESSION['error'] = "Invalid accounts for merge.";
+  }
+  else {
+    $sql = "
+      SELECT sd.id
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      WHERE rd.user_id = ";
+    $read_days_from = $db->cols($sql.$merge_from_account['id']);
+    $read_days_to = $db->cols($sql.$merge_to_account['id']);
+
+    $difference = array_values(array_diff($read_days_from, $read_days_to));
+
+    if ($difference) {
+      $db->query("
+        UPDATE read_dates
+        SET user_id = $merge_to_account[id]
+        WHERE id IN(
+          SELECT rd.id
+          FROM read_dates rd
+          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+          WHERE sd.id IN(".implode(',', $difference).")
+            AND rd.user_id = $merge_from_account[id]
+        )");
+    }
+
+    $db->query("DELETE FROM read_dates WHERE user_id = $merge_from_account[id]");
+    $db->query("DELETE FROM users WHERE id = $merge_from_account[id]");
+
+    $_SESSION['success'] = "Deleted account: ".html($merge_from_account['email'])." and updated ".count($difference)." unread day".xs(count($difference))." to ".html($merge_to_account['email']);
+    redirect('/admin/users?user_id='.$merge_to_account['id']);
+  }
+  redirect();
+}
+
 $page_title = "Manage Users";
 $hide_title = true;
 $add_to_head .= "
@@ -95,29 +136,33 @@ if ($_GET['user_id'] &&
       ".$site->weekly_progress_canvas($user['id'], $schedule)."
     </div>
   </div>
+  <br>
   <form method='post'>
-    <input type='hidden' name='user_id' value='$user[id]'>
-    <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
-    <div>
-      <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
-    </div>
-    <div>
-      <label>My emoji
-        <input type='text' name='emoji'
-          minlength='1' maxlength='6'
-          value='".html($user['emoji'])."'
-          style='width: 70px'
-        >
-      </label>
-    </div>
-    <div>
-      <legend>Account Type</legend>
-      <label><input type='radio' name='staff' ".($user['staff'] ? 'checked' : '')." value='1'".($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "")."> Staff</label>
-      <label><input type='radio' name='staff' ".($user['staff'] ? '' : 'checked')." value='0'".($user['id'] == $my_id ? "title='Cant mark yourself as a student' disabled" : "")."> Student</label>
-    </div>
-    <button type='submit'>Save</button>
-    <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $user[name]? This can NEVER be recovered.`)'>Delete user</button>
-  </form> ";
+    <fieldset>
+      <legend>Edit Account</legend>
+      <input type='hidden' name='user_id' value='$user[id]'>
+      <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
+      <div>
+        <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
+      </div>
+      <div>
+        <label>My emoji
+          <input type='text' name='emoji'
+            minlength='1' maxlength='6'
+            value='".html($user['emoji'])."'
+            style='width: 70px'
+          >
+        </label>
+      </div>
+      <div>
+        <legend>Account Type</legend>
+        <label><input type='radio' name='staff' ".($user['staff'] ? 'checked' : '')." value='1'".($user['id'] == $my_id ? "title='Cant mark yourself as a student'" : "")."> Staff</label>
+        <label><input type='radio' name='staff' ".($user['staff'] ? '' : 'checked')." value='0'".($user['id'] == $my_id ? "title='Cant mark yourself as a student' disabled" : "")."> Student</label>
+      </div>
+      <button type='submit'>Save</button>
+      <button type='submit' name='delete' value='1' onclick='return confirm(`Are you sure you want to delete $user[name]? This can NEVER be recovered.`)'>Delete user</button>
+    </fieldset>
+  </form>";
   echo "<h5>Progress</h5>";
   echo generate_schedule_calendar($schedule);
   $add_to_foot .= chartjs_js();
@@ -139,6 +184,36 @@ if ($_GET['user_id'] &&
       })
     })
     </script>";
+
+    // merge accounts
+    $read_days_sql = "
+      SELECT COUNT(*) read_days, u.*
+      FROM users u
+      JOIN read_dates rd ON rd.user_id = u.id
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      %s
+      GROUP BY u.id
+      ORDER BY name";
+    $user_read_days = $db->col(sprintf($read_days_sql, "WHERE u.site_id = ".$site->ID." AND u.id = $user[id]"));
+    echo "
+    <form method='post'>
+      <fieldset>
+        <legend>Merge Accounts</legend>
+        <p>You can use this form to merge this account into another account. This is destructive, deleting THIS account and retaining the other account.</p>
+        <details>
+          <summary>Danger Zone</summary>
+          I want to delete <input style='width: 450px;' type='text' readonly value='$user[emoji] ".html($user['name']).": ".html($user['email']).", $user_read_days read days'> and put all of that account's progress into: ";
+        echo "
+          <input type='hidden' name='merge_from_account' value='$user[id]'>
+          <select name='merge_to_account'>";
+        foreach($db->select(sprintf($read_days_sql, "WHERE u.site_id = ".$site->ID." AND u.id != $user[id]")) as $other_user) {
+          echo "<option value='$other_user[id]'>$other_user[emoji] ".html($other_user['name']).": ".html($other_user['email']).", $other_user[read_days] read days</option>";
+        }
+        echo  "   </select>
+        <button type='submit' onclick='return confirm(`Are you sure you want to merge $user[email] into another account? $user[email] will be deleted and NEVER able to be recovered.`)'>Go</button>
+        </details>
+      </fieldset>
+    </form>";
 }
 else {
   // regular landing

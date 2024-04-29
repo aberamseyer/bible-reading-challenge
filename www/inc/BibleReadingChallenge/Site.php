@@ -148,6 +148,7 @@ class Site extends SiteRegistry {
 
   public function mountain_for_emojis($emojis, $my_id = 0, $hidden = false)
   {  
+    ob_start();
     echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
   
     foreach($emojis as $i => $datum) {
@@ -163,6 +164,7 @@ class Site extends SiteRegistry {
     
     echo "<img src='".$this->resolve_img_src('progress')."' class='mountain'>";
     echo "</div>";
+    return ob_get_clean();
   }
 
   public function resolve_img_src($type)
@@ -231,7 +233,7 @@ class Site extends SiteRegistry {
 			echo "
 			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
 			<form action='".SCHEME."://".$this->DOMAIN."/today' method='get' $form_style>
-				<input type='hidden' name='complete_key' value='$complete_key'>
+				<input type='hidden' name='complete_key' value='$complete_key".($email ? '-e' : '' /* bypass wpm check from an email */)."'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>
 			</form>";
