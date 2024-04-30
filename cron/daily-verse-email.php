@@ -8,7 +8,7 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = \BibleReadingChallenge\Database::get_instance();
+$db = BibleReadingChallenge\Database::get_instance();
 
 foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $site = BibleReadingChallenge\Site::get_site($site_id);

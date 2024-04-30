@@ -363,7 +363,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			}
 			
 			// match the book and chapters to the database
-			$db = \BibleReadingChallenge\Database::get_instance();
+			$db = BibleReadingChallenge\Database::get_instance();
 			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book_str)."'");
 			foreach($db->select("
 				SELECT *
@@ -401,7 +401,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			return $schedules[$schedule_id];
 		}
 
-		$db = \BibleReadingChallenge\Database::get_instance();
+		$db = BibleReadingChallenge\Database::get_instance();
 		$schedule_dates = $db->select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
 		$days = [];
 		foreach ($schedule_dates as $sd) {			
@@ -419,7 +419,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 	}
 
 	function schedule_completed($user_id, $schedule_id) {
-		$db = \BibleReadingChallenge\Database::get_instance();
+		$db = BibleReadingChallenge\Database::get_instance();
 		return $db->col("SELECT COUNT(*)
 			FROM read_dates rd
 			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id

@@ -8,10 +8,10 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = \BibleReadingChallenge\Database::get_instance();
+$db = BibleReadingChallenge\Database::get_instance();
 
 foreach($db->cols("SELECT * FROM sites") as $site_id) {
-  $site = Site::get_site($site_id);
+  $site = BibleReadingChallenge\Site::get_site($site_id);
   $db->query("UPDATE users SET streak=0, max_streak=0 WHERE site_id = ".$site->ID);
   
   $period = new DatePeriod(
