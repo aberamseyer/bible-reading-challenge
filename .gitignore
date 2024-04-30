@@ -3,4 +3,6 @@ brc.db
 .DS_Store
 node_modules
 
+test.sql
+
 **/img/upload-*

@@ -88,7 +88,7 @@ $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 if ($schedule_completed) {
-  echo "<blockquote><img class='icon' src='/img/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+  echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
   $add_to_foot .= "
     <script src='https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js'></script>
     <script>

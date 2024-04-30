@@ -161,6 +161,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   $reading_timer_wpm = (int)$_POST['reading_timer_wpm'];
   $start_of_week = (int)$_POST['start_of_week'];
   $timezone = $_POST['time_zone_id'];
+  $allow_personal_schedules = (int)$_POST['allow_personal_schedules'];
   if (!$site_name) {
     $_SESSION['error'] = 'Dont forget to include a site name';
   }
@@ -198,7 +199,8 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'default_emoji' => $default_emoji,
       'reading_timer_wpm' => $reading_timer_wpm,
       'start_of_week' => $start_of_week,
-      'time_zone_id' => $timezone
+      'time_zone_id' => $timezone,
+      'allow_personal_schedules' => $allow_personal_schedules
     ], 'id = '.$site->ID);
     $_SESSION['success'] = 'Site Configuration updated';
   }
@@ -309,6 +311,10 @@ echo "
         echo "<option value='$id' ".($id == $site->data('time_zone_id') ? 'selected' : '').">".str_replace('_', ' ', str_replace('America/', '', $id))."</option>";
       }
 echo "  </select>
+    </label>
+    <label>
+    Allow personal reading schedules ".help('Allow the creation of personal reading schedules alongside the corporate schedule.')."
+    <input type='checkbox' name='allow_personal_schedules' value='1' ".($site->data('allow_personal_schedules') ? 'checked' : '').">
     </label>
     <button type='submit'>Save Site Configuration</button>
   </fieldset>

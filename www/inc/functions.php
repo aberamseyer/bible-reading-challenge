@@ -174,12 +174,13 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 
 	function navigation() {
 		global $staff;
+		$site = BibleReadingChallenge\Site::get_site();
 
 		$nav = "
     	<div class='navigation'>";
 
 		$nav_elements = [
-			['/my-schedule', 'My schedule'],
+			['/my-schedule/corporate', 'My schedule'.($site->data('allow_personal_schedules') ? 's' : '')],
 			['/today', 'Today'],
 			['/profile', 'Profile']
 		];

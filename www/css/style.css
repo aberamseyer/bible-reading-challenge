@@ -212,3 +212,23 @@ th, td {
   height: 50px;
   margin-left: 14px;
 }
+
+/* navigation */
+.admin-navigation {
+  margin: 21px 0;
+}
+
+.nav-item {
+  margin: 0 14px;
+  padding: 10px 15px;
+  font-size: 1.3rem;
+  border: none;
+  background: none;
+}
+
+.nav-item.active-page {
+  border-radius: 4px;
+  background: var(--color-blossom);
+  color: var(--color-bg) !important;
+  border: 2px solid var(--color-blossom);
+}
