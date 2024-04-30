@@ -114,5 +114,5 @@ CREATE TABLE sites(
   logo_image_id INTEGER,
   login_image_id INTEGER,
   progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(0), time_zone_id TEXT, env TEXT
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(0), time_zone_id TEXT, env TEXT, allow_personal_schedules INTEGER DEFAULT(0)
 );
