@@ -70,14 +70,6 @@ CREATE TABLE users(
   emoji TEXT,
   websocket_nonce TEXT
 );
-CREATE TABLE schedules(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  site_id INTEGER,
-  name TEXT,
-  start_date TEXT,
-  end_date TEXT,
-  active INTEGER
-);
 CREATE TABLE images(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   site_id INTEGER,
@@ -115,4 +107,13 @@ CREATE TABLE sites(
   login_image_id INTEGER,
   progress_image_id INTEGER,
   progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(0), time_zone_id TEXT, env TEXT, allow_personal_schedules INTEGER DEFAULT(0)
+);
+CREATE TABLE schedules(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id INTEGER,
+  user_id INTEGER,
+  name TEXT,
+  start_date TEXT,
+  end_date TEXT,
+  active INTEGER
 );

@@ -7,6 +7,6 @@
     redirect('/my-schedule/corporate');
   }
 
-  echo "<h1>$page_title</h1>";
+  echo "<h1>Personal Schedule</h1>";
     
   require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

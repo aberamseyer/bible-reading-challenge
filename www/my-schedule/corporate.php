@@ -3,7 +3,7 @@
 
   require "index.php";  
   
-  echo "<h1>$page_title</h1>";
+  echo "<h1>".($allow_personal_schedules ? "Corporate " : "")." Schedule</h1>";
   echo "<p>Click a date to jump to any past reading to complete it</p>";
   
   echo generate_schedule_calendar($schedule);
@@ -29,7 +29,7 @@
           }
         }
       })
-      Array.from(document.querySelectorAll('.active')).at(-1).scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Array.from(document.querySelectorAll('.active')).at(-1).scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
     </script>";
     
