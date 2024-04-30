@@ -20,6 +20,7 @@ class Database {
   private function __wakeup()
   {
       // Do nothing
+			throw new \Exception("Cannot unserialize a singleton.");
   }
 
 	private function format_db_vals ($db_vals, array $options = [])

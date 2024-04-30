@@ -99,6 +99,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 	}
 
 	function curl_post_json($url, $headers, $arr) {
+		$debug = false;
 		// $debug = true;
 
 		$curl = curl_init($url);
@@ -106,20 +107,24 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 		curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($arr));
 		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', ...$headers ]);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		/*
 		if ($debug) {
 			$temp_file = fopen('php://temp', 'w+');
 			curl_setopt($curl, CURLOPT_VERBOSE, true);
 			curl_setopt($curl, CURLOPT_STDERR, $temp_file);
 		}
+		*/
 
 		$response = curl_exec($curl);
 
+		/*
 		if ($debug) {
 			// Get the verbose output
 			rewind($temp_file);
 			$verboseData = stream_get_contents($temp_file);
 			fclose($temp_file);
 		}
+		*/
 
 		if(curl_errno($curl)) {
 				$error = curl_error($curl);
@@ -127,6 +132,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 		}
 		curl_close($curl);
 
+		/*
 		if ($debug) {
 			// Dump the cURL data
 			echo "---- cURL Verbose Output ----\n";
@@ -134,6 +140,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			echo "---- Response Body ----\n";
 			echo nl2br($response);
 		}
+		*/
 
 		return $response;
 	}
@@ -144,15 +151,22 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 	}
 
 	function admin_navigation() {
+		global $me;
+
 		$nav = "
 			<div class='admin-navigation'>";
 
-		foreach([
+		$arr = [
 			['users', 'Users'],
 			['progress', 'Progress'],
 			['schedules', 'Schedules'],
 			['customize', 'Customize']
-		] as list($link, $title)) {
+		];
+		if ($me['id'] == 1) {
+			$arr[] = ['sites', 'Sites'];
+		}
+
+		foreach($arr as list($link, $title)) {
 			$nav .= "<a class='nav-item ".active_navigation_class($link)."' href='/admin/$link'>$title</a>";
 		}
 		return $nav."</div>";
@@ -245,7 +259,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			$calendar .= "
 				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
 					<span class='date'>$day</span><br>";
-			if ($editable && !$inactive)
+			if ($editable && strpos($class, 'inactive') !== false)
 				$calendar .= "
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
@@ -484,7 +498,7 @@ function day_completed($my_id, $schedule_date_id) {
 
 function number_chapters_in_book_read($book_id, $user_id) {
 	$db = BibleReadingChallenge\Database::get_instance();
-	return $db->insert("
+	return $db->num_rows("
       SELECT json_each.value
       FROM read_dates rd
       JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id

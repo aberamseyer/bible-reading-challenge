@@ -3,10 +3,10 @@
 namespace Email;
 
 class MailSenderSendgrid implements MailSender {
+	private readonly string $daily_email_template;
+	private readonly string $register_email_template;
+	private readonly string $forgot_password_template;
 	private readonly string $api_key;
-	public readonly string $daily_email_template;
-	public readonly string $register_email_template;
-	public readonly string $forgot_password_template;
 
 	public function __construct(
 			$sendgrid_api_key, 
@@ -18,6 +18,21 @@ class MailSenderSendgrid implements MailSender {
 		$this->daily_email_template = $sendgrid_daily_email_template;
 		$this->register_email_template = $sendgrid_register_email_template;
 		$this->forgot_password_template = $sendgrid_forgot_password_template;
+	}
+
+	public function daily_email_template()
+	{
+		return $this->daily_email_template;
+	}
+	
+	public function register_email_template()
+	{
+		return $this->register_email_template;
+	}
+
+	public function forgot_password_template()
+	{
+		return $this->forgot_password_template;
 	}
 
 	public function send_dynamic_email($to, $template, $dynamic_data)

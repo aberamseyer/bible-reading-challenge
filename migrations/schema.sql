@@ -78,24 +78,6 @@ CREATE TABLE schedules(
   end_date TEXT,
   active INTEGER
 );
-CREATE TABLE sites(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  enabled INTEGER DEFAULT(1),
-  site_name TEXT,
-  domain_www TEXT,
-  domain_www_test TEXT,
-  domain_socket TEXT,
-  domain_socket_test TEXT,
-  short_name TEXT,
-  contact_name TEXT,
-  contact_email TEXT,
-  contact_phone TEXT,
-  favico_image_id INTEGER,
-  logo_image_id INTEGER,
-  login_image_id INTEGER,
-  progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER, time_zone_id TEXT, env TEXT
-);
 CREATE TABLE images(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   site_id INTEGER,
@@ -116,3 +98,21 @@ CREATE INDEX idx_verses_niv ON verses(niv);
 CREATE INDEX idx_verses_nlt ON verses(nlt);
 CREATE INDEX idx_verses_text ON verses(rcv);
 CREATE INDEX idx_chapters_book_id ON chapters(book_id);
+CREATE TABLE sites(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  enabled INTEGER DEFAULT(1),
+  site_name TEXT,
+  domain_www TEXT,
+  domain_www_test TEXT,
+  domain_socket TEXT,
+  domain_socket_test TEXT,
+  short_name TEXT,
+  contact_name TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  favico_image_id INTEGER,
+  logo_image_id INTEGER,
+  login_image_id INTEGER,
+  progress_image_id INTEGER,
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(0), time_zone_id TEXT, env TEXT
+);

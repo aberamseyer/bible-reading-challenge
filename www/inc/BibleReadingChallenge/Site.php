@@ -6,26 +6,26 @@ class SiteRegistry
 {
   private static array $sites = [];
 
-  protected function __construct()
+  private function __construct()
   {
     // Prevent direct instantiation
   }
   
-  protected function __clone()
+  private function __clone()
   {
     // Prevent cloning
   }
   
-  public function __wakeup()
+  private function __wakeup()
   {
     // Prevent unserialization
-    throw new Exception("Cannot unserialize a singleton.");
+    throw new \Exception("Cannot unserialize a singleton.");
   }
 
-  public static function get_site($id = 0)
+  public static function get_site($id = 0, $soft=false): Site
   {
     if (!isset(self::$sites[$id])) {
-      $inst = new static($id);
+      $inst = new Site($id, $soft);
       if ($id === 0) {
         self::$sites[ 0 ] = $inst; // if no $id is passed, we need the to put our site in the 'default' slot of 0
       }
@@ -50,7 +50,11 @@ class Site extends SiteRegistry {
 
   private \Email\MailSender $ms;
 
-  protected function __construct($id)
+  /**
+   * @var $id a specific site to get
+   * @var $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
+   */
+  protected function __construct($id, $soft=false)
   {
     $this->db = Database::get_instance();
     // either a passed $id gets a specific site, or we default to the site that matches the server HOST value
@@ -59,38 +63,46 @@ class Site extends SiteRegistry {
       $stmt->bindValue(':id', $id);
     }
     else {
-      $stmt = $this->db->get_db()->prepare('SELECT * FROM sites WHERE ENABLED = 1 AND domain_www = :domain OR domain_www_test = :domain LIMIT 1');
+      if ($soft) {
+        $stmt = $this->db->get_db()->prepare('SELECT * FROM sites WHERE domain_www = :domain OR domain_www_test = :domain LIMIT 1');
+      }
+      else {
+        $stmt = $this->db->get_db()->prepare('SELECT * FROM sites WHERE enabled = 1 AND (domain_www = :domain OR domain_www_test = :domain) LIMIT 1');
+      }
       $stmt->bindValue(':domain', $_SERVER['HTTP_HOST']);
     }
     $this->data = $this->db->get_db()->querySingle($stmt->getSQL(true), true);
-
-    $this->ID = $this->data('id');
-
-    $this->DOMAIN = PROD ? $this->data('domain_www') : $this->data('domain_www_test');
-    $this->SOCKET_DOMAIN = PROD ? $this->data('domain_socket') : $this->data('domain_socket_test');
 
     if (!$this->data) {
       die("Nothing to see here: ".$id);
     }
     else {
-			$this->TZ = new \DateTimeZone($this->data('time_zone_id') ?: 'UTC');
-			$this->TZ_OFFSET = ''.intval($this->TZ->getOffset(new \DateTime('UTC')) / 3600);
-    }
-
-    foreach (explode("\n", $this->data('env')) as $line) {
-      $line = trim($line);
-      if ($line && !preg_match("/^\/\/.*$/", $line)) { // line doesn't begin with a comment
-        list($key, $val) = explode("=", $line);
-        $this->env[ $key ] = $val;
+      $this->ID = $this->data('id');
+      
+      if (!$soft) {
+        $this->DOMAIN = PROD ? $this->data('domain_www') : $this->data('domain_www_test');
+        $this->SOCKET_DOMAIN = PROD ? $this->data('domain_socket') : $this->data('domain_socket_test');
+        $this->TZ = new \DateTimeZone($this->data('time_zone_id') ?: 'UTC');
+        $this->TZ_OFFSET = ''.intval($this->TZ->getOffset(new \DateTime('UTC')) / 3600);
       }
     }
 
-    $this->ms = new \Email\MailSenderSendgrid(
-      $this->env('SENDGRID_API_KEY'), 
-      $this->env('SENDGRID_DAILY_EMAIL_TEMPLATE'), 
-      $this->env('SENDGRID_REGISTER_EMAIL_TEMPLATE'), 
-      $this->env('SENDGRID_FORGOT_PASSWORD_TEMPLATE')
-    );
+    if (!$soft) {
+      foreach (explode("\n", $this->data('env')) as $line) {
+        $line = trim($line);
+        if ($line && !preg_match("/^\/\/.*$/", $line)) { // line doesn't begin with a comment
+          list($key, $val) = explode("=", $line);
+          $this->env[ $key ] = $val;
+        }
+      }
+  
+      $this->ms = new \Email\MailSenderSendgrid(
+        $this->env('SENDGRID_API_KEY'), 
+        $this->env('SENDGRID_DAILY_EMAIL_TEMPLATE'), 
+        $this->env('SENDGRID_REGISTER_EMAIL_TEMPLATE'), 
+        $this->env('SENDGRID_FORGOT_PASSWORD_TEMPLATE')
+      );
+    }
   }
 
   public function data(string $key)
@@ -105,17 +117,17 @@ class Site extends SiteRegistry {
 
   public function send_register_email($to, $link)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->register_email_template, [ 'confirm_link' => $link ]);
+    $this->ms->send_dynamic_email($to, $this->ms->register_email_template(), [ 'confirm_link' => $link ]);
   }
 
   public function send_forgot_password_email($to, $link)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template, [ "reset_link" => $link ]);
+    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template(), [ "reset_link" => $link ]);
   }
 
-  public function send_daily_verse_email($email, $name, $subject, $content, $streak)
+  public function send_daily_verse_email($to, $name, $subject, $content, $streak)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template, [
+    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template(), [
       "subject" => $subject,
       "name" => $name,
       "html" => $content,
@@ -170,7 +182,7 @@ class Site extends SiteRegistry {
   public function resolve_img_src($type)
   {
     static $pictures;
-    if ($picutres[$type]) {
+    if ($pictures[$type]) {
       return '/img/'.$pictures[$type];
     }
     else {

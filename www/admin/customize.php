@@ -9,6 +9,18 @@ if (!$staff) {
   redirect('/');
 }
 
+$edit_site_id = (int)$_SESSION['edit_site_id'];
+if ($my_id == 1) {
+  if ($edit_site_id) {
+    $site = BibleReadingChallenge\Site::get_site($edit_site_id, true);
+  }
+  if ($_POST['reset']) {
+    $_SESSION['edit_site_id'] = '';
+    redirect();
+  }
+}
+
+
 // Uploaded pictures handler
 if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK) {
   $ext = '.'.pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
@@ -202,6 +214,12 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 echo admin_navigation();
 
 echo "<h2>Customize Site</h2>";
+if ($edit_site_id) {
+  echo "
+  <form method='post'>
+    <button type='submit' name='reset' value='1'>Back to home site</button>
+  </form>";
+}
 
 // Theming form
 echo "

@@ -47,7 +47,7 @@ if ($reading_timer_wpm) {
 
 // determine if today's reading
 $today_completed = day_completed($my_id, $scheduled_reading['id'] ?: 0);
-$schedule_complete = false;
+$schedule_completed = schedule_completed($my_id, $schedule['id']);
 $schedule_just_completed = false; // only true on the day we finish the schedule
 // "Done!" clicked
 if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
@@ -82,9 +82,6 @@ if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
     $today_completed = true;
     $schedule_just_completed = $schedule_completed = schedule_completed($my_id, $schedule['id']);
   }
-}
-if ($today_completed && !$schedule_just_completed) {
-  $schedule_completed = schedule_completed($my_id, $schedule['id']);
 }
 
 $page_title = "Read";
