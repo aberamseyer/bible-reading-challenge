@@ -10,7 +10,8 @@ if (!$staff) {
 }
 
 $edit_site_id = (int)$_SESSION['edit_site_id'];
-if ($my_id == 1) {
+$abe = $my_id == 1;
+if ($abe) {
   if ($edit_site_id) {
     $site = BibleReadingChallenge\Site::get_site($edit_site_id, true);
   }
@@ -202,6 +203,18 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
     $_SESSION['success'] = 'Site Configuration updated';
   }
 
+  redirect();
+}
+
+if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain_socket'] || $_POST['domain_socket_test'] || $_POST['env']))  {
+  $db->update('sites', [
+    'domain_www' => $_POST['domain_www'],
+    'domain_www_test' => $_POST['domain_www_test'],
+    'domain_socket' => $_POST['domain_socket'],
+    'domain_socket_test' => $_POST['domain_socket_test'],
+    'env' => $_POST['env']
+  ], 'id = '.$site->ID);
+  $_SESSION['success'] = "Domain configuration updated";
   redirect();
 }
 
@@ -415,6 +428,7 @@ echo "  </fieldset>
 </div>";
 
 // Domain configuration form
+$readonly = !$abe ? "readonly='true'" : "";
 echo "
 <form method='post'>
   <fieldset>
@@ -428,10 +442,10 @@ echo "
           Ensure you have a DNS Record (A, or CNAME for a subdomain) with this value pointing to <code>5.161.204.56</code>
         </div>
       </label>
-      <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' readonly='true'>
+      <input type='text' name='domain_www' value='".html($site->data('domain_www'))."' $readonly>
     </div>
     <label>
-      Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' readonly='true'>
+      Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' $readonly>
     </label>
     <div class='form-group'>
       <label>
@@ -440,16 +454,18 @@ echo "
           Ensure you have a DNS Record (A, or CNAME for a subdomain) with this value pointing to <code>5.161.204.56</code>
         </div>
       </label>
-      <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' readonly='true'>
+      <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' $readonly>
     </div>
     <label>
-      Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' readonly='true'>
+      Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' $readonly>
     </label>
     <label>
     <details>
-      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google. DO NOT share these with anyone else.')." </summary>
-      <pre>".html($site->data('env'))."</pre>
-    </details>
+      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google. DO NOT share these with anyone else.')." </summary>";
+      echo $abe
+        ? "<textarea name='env' required rows='30'>".html($site->data('env'))."</textarea><button type='submit'>Submit</button>"
+        : "<pre>".html($site->data('env'))."</pre>";
+  echo "  </details>
     </label>
   </fieldset>
 </form>";

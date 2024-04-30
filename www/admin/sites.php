@@ -9,7 +9,8 @@ if (!$staff && $me['id'] != 1) {
 
 if ($_POST) {
   if ($_POST['create']) {
-    $db->insert('sites', [
+    // create site
+    $new_site_id = $db->insert('sites', [
       'site_name' => $_POST['site_name'],
       'contact_name' => $_POST['contact_name'],
       'contact_email' => $_POST['contact_email'],
@@ -18,8 +19,20 @@ if ($_POST) {
       'domain_www_test' => $_POST['domain_www_test'],
       'default_emoji' => '😁',
       'start_of_week' => 0,
-      
     ]);
+    // create default schedule so everything doesn't break
+    $db->insert('schedules', [
+      'site_id' => $new_site_id,
+      'name' => 'Default Schedule',
+      'start_date' => date('Y-m-d'),
+      'end_date' => date('Y-m-d'),
+      'active' => 1
+    ]);
+    $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
+    // create user and assign as staff
+    $ret = $new_site->create_user($_POST['email'], $_POST['name']);
+    $db->update('users', [ 'staff' => 1 ], 'id = '.$ret['insert_id']);
+
     $_SESSION['success'] = 'Created '.html($_POST['site_name']);
     redirect();
   }
@@ -60,25 +73,37 @@ echo admin_navigation();
 if ($_GET['create']) {
   echo "
   <form method='post'>
-    <label>
-      Site name: <input type='text' name='site_name' required>
-    </label>
-    <label>
-      Contact name: <input type='text' name='contact_name' required>
-    </label>
-    <label>
-      Contact email: <input type='text' name='contact_email' required>
-    </label>
-    <label>
-      Contact phone: <input type='text' name='contact_phone' required>
-    </label>
-    <label>
-      WWW Domain: <input type='text' name='domain_www' required>
-    </label>
-    <label>
-      WWW Test Domain: <input type='text' name='domain_www_test'>
-    </label>
-    <button type='submit' name='create' value='1'>Submit</button>
+    <fieldset>
+      <legend>Create new site</legend>
+      <h5>Site info</h5>
+      <label>
+        Site name: <input type='text' name='site_name' required>
+      </label>
+      <label>
+        Contact name: <input type='text' name='contact_name' required>
+      </label>
+      <label>
+        Contact email: <input type='text' name='contact_email' required>
+      </label>
+      <label>
+        Contact phone: <input type='text' name='contact_phone' required>
+      </label>
+      <label>
+        WWW Domain: <input type='text' name='domain_www' required>
+      </label>
+      <label>
+        WWW Test Domain: <input type='text' name='domain_www_test'>
+      </label>
+      <hr>
+      <h5>Initial staff account info</h5>
+      <label>
+        Name: <input type='text' name='name' required>
+      </label>
+      <label>
+        Email address: <input type='email' name='email' required>
+      </label>
+      <button type='submit' name='create' value='1'>Create</button>
+    </fieldset>
   </form>";
 }
 else {

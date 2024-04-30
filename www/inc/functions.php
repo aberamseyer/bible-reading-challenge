@@ -452,7 +452,7 @@ function help($tip) {
 
 function four_week_trend_canvas($user_id) {
 	$data = json_encode(four_week_trend_data($user_id));
-	return "<canvas title='$data' data-graph='$data' width='200'></canvas>";
+	return "<canvas title='$data' data-graph='$data' width='200' style='margin: auto;'></canvas>";
 }
 
 function four_week_trend_data($user_id) {

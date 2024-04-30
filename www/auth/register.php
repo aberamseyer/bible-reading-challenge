@@ -39,21 +39,8 @@ else if ($_POST['email']) {
     $_SESSION['error'] = "Email already registered.";
   }
   else {
-    $uuid = uniqid();
-    $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
-    $verify_token = uniqid("", true).uniqid("", true);
-    $db->insert("users", [ 
-      'site_id' => $site->ID,
-      'uuid' => $uuid,
-      'name' => $_POST['name'],
-      'email' => $_POST['email'],
-      'password' => $hash,
-      'trans_pref' => 'rcv',
-      'date_created' => time(),
-      'email_verify_token' => $verify_token,
-      'emoji' => $site->data('default_emoji')
-    ]);
-    $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=$uuid&key=$verify_token");
+    $ret = $site->create_user($_POST["email"], $_POST['name'], $_POST["password"]);
+    $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=".$ret['uuid']."&key=".$ret['verify_token']);
     $_SESSION['email'] = "Registration email sent. Check your inbox!";
     redirect("/auth/login");
   }
@@ -87,7 +74,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
+        data-client_id="<?= $site->env('GOOGLE_CLIENT_ID') ?>"
         data-context="signup"
         data-ux_mode="popup"
         data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"

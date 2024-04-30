@@ -27,6 +27,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
         $_SESSION['error'] = "Please confirm your email.";
       }
       else {
+        $_SESSION['succes'] = "Welcome back!";
         log_user_in($user_row['id']);        
       }
     }
@@ -55,7 +56,7 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
+        data-client_id="<?= $site->env('GOOGLE_CLIENT_ID') ?>"
         data-context="signin"
         data-ux_mode="popup"
         data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"
