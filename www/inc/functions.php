@@ -259,7 +259,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			$calendar .= "
 				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
 					<span class='date'>$day</span><br>";
-			if ($editable && strpos($class, 'inactive') !== false)
+			if ($editable)
 				$calendar .= "
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
