@@ -124,6 +124,6 @@ else {
 }
 
 $add_to_foot .= chartjs_js()."
-<script src='/js/tableSort.js'></script>
+<script src='/js/lib/tableSort.js'></script>
 <script src='/js/progress.js'></script>";
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

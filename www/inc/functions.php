@@ -691,8 +691,8 @@ function clamp($value, $min, $max) {
 function chartjs_js() {
 	global $add_to_foot;
 	return "
-	<script src='https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js'></script>
-  <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js'></script>
-  <script src='/js/chart.inc.js'></script>";
+	<script src='/js/lib/chart.min.js'></script>
+  <script src='/js/lib/chartjs-adapter-date-fns.min.js'></script>
+  <script src='/js/lib/chart.inc.js'></script>";
 
 }

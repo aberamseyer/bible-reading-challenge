@@ -157,7 +157,7 @@ else {
   </table>";
   
   $add_to_foot .= "
-  <script src='/js/tableSort.js'></script>
+  <script src='/js/lib/tableSort.js'></script>
   <script src='/js/sites.js'></script>";
 }
 
