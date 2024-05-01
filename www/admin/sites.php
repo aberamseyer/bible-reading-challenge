@@ -12,6 +12,7 @@ if ($_POST) {
     // create site
     $new_site_id = $db->insert('sites', [
       'site_name' => $_POST['site_name'],
+      'short_name' => $_POST['short_name'],
       'contact_name' => $_POST['contact_name'],
       'contact_email' => $_POST['contact_email'],
       'contact_phone' => $_POST['contact_phone'],
@@ -78,6 +79,9 @@ if ($_GET['create']) {
       <h5>Site info</h5>
       <label>
         Site name: <input type='text' name='site_name' required>
+      </label>
+      <label>
+        Short name: <input type='text' name='short_name' required>
       </label>
       <label>
         Contact name: <input type='text' name='contact_name' required>
