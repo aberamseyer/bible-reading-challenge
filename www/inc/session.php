@@ -35,7 +35,7 @@ class MySessionHandler implements SessionHandlerInterface
     {
       $this->s_db->query("
         INSERT INTO sessions (data, id, last_updated)
-        VALUES ('".$this->s_db->esc($data, $this->s_db)."', '".$this->s_db->esc($id)."', '".date(MySessionHandler::DATE_FORMAT)."')
+        VALUES ('".$this->s_db->esc($data)."', '".$this->s_db->esc($id)."', '".date(MySessionHandler::DATE_FORMAT)."')
         ON CONFLICT (id) DO UPDATE
         SET data=excluded.data, last_updated=excluded.last_updated
       ", "");

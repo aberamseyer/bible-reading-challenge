@@ -12,6 +12,7 @@ session_name("brc-sessid");
 $site = BibleReadingChallenge\Site::get_site();
 $db = BibleReadingChallenge\Database::get_instance();
 
+ini_set('session.use_strict_mode', 1);
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
 ini_set('session.gc_maxlifetime', SESSION_LENGTH);
