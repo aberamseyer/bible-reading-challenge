@@ -79,6 +79,15 @@
             'start_date' => date('Y-m-d', $start_date),
             'end_date' => date('Y-m-d', $end_date)
           ], "id = $change_sched[id]");
+          
+          // delete all scheduled readings that have been invalidated by the new start and end dates
+          $db->query("
+            DELETE FROM schedule_dates
+            WHERE schedule_id = $change_sched[id] AND
+              (
+                date < '".date('Y-m-d', $start_date)."' OR
+                date > '".date('Y-m-d', $end_date)."'
+              )");
           $_SESSION['success'] = "Saved schedule";
         }   
       }

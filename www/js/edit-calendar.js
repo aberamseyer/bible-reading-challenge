@@ -9,30 +9,63 @@
     const days = Array.from(
       document.querySelectorAll('[name="days[]"]:checked')
     ).map(x => `days[]=${x.value}`).join('&')
-    const activeDay = document.querySelector('.reading-day.active')
-    const currentPassage = activeDay.querySelector('input[data-passage]').value
-    let book, chp
+
+    const allDays = Array.from(document.querySelectorAll('.reading-day'));
+    let activeDay, prevDay
+    for (let i=0; i < allDays.length; i++) {
+      let el = allDays[i]
+      if (el.classList.contains('active')) {
+        activeDay = el
+        prevDay = i === 0 ? el : allDays[ i-1 ]
+        break
+      }
+    }
+    if (!activeDay) {
+      return
+    }
+
+    let currentPassage = activeDay.querySelector('input[data-passage]').value
     if (!currentPassage) {
-      book = 'Matthew'
-      chp = 1
+      currentPassage = `Matthew 1`
     }
-    else {
-      const arr = currentPassage.split(';')
-      const end = arr.pop().trim()
-      const matches = end.match(BOOK_REGEX)
-      book = matches[1]
-      chp = matches[3] || matches[2]
+    let prevPassage = prevDay.querySelector('input[data-passage]').value
+    if (!prevPassage) {
+      prevPassage = currentPassage
     }
+
+    let differences = []
+
+    for(let i=0; i < currentPassage.split(';').length; i++) {
+      const matchesCurr = currentPassage.split(';')[i].trim().match(BOOK_REGEX)
+      const bookCurr = matchesCurr[1]
+      const chpCurr = parseInt(matchesCurr[3] || matchesCurr[2])
+
+      const matchesPrev = prevPassage.split(';')[i].trim().match(BOOK_REGEX)
+      const bookPrev = matchesPrev[1]
+      const chpPrev = parseInt(matchesPrev[3] || matchesPrev[2])
+      differences.push('d[]=' + 
+        (bookCurr !== bookPrev
+          ? chpCurr + (parseInt(BOOK_CHAPTERS.find(b => b.name === bookPrev).chapters) - chpCurr)
+          : chpCurr - chpPrev)
+      )
+    }
+    
+    const queryStrArr = currentPassage.split(';').map(portion => {
+      const matches = portion.trim().match(BOOK_REGEX)
+      const book = matches[1]
+      const chp = matches[3] || matches[2]
+      return `start_book[]=${book}&start_chp[]=${chp}`
+    })
+
     const fillAfter = activeDay.getAttribute('data-date')
-    const chpsPerDay = +document.getElementById('chps-per-day').value || 1
-    fetch(`?calendar_id=${CALENDAR_ID}&fill_dates=${fillAfter}&rate=${chpsPerDay}&start_book=${book}&start_chp=${chp}&${days}`)
+    fetch(`?calendar_id=${CALENDAR_ID}&fill_dates=${fillAfter}&${differences.join('&')}&${queryStrArr.join('&')}&${days}`)
     .then(rsp => rsp.json())
     .then(data => {
       calendarDays.forEach(cd => {
-        const date = cd.getAttribute('data-date')
+        const date = cd.dataset.date
         if (data.hasOwnProperty(date)) {
-          cd.querySelector('input[data-passage]').value = data[date]
-          cd.querySelector('small').textContent = data[date]
+          cd.querySelector('input[data-passage]').value = data[date].join('; ')
+          cd.querySelector('small').textContent = data[date].join('; ')
         }
       })
     })
@@ -129,7 +162,7 @@
   fetch(`?get_dates=1&calendar_id=${CALENDAR_ID}`).then(rsp => rsp.json())
   .then(data => {
     calendarDays.forEach(tableCell => {
-      const date = tableCell.getAttribute('data-date')
+      const date = tableCell.dataset.date
       const matchingDay = data.find(sd => sd.date === date)
       if (matchingDay) {
         tableCell.querySelector('input[data-passage]').value = matchingDay.passage

@@ -22,12 +22,12 @@
         $db->update("schedule_dates", [
           'passage' => $day['passage'],
           'passage_chapter_ids' => json_encode($chp_ids)
-        ], "id = ".(int)$day['id']);
+        ], "schedule_id = $calendar_sched[id] AND id = ".(int)$day['id']);
       }
       else if ($day['id'] && !$day['passage']) {
         // delete
-        $db->query("DELETE FROM schedule_dates WHERE id = ".(int)$day['id']);
-        $db->query("DELETE FROM read_dates WHERE schedule_date_id = ".(int)$day['id']);
+        $db->query("DELETE FROM schedule_dates WHERE schedule_id = $calendar_sched[id] AND id = ".(int)$day['id']);
+        $db->query("DELETE FROM read_dates WHERE schedule_id = $calendar_sched[id] AND schedule_date_id = ".(int)$day['id']);
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
@@ -38,7 +38,7 @@
         'id');
 
         $db->insert("schedule_dates", [
-          'schedule_id' => $_POST['calendar_id'],
+          'schedule_id' => $calendar_sched['id'],
           'date' => $date,
           'passage' => $day['passage'],
           'passage_chapter_ids' => json_encode($chp_ids),
@@ -50,7 +50,7 @@
     redirect("/admin/schedules?calendar_id=".$calendar_sched['id']);
   }
 
-  if ($_REQUEST['fill_dates'] && $_REQUEST['rate'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
+  if ($_REQUEST['fill_dates'] && $_REQUEST['d'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
     // generate a schedule to fill in on the client side
     try {
       $start_date = date_create_from_format('Y-m-d H:i:s', $_REQUEST['fill_dates']." 00:00:00");
@@ -58,7 +58,6 @@
     // this is all input validation
     if ($start_date && $start_date->modify('+1 day') && $start_date->format('Y-m-d') >= $calendar_sched['start_date']) {
       // we +1 day bc the client sends us the day the user selected (one day before we start generating)
-      $rate = clamp((int)$_REQUEST['rate'], 1, 10); // between 1 and 10 chapters per day
       $end_date = new Datetime($calendar_sched['end_date']);
       $period = new DatePeriod(
         $start_date,
@@ -74,49 +73,70 @@
           $days[] = $date->format('Y-m-d');
         }
       }
-      // the id to start AFTER
-      $starting_id = $db->col("
-        SELECT c.id
-        FROM chapters c
-        JOIN books b ON b.id = c.book_id
-        WHERE b.name = '".$db->esc($_REQUEST['start_book'])."'
-          AND c.number = ".(int)$_REQUEST['start_chp']);
-      // all the chapters we need, limited by the amount * the rate we are generating
-      $chapters = array_reverse($db->select("
-        SELECT b.name book, c.number
-        FROM chapters c
-        JOIN books b ON b.id = c.book_id
-        WHERE c.id > ".intval($starting_id)."
-        LIMIT ".count($days)*$rate)); // reverse the array so we can use array_pop in the loop for sorting instead of array_shift, which is slower
 
-      if ($chapters) { // just to make sure no parameters were funky. lazy input validation.
-        $sorted = [];
-        // we group each book's chapters into a sub-array
-        foreach($days as $day) {
-          for($i = 0; $i < $rate; $i++) {
-            $chp_row = array_pop($chapters);
-            $sorted[$day][ $chp_row['book'] ][] = $chp_row['number'];
-          }
-        }
-        $result = [];
-        // we build references by pulling the last and first elements out of each sub-array
-        foreach($sorted as $date => $book_arr) {
-          $references = [];
-          foreach($book_arr as $book => $chp_arr) {
-            if ($end = array_pop($chp_arr)) { // sanity check
-              if ($chp_arr) {
-                $begin = array_shift($chp_arr);
-                $references[] = $book." ".$begin."-".$end;
-              }
-              else {
-                $references[] = $book." ".$end;
-              }
+      $book_arr = is_array($_REQUEST['start_book'])
+        ? $_REQUEST['start_book']
+        : [ $_REQUEST['start_book'] ];
+      $chp_arr = is_array($_REQUEST['start_chp'])
+        ? $_REQUEST['start_chp']
+        : [ $_REQUEST['start_chp'] ];
+      $d_arr = is_array($_REQUEST['d'])
+        ? $_REQUEST['d']
+        : [ $_REQUEST['d'] ];
+        
+      $result = []; $i = 0;
+      foreach(array_combine($book_arr, $chp_arr) as $b => $c) {
+        $rate = clamp((int)$d_arr[ $i++ ], 1, 10); // between 1 and 10 chapters per day
+        // the id to start AFTER
+        $starting_id = $db->col("
+          SELECT c.id
+          FROM chapters c
+          JOIN books b ON b.id = c.book_id
+          WHERE b.name = '".$db->esc($b)."'
+            AND c.number = ".(int)$c);
+        // all the chapters we need, limited by the amount * the rate we are generating
+        $chapters = array_reverse($db->select("
+          SELECT b.name book, c.number
+          FROM chapters c
+          JOIN books b ON b.id = c.book_id
+          WHERE c.id > ".intval($starting_id)."
+          LIMIT ".count($days)*$rate)); // reverse the array so we can use array_pop in the loop for sorting instead of array_shift, which is slower
+  
+        if ($chapters) { // just to make sure no parameters were funky. lazy input validation.
+          $sorted = [];
+          // we group each book's chapters into a sub-array
+          foreach($days as $day) {
+            for($j = 0; $j < $rate; $j++) {
+              $chp_row = array_pop($chapters);
+              $sorted[$day][ $chp_row['book'] ][] = $chp_row['number'];
             }
           }
-          $result[$date] = implode('; ', $references);
+          $iter_result = [];
+          // we build references by pulling the last and first elements out of each sub-array
+          foreach($sorted as $date => $book_arr) {
+            $references = [];
+            foreach($book_arr as $book => $chp_arr) {
+              if ($end = array_pop($chp_arr)) { // sanity check
+                if ($chp_arr) {
+                  $begin = array_shift($chp_arr);
+                  $references[] = $book." ".$begin."-".$end;
+                }
+                else {
+                  $references[] = $book." ".$end;
+                }
+              }
+            }
+            $iter_result[$date] = implode('; ', $references);
+          }
         }
-        print_json($result);
+        foreach($iter_result as $date => $passage) {
+          if (!is_array($result[ $date ])) {
+            $result[ $date ] = [];
+          }
+          $result[ $date ][] = $passage;
+        }
       }
+      print_json($result);
     }
   }
 
@@ -135,10 +155,22 @@
     <h5>Editing calendar for '".html($calendar_sched['name'])."'</h5>
     <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
     <h6>Instructions</h6>
-    <small>Double-click white-space to add/edit/remove a day's reading<br>
-    Hover mouse on the left edge of the screen for a reference of how many chapters are in each book<br>
-    Use format: <b>\"Matthew 28; John 1-2\"</b><br>
-    Only <b>future</b> days can be edited</small>";
+    <ul>
+      <li><small>Double-click white-space to add/edit/remove a day's reading</li>
+      <li>Hover mouse on the left edge of the screen for a reference of how many chapters are in each book</li>
+      <li>Use format: <code>Matthew 28; John 1-2</code></li>
+      <li>
+        To use autofill:
+        <ol>
+          <li>Fill in two consecutive days</li>
+          <li>Highlight the second day</li>
+          <li>Click 'Fill after selected'</li>
+        </ol>
+        Chapters per day will be calculated by the difference between the two days across passages segments.<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 2-4</code>. Click the second day to select it, and choose 'Fill after selected' to populate the calendar.
+      </li>
+      <li>Only <b>future</b> days can be edited</small></li>
+    </ul>";
 
   // sort books/chapters into some arrays for easier printing
   $book_chapters = $db->select("SELECT name, chapters FROM books");
@@ -159,7 +191,6 @@
   </div><br>
     <div>
       <button type='button' id='fill' disabled>Fill after selected</button>&nbsp;
-      <small><input type='number' id='chps-per-day' min='1' max='10' style='width: 50px; padding: 0.5rem;' value='1'> chps/day</small><br>
       <div style='display: flex; justify-content: space-between; align-items: center; padding: 0 7px;'>
         <label><input type='checkbox' name='days[]' value='7' checked> S</label>
         <label><input type='checkbox' name='days[]' value='1' checked> M</label>
