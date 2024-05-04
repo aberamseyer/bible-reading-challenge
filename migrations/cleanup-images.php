@@ -7,7 +7,7 @@
 require __DIR__."/../www/inc/env.php";
 require __DIR__."/../www/inc/functions.php";
 
-$db = \BibleReadingChallenge\Database::get_instance();
+$db = BibleReadingChallenge\Database::get_instance();
 
 $used_images = $db->cols("SELECT uploads_dir_filename FROM images");
 

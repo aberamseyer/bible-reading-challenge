@@ -58,7 +58,7 @@
     // this is all input validation
     if ($start_date && $start_date->modify('+1 day') && $start_date->format('Y-m-d') >= $calendar_sched['start_date']) {
       // we +1 day bc the client sends us the day the user selected (one day before we start generating)
-      $rate = max(1, min(10, (int)$_REQUEST['rate'])); // clamp rate between 1 and 10 chps/day
+      $rate = clamp((int)$_REQUEST['rate'], 1, 10); // between 1 and 10 chapters per day
       $end_date = new Datetime($calendar_sched['end_date']);
       $period = new DatePeriod(
         $start_date,
