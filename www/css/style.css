@@ -27,6 +27,37 @@ body {
     display: block;
   }
 }
+/* edit calendar page */
+#editor {
+  position: fixed;
+  top: 0;
+  left: -290px;
+  width: 300px;
+  z-index: 1;
+  background: var(--color-bg);
+  padding: 1rem;
+  border: 2px solid var(--color-bg-alt);
+  transition: .2s left;
+}
+#editor:hover {
+  left: -1px;
+}
+.chapters {
+  display: flex;
+  flex-flow: row wrap;
+}
+.chapters small {
+  width: 50%;
+}
+.edit-input {
+  font-size: 70%;
+  padding: 0;
+  width: 75px;
+  height: 35px;
+}
+.today .date, .future .date {
+  cursor: pointer;
+}
 
 /* read page */
 #date-header {

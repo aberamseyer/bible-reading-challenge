@@ -385,18 +385,26 @@ class Site extends SiteRegistry {
     $uuid = uniqid();
     $hash = password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
+    $user_id = $this->db->insert("users", [ 
+      'site_id' => $this->ID,
+      'uuid' => $uuid,
+      'name' => $name,
+      'email' => $email,
+      'password' => $hash,
+      'trans_pref' => 'rcv',
+      'date_created' => time(),
+      'email_verify_token' => $verify_token,
+      'emoji' => $emoji ?: $this->data('default_emoji')
+    ]);
+    $this->db->insert('schedules', [
+      'site_id' => $this->ID,
+      'user_id' => $user_id,
+      'name' => "$name's Schedule",
+      'start_date' => date('Y-m-d', strtotime('January 1')),
+      'end_date' => date('Y-m-d', strtotime('December 1')),
+    ]);
     return [
-      'insert_id' => $this->db->insert("users", [ 
-          'site_id' => $this->ID,
-          'uuid' => $uuid,
-          'name' => $name,
-          'email' => $email,
-          'password' => $hash,
-          'trans_pref' => 'rcv',
-          'date_created' => time(),
-          'email_verify_token' => $verify_token,
-          'emoji' => $emoji ?: $this->data('default_emoji')
-        ]),
+      'insert_id' => $user_id,
       'verify_token' => $verify_token,
       'uuid' => $uuid
     ];

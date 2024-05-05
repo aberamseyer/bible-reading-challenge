@@ -5,6 +5,7 @@ require_once __DIR__."/MailSender/MailSenderSES.php";
 require_once __DIR__."/MailSender/MailSenderSendgrid.php";
 require_once __DIR__."/BibleReadingChallenge/Site.php";
 require_once __DIR__."/BibleReadingChallenge/Database.php";
+require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 
 	function html ($str, $lang_flag = ENT_HTML5) {
 		return htmlspecialchars($str, ENT_QUOTES|$lang_flag);
@@ -150,37 +151,40 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			? 'active-page' : '';
 	}
 
+	function do_nav($links, $buttons, $navigation_class) {
+		$nav = "
+			<div class='$navigation_class'>";
+
+		$button_class = $buttons ? 'nav-item' : '';
+
+		foreach($links as list($link, $title)) {
+			$nav .= "<a class='$button_class ".active_navigation_class($link)."' href='$link'>$title</a>";
+		}
+		return $nav."</div>";
+	}
+
 	function admin_navigation() {
 		global $me;
 
-		$nav = "
-			<div class='admin-navigation'>";
-
 		$arr = [
-			['users', 'Users'],
-			['progress', 'Progress'],
-			['schedules', 'Schedules'],
-			['customize', 'Customize']
+			['/admin/users', 'Users'],
+			['/admin/progress', 'Progress'],
+			['/admin/schedules', 'Schedules'],
+			['/admin/customize', 'Customize']
 		];
 		if ($me['id'] == 1) {
 			$arr[] = ['sites', 'Sites'];
 		}
 
-		foreach($arr as list($link, $title)) {
-			$nav .= "<a class='nav-item ".active_navigation_class($link)."' href='/admin/$link'>$title</a>";
-		}
-		return $nav."</div>";
+		return do_nav($arr, true, 'admin-navigation');
 	}
 
 	function navigation() {
 		global $staff;
 		$site = BibleReadingChallenge\Site::get_site();
 
-		$nav = "
-    	<div class='navigation'>";
-
 		$nav_elements = [
-			['/my-schedule/corporate', 'My schedule'.($site->data('allow_personal_schedules') ? 's' : '')],
+			['/my-schedule', 'My schedule'.($site->data('allow_personal_schedules') ? 's' : '')],
 			['/today', 'Today'],
 			['/profile', 'Profile']
 		];
@@ -188,11 +192,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			array_unshift($nav_elements, ['/admin', 'Admin']);
 		}
 
-		foreach($nav_elements as list($link, $title)) {
-			$nav .= "<a class='".active_navigation_class($link)."' href='$link'>$title</a>";
-		}
-
-		return $nav."</div>";
+		return do_nav($nav_elements, false, 'navigation');
 	}
 
 	function allowed_schedule_date(Datetime $date) {
@@ -309,7 +309,7 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 			echo "</div>";
 		}
 		if ($editable) {
-			echo "<br><button type='submit' name='edit' value='1'>Save Changes</button></form>";
+			echo "<br><button type='submit' name='edit' value='1'>Save readings</button></form>";
 		}
 		return ob_get_clean();
 	}

@@ -1,7 +1,20 @@
 <?php
   require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
-  require "index.php";  
+
+  $calendar_sched = new BibleReadingChallenge\Schedule(false);
+  if ($_REQUEST['get_dates']) {
+    print_json($calendar_sched->get_dates());
+  }
+
+  $hide_title = true;
+  $page_title = "Schedule".($allow_personal_schedules ? 's' : '');
+  require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";  
+
+  echo do_nav([
+    ['/my-schedule/corporate', 'Corporate'],
+    ['/my-schedule/personal', 'Personal'],
+  ], true, 'admin-navigation');
   
   echo "<h1>".($allow_personal_schedules ? "Corporate " : "")." Schedule</h1>";
   echo "<p>Click a date to jump to any past reading to complete it</p>";
