@@ -115,5 +115,5 @@ CREATE TABLE schedules(
   name TEXT,
   start_date TEXT,
   end_date TEXT,
-  active INTEGER
+  active INTEGER DEFAULT(0)
 );

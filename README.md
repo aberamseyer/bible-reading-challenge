@@ -18,7 +18,6 @@ Initialize it with the data from `migrations/bible-import.sql`
 ### Schema
 to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > migrations/schema.sql`
 
-
 ## Realtime updates
 This website supports readers' seeing each other on the page reading together
 
@@ -28,7 +27,7 @@ From the `socket` directory, run `npm i` and then keep it alive with `forever st
 It defaults to port `8085`, customizable with the environment variable `SOCKET_PORT`
 
 ## API Keys
-create a '.env' file in the project root. required keys:
+Each site created in the database requires the following values in the 'env' column
 
 ### Emails
 - SENDGRID_API_KEY_ID
