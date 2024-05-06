@@ -16,12 +16,12 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 echo admin_navigation();
 
 echo "<h5 class='text-center'>Group Monthly Progress</h5>";
-$start = new Datetime($schedule['start_date']);
-$end_date = new Datetime($schedule['end_date']);
+$start = new Datetime($schedule->data('start_date'));
+$end_date = new Datetime($schedule->data('end_date'));
 $next = clone($start); $next->modify('+1 month');
 $prev = clone($start);
 
-$total_words_in_schedule = total_words_in_schedule($schedule['id']);
+$total_words_in_schedule = total_words_in_schedule($schedule->ID);
 $graphs = [];
 $sum = 0;
 do {
@@ -32,7 +32,7 @@ do {
     JOIN chapters c on c.id = value
     JOIN read_dates rd ON sd.id = rd.schedule_date_id
     JOIN users u ON u.id = rd.user_id
-    WHERE sd.schedule_id = $schedule[id] AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
+    WHERE sd.schedule_id = ".$schedule->ID." AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
     GROUP BY u.id
     ORDER BY COUNT(*) DESC, RANDOM()
     LIMIT 20");
@@ -100,16 +100,16 @@ echo "<thead>
 
 foreach($all_users as $user) {
   $days_behind = 
-    $db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = $schedule[id] AND date <= '".date('Y-m-d')."'") - 
-    $db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = $schedule[id] AND rd.user_id = $user[id]");
-  $percent_complete = words_read($user, $schedule['id']) / total_words_in_schedule($schedule['id']) * 100;
+    $db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$schedule->ID." AND date <= '".date('Y-m-d')."'") - 
+    $db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$schedule->ID." AND rd.user_id = $user[id]");
+  $percent_complete = words_read($user,$schedule->ID) / total_words_in_schedule($schedule->ID) * 100;
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
   <td data-percent='".($percent_complete)."'>".round($percent_complete, 2)."%</td>
   <td data-progress='$percent_complete' style='max-height: 100px;'>";
-    echo $site->progress_canvas($user['id'], $schedule['id'], 170);
+    echo $site->progress_canvas($user['id'], $schedule->ID, 170);
   echo "</td></tr>";
 }
 echo "</tbody>

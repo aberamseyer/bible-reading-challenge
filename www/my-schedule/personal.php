@@ -10,7 +10,7 @@
 
   $calendar_sched = new BibleReadingChallenge\Schedule(true);
   if ($_REQUEST['get_dates']) {
-    print_json($calendar_sched->get_dates());
+    print_json($calendar_sched->get_dates($my_id));
   }
   else if ($_REQUEST['fill_dates'] && $_REQUEST['d'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
     print_json(
@@ -20,9 +20,23 @@
   else if ($_POST['start_date'] && $_POST['end_date']) {
     $start = new Datetime($_POST['start_date']);
     $end = new Datetime($_POST['end_date']);
-    $calendar_sched->update($start, $end, $calendar_sched->data('name'));
-    $_SESSION['success'] = "Updated your schedule's dates.";
-    redirect();
+    if (!$start || !$end) {
+      $_SESSION['error'] = "Invalid dates";
+    }
+    else {
+      $difference = $start->diff($end);
+      if ($start >= $end) {
+        $_SESSION['error'] = 'Start date must come before end date';
+      }
+      else if ($difference->y > 4) {
+        $_SESSION['error'] = 'Schedule must be shorter than 4 years';
+      }
+      else {
+        $calendar_sched->update($start, $end, $calendar_sched->data('name'));
+        $_SESSION['success'] = "Updated your schedule's dates.";
+        redirect();
+      }
+    }
   }
   else if ($_POST['edit']) {
     $calendar_sched->edit($_POST['days']);
@@ -44,6 +58,7 @@
   echo "<h1>Personal Schedule</h1>
   <details>
     <summary>Introduction</summary>
+    <h5>Personal Calendar Instructions</h5>
     <p>
       From here, you can create and edit your very own Bible reading schedule. This is useful if you already read the Bible on your own schedule
       and want to track everything in one on the website. Everything read here will be recorded and count toward your personal statistics, but it will

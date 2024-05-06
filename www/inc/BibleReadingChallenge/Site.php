@@ -137,7 +137,7 @@ class Site extends SiteRegistry {
 
 	public function get_active_schedule()
   {
-		return $this->db->row("SELECT * FROM schedules WHERE site_id = ".$this->ID." AND active = 1");
+    return new Schedule(false);
 	}
 
   public function all_users($stale = false) {
@@ -245,6 +245,7 @@ class Site extends SiteRegistry {
 			echo "
 			<div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
 			<form action='".SCHEME."://".$this->DOMAIN."/today' method='get' $form_style>
+        <input type='hidden' name='schedule_id' value='".$schedule->ID."'>
 				<input type='hidden' name='complete_key' value='$complete_key".($email ? '-e' : '' /* bypass wpm check from an email */)."'>
 				<input type='hidden' name='today' value='$scheduled_reading[date]'>
 				<button type='submit' name='done' value='1' $btn_style>Done!</button>
@@ -254,7 +255,7 @@ class Site extends SiteRegistry {
 			echo "<p>Nothing to read today!</p>";
 	
 			// look for the next time to read in the schedule.
-			$days = get_schedule_days($schedule['id']);
+			$days = $schedule->get_schedule_days();
 			$today = new \Datetime();
 			foreach($days as $day) {
 				$dt = new \Datetime($day['date']);
@@ -301,8 +302,8 @@ class Site extends SiteRegistry {
 
   public function weekly_counts($user_id, $schedule)
   {
-    $start = new \DateTime($schedule['start_date']);
-    $end = new \DateTime($schedule['end_date']);
+    $start = new \DateTime($schedule->data('start_date'));
+    $end = new \DateTime($schedule->data('end_date'));
   
     $interval = $start->diff($end);
     $days_between = abs(intval($interval->format('%a')));

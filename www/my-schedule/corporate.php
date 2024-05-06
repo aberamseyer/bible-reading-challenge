@@ -4,7 +4,7 @@
 
   $calendar_sched = new BibleReadingChallenge\Schedule(false);
   if ($_REQUEST['get_dates']) {
-    print_json($calendar_sched->get_dates());
+    print_json($calendar_sched->get_dates($my_id));
   }
 
   $hide_title = true;
@@ -19,7 +19,7 @@
   echo "<h1>".($allow_personal_schedules ? "Corporate " : "")." Schedule</h1>";
   echo "<p>Click a date to jump to any past reading to complete it</p>";
   
-  echo generate_schedule_calendar($schedule);
+  echo $schedule->generate_schedule_calendar();
   
   $add_to_foot .= "
     <script>

@@ -133,7 +133,7 @@ class Database {
 	 */
 	public function update ($table, $vals, $where)
   {
-		$SET = array();
+		$SET = [];
 		foreach ($this->format_db_vals($vals) as $col => $val) {
 			$col = preg_replace("/^__/", "", $col, 1, $use_literal);
 			$SET[] = "$col = $val";

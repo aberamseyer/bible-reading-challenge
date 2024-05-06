@@ -15,7 +15,7 @@ if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
     LEFT JOIN (
       SELECT * FROM read_dates WHERE user_id = ".intval($_REQUEST['user_id'])."
     ) rd ON rd.schedule_date_id = sd.id
-    WHERE schedule_id = $schedule[id]"));
+    WHERE schedule_id = ".$schedule->ID));
 }
     
 // edit/delete user
@@ -129,7 +129,7 @@ if ($_GET['user_id'] &&
   <div class='two-columns'>
     <div>
       <h6 class='text-center'>Progress</h6>
-     ".$site->progress_canvas($user['id'], $schedule['id'])."
+     ".$site->progress_canvas($user['id'], $schedule->ID)."
     </div>
     <div>
       <h6 class='text-center'>Days read each week</h6>
@@ -164,7 +164,7 @@ if ($_GET['user_id'] &&
     </fieldset>
   </form>";
   echo "<h5>Progress</h5>";
-  echo generate_schedule_calendar($schedule);
+  echo $schedule->generate_schedule_calendar();
   $add_to_foot .= chartjs_js();
   $add_to_foot .= "
   <script src='/js/user.js'></script>
@@ -239,8 +239,8 @@ else {
 
   $last_beginning = $user_start_date ?: new Datetime("last $starting_day_of_week");
   
-  $schedule_start_date = new Datetime($schedule['start_date']);
-  $schedule_end_date = new Datetime($schedule['end_date']);
+  $schedule_start_date = new Datetime($schedule->data('start_date'));
+  $schedule_end_date = new Datetime($schedule->data('end_date'));
 
   // week picker
   $period = new DatePeriod(
@@ -303,7 +303,7 @@ else {
       
   echo "<h5>Fully Equipped ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ]))."</h5>";
   $where = "
-    WHERE sd.schedule_id = $schedule[id] ".                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
+    WHERE sd.schedule_id = ".$schedule->ID.                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
     " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = $db->col("
     SELECT COUNT(*)
@@ -369,7 +369,7 @@ else {
         SELECT DATE(sd.date) d
         FROM read_dates rd
         JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-        WHERE schedule_id = $schedule[id]
+        WHERE schedule_id = ".$schedule->ID."
           AND rd.user_id = $user[id]
           AND d >= DATE('".$this_week[0][0]->format('Y-m-d')."')
           AND d <= DATE('".$this_week[6][0]->format('Y-m-d')."')");

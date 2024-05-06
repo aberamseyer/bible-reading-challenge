@@ -205,7 +205,7 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			<table>
 				<thead>
 					<tr>';
-		$weekdays = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+		$weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 		foreach ($weekdays as $weekday) {
 			$calendar .= '
 				<th>' . $weekday . '</th>';
@@ -286,46 +286,7 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 		
 		return $calendar;
 	}
-	function generate_schedule_calendar($schedule, $editable = false) {
-		$start_date = new Datetime($schedule['start_date']);
-		$end_date = new Datetime($schedule['end_date']);
 
-		$period = new DatePeriod(
-			new Datetime($start_date->format('Y-m').'-01'),
-			new DateInterval('P1M'), // 1 month
-			$end_date,
-			DatePeriod::INCLUDE_END_DATE
-		);
-		
-		ob_start();
-		if ($editable) {
-			echo "<form method='post'>
-				<input type='hidden' name='calendar_id' value='$schedule[id]'>";
-		}
-		foreach ($period as $date) {
-			echo "<div class='month table-scroll'>";
-			echo "<h6 class='text-center'>".$date->format('F Y')."</h6>";
-			echo generate_calendar($date->format('Y'), $date->format('F'), $start_date, $end_date, $editable);
-			echo "</div>";
-		}
-		if ($editable) {
-			echo "<br><button type='submit' name='edit' value='1'>Save readings</button></form>";
-		}
-		return ob_get_clean();
-	}
-
-	/**
-	 * returns one element from the array returned by get_schedule_days($schedule_id)
-	 */
-	function get_reading($datetime, $schedule_id) {
-		$days = get_schedule_days($schedule_id);
-		$today = $datetime->format('Y-m-d');
-		foreach($days as $day) {
-			if ($day['date'] == $today)
-				return $day;
-		}
-		return false;
-	}
 
 	/**
 	 * This parses a passage that appears in the schedule calendar
@@ -379,54 +340,6 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			}
 		}
 		return $chps;
-	}
-
-	/**
-	 * [
-	 * 		[0] => [
-	 * 			'id' => 1
-	 * 			'date' => '2023-06-27'
-	 *			'reference' => 'Matthew 1; Mark 2',
-	 *  		'passages' => [
-	 *				'book' => book_row,
-	 * 				'chapter' => chapter_row
-	 *			],
-	 *			...
-	 * 		],
-	 * 		...
-	 * ]
-	 */
-	function get_schedule_days($schedule_id) {
-		static $schedules = [];
-		if ($schedules[$schedule_id]) {
-			return $schedules[$schedule_id];
-		}
-
-		$db = BibleReadingChallenge\Database::get_instance();
-		$schedule_dates = $db->select("SELECT * FROM schedule_dates WHERE schedule_id = $schedule_id");
-		$days = [];
-		foreach ($schedule_dates as $sd) {			
-			$days[] = [
-				'id' => $sd['id'],
-				'date' => $sd['date'],
-				'reference' => $sd['passage'],
-				'passages' => parse_passage($sd['passage']),
-				'complete_key' => $sd['complete_key']
-			];
-		}
-		$schedules[$schedule_id] = $days;
-
-		return $days;
-	}
-
-	function schedule_completed($user_id, $schedule_id) {
-		$db = BibleReadingChallenge\Database::get_instance();
-		return $db->col("SELECT COUNT(*)
-			FROM read_dates rd
-			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-			WHERE user_id = $user_id AND schedule_id = $schedule_id")
-			== $db->col("SELECT COUNT(*)
-				FROM schedule_dates WHERE schedule_id = $schedule_id");
 	}
 
 function log_user_in($id) {
@@ -486,15 +399,6 @@ function four_week_trend_data($user_id) {
 		ORDER BY sd.week ASC
 		LIMIT 4");
 		return array_column($values, 'count', 'day_start');
-}
-
-function day_completed($my_id, $schedule_date_id) {
-	$db = BibleReadingChallenge\Database::get_instance();
-	return $db->num_rows("
-		SELECT id
-		FROM read_dates
-		WHERE schedule_date_id = $schedule_date_id
-			AND user_id = $my_id");
 }
 
 function number_chapters_in_book_read($book_id, $user_id) {

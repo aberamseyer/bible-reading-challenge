@@ -7,6 +7,9 @@ class Schedule {
   private readonly array $data;
   private readonly bool $private;
   private readonly Database $db;
+  private readonly array $schedule_days;
+  private array $just_completed_arr;
+  private array $day_completed_arr;
 
   public function __construct($private, $id=false)
   {
@@ -29,6 +32,8 @@ class Schedule {
       $this->data = [];
       $this->ID = 0;
     }
+    $this->just_completed_arr = [];
+    $this->day_completed_arr = [];
   }
 
   public function data($key)
@@ -100,7 +105,7 @@ class Schedule {
         <button type='button' id='clear' disabled>Clear after selected</button>
       </div>
     </div>";
-    echo generate_schedule_calendar($this->data, true);
+    echo $this->generate_schedule_calendar(true);
   
     $add_to_foot .= "
       <script>
@@ -208,8 +213,15 @@ class Schedule {
     }
   }
 
-  public function get_dates() {
-    return $this->db->select("SELECT id, date, passage FROM schedule_dates WHERE schedule_id = ".$this->ID);
+  public function get_dates($user_id)
+  {
+    return $this->db->select("
+      SELECT sd.id, sd.date, sd.passage, rd.id read
+      FROM schedule_dates sd
+      LEFT JOIN (
+        SELECT * FROM read_dates WHERE user_id = ".intval($user_id)."
+      ) rd ON rd.schedule_date_id = sd.id
+      WHERE schedule_id = ".$this->ID);
   }
 
   public function edit($days)
@@ -297,7 +309,8 @@ class Schedule {
     $this->db->query("DELETE FROM schedules WHERE site_id = ".$this->data('site_id')." AND id  = ".$this->ID);
   }
 
-  public function duplicate() {
+  public function duplicate()
+  {
     $s_id = Schedule::create(new \Datetime($this->data('start_date')), new \Datetime($this->data('end_date')), "Copy of ".$this->data('name'), $this->data('site_id'), 0);
     $this->db->query("
       INSERT INTO schedule_dates (schedule_id, date, passage)
@@ -316,5 +329,116 @@ class Schedule {
         $schedules[] = new Schedule(false, $id);
     }
     return $schedules;
+  }
+
+	public function generate_schedule_calendar($editable = false)
+  {
+		$start_date = new \Datetime($this->data('start_date'));
+		$end_date = new \Datetime($this->data('end_date'));
+
+		$period = new \DatePeriod(
+			new \Datetime($start_date->format('Y-m').'-01'),
+			new \DateInterval('P1M'), // 1 month
+			$end_date,
+			\DatePeriod::INCLUDE_END_DATE
+		);
+		
+		ob_start();
+		if ($editable) {
+			echo "<form method='post'>
+				<input type='hidden' name='calendar_id' value='".$this->ID."'>";
+		}
+		foreach ($period as $date) {
+			echo "<div class='month table-scroll'>";
+			echo "<h6 class='text-center'>".$date->format('F Y')."</h6>";
+			echo generate_calendar($date->format('Y'), $date->format('F'), $start_date, $end_date, $editable);
+			echo "</div>";
+		}
+		if ($editable) {
+			echo "<br><button type='submit' name='edit' value='1'>Save readings</button></form>";
+		}
+		return ob_get_clean();
+	}
+
+	/**
+	 * returns one element from the array returned by get_schedule_days($schedule_id)
+	 */
+	public function get_reading($datetime)
+  {
+		$days = $this->get_schedule_days();
+		$today = $datetime->format('Y-m-d');
+		foreach($days as $day) {
+			if ($day['date'] == $today)
+				return $day;
+		}
+		return false;
+	}
+
+	/**
+	 * [
+	 * 		[0] => [
+	 * 			'id' => 1
+	 * 			'date' => '2023-06-27'
+	 *			'reference' => 'Matthew 1; Mark 2',
+	 *  		'passages' => [
+	 *				'book' => book_row,
+	 * 				'chapter' => chapter_row
+	 *			],
+	 *			...
+	 * 		],
+	 * 		...
+	 * ]
+	 */
+	public function get_schedule_days()
+  {
+    if (!isset($this->schedule_days)) {
+      $schedule_dates = $this->db->select("SELECT * FROM schedule_dates WHERE schedule_id = ".$this->ID);
+      $days = [];
+      foreach ($schedule_dates as $sd) {			
+        $days[] = [
+          'id' => $sd['id'],
+          'date' => $sd['date'],
+          'reference' => $sd['passage'],
+          'passages' => parse_passage($sd['passage']),
+          'complete_key' => $sd['complete_key']
+        ];
+      }
+      $this->schedule_days = $days;
+    }
+    
+		return $this->schedule_days;
+	}
+
+	public function completed($user_id)
+  {
+    return $this->db->col("
+      SELECT COUNT(*)
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      WHERE user_id = $user_id AND schedule_id = ".$this->ID)
+      == $this->db->col("SELECT COUNT(*)
+        FROM schedule_dates WHERE schedule_id = ".$this->ID);
+	}
+
+  public function set_just_completed($user_id, bool $complete)
+  {
+    $this->just_completed_arr[ $user_id ] = $complete;
+  }
+
+  public function get_just_completed($user_id)
+  {
+    return $this->just_completed_arr[ $user_id ] ?: false;
+  }
+
+  public function day_completed($user_id, $scheduled_reading_id)
+  {
+    if (!isset($this->day_completed_arr[ $user_id ])) {
+      $this->day_completed_arr[ $user_id ] = $this->db->num_rows("
+        SELECT id
+        FROM read_dates
+        WHERE schedule_date_id = $scheduled_reading_id
+          AND user_id = $user_id");
+    }
+    return $this->day_completed_arr[ $user_id ];
   }
 }

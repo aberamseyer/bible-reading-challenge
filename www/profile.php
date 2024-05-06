@@ -44,9 +44,9 @@ else {
   echo $badges;
 }
 
-$words_read = words_read($me, $schedule['id']);
+$words_read = words_read($me, $schedule->ID);
 
-$total_words_in_challenge = total_words_in_schedule($schedule['id']);
+$total_words_in_challenge = total_words_in_schedule($schedule->ID);
 
 echo "</div>
 <div class='two-columns'>
@@ -75,7 +75,7 @@ echo "</div>
 </div>";
 
 // mountain
-$total_words_in_schedule = total_words_in_schedule($schedule['id']);
+$total_words_in_schedule = total_words_in_schedule($schedule->ID);
 $emojis = $db->select("
   SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
   FROM schedule_dates sd
@@ -83,7 +83,7 @@ $emojis = $db->select("
   JOIN chapters c on c.id = value
   JOIN read_dates rd ON sd.id = rd.schedule_date_id
   JOIN users u ON u.id = rd.user_id
-  WHERE sd.schedule_id = $schedule[id]
+  WHERE sd.schedule_id = ".$schedule->ID."
   GROUP BY u.id
   ORDER BY 
     CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
@@ -99,7 +99,7 @@ echo "
   <div class='two-columns'>
     <div>
       <h6 class='text-center'>Progress</h6>
-      ".$site->progress_canvas($me['id'], $schedule['id'])."
+      ".$site->progress_canvas($me['id'], $schedule->ID)."
     </div>
     <div>
       <h6 class='text-center'>Days read each week</h6>

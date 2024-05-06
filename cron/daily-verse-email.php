@@ -19,10 +19,10 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   }
   
   $schedule = $site->get_active_schedule();
-  $recently = new Datetime($schedule['start_date']);
+  $recently = new Datetime($schedule->data('start_date'));
   $recently->modify('-3 months');
   
-  $scheduled_reading = get_reading($today, $schedule['id']);
+  $scheduled_reading = $schedule->get_reading($today);
   
   if (!$scheduled_reading) {
     die("nothing to do today!");
@@ -35,7 +35,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     }
   
     // skip anyone who's already read today (ptl early risers!)
-    if (day_completed($user['id'], $scheduled_reading['id'])) {
+    if ($schedule->day_completed($user['id'], $scheduled_reading['id'])) {
       continue;
     }
     

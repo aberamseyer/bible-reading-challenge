@@ -7,7 +7,7 @@
   }
 
   if ($_REQUEST['get_dates']) {
-    print_json($calendar_sched->get_dates());
+    print_json($calendar_sched->get_dates($my_id));
   }
 
   if ($_POST['edit']) {
