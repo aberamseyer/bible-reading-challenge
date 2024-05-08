@@ -15,7 +15,7 @@ if ($_POST['email']) {
     $_SESSION['error'] = "Invalid email.";
   }
   else {
-    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($_POST['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($_POST['email'])."'");
     if ($user_row['forgot_password_expires'] && time() <= date('U', $user_row['forgot_password_expires'])) {
       $_SESSION['error'] = "Email already sent.";
     }
@@ -37,7 +37,7 @@ if ($_POST['email']) {
 }
 else if ($_REQUEST['reset']) {
   // check password reset link
-  $user_row = $db->row("SELECT * FROM users WHERE uuid = '".$db->esc($_REQUEST['reset'])."'");
+  $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND uuid = '".$db->esc($_REQUEST['reset'])."'");
   if (!$user_row || $user_row['forgot_password_token'] != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid reset link.";
   }

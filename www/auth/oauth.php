@@ -15,7 +15,7 @@ else {
     $_SESSION['error'] = "Problem with Google Sign in";
   } else {
     $payload['email'] = strtolower($payload['email']);
-    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($payload['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
       $ret = $site->create_user($payload['email'], $payload['name']);
