@@ -1,8 +1,5 @@
 <?php
 
-ini_set('upload_max_filesize', '20M');
-ini_set('post_max_size', '20M');
-
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 if (!$staff) {
@@ -23,7 +20,7 @@ if ($abe) {
 
 
 // Uploaded pictures handler
-if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK) {
+if ($_FILES && $_FILES['upload']) {
   $ext = '.'.pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
   $mime = mime_content_type($_FILES['upload']['tmp_name']);
   $valid_mime = strpos($mime, 'image/') === 0 || ($mime == 'text/plain' && $ext == '.svg'); // svg files appear as text/plain sometimes
@@ -33,6 +30,19 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
   }
   else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '".$db->esc($md5)."' AND site_id = ".$site->ID)) { 
     $_SESSION['error'] = "A file like that seems to already exist by the name '".html($existing_match)."'";
+  }
+  else if ($_FILES['upload']['error'] != UPLOAD_ERR_OK) {
+    $msg = [
+      0 => 'There is no error, the file uploaded with success',
+      1 => 'The uploaded file exceeds the maximum: '.ini_get('upload_max_filesize'),
+      2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
+      3 => 'The uploaded file was only partially uploaded',
+      4 => 'No file was uploaded',
+      6 => 'Missing a temporary folder',
+      7 => 'Failed to write file to disk.',
+      8 => 'A PHP extension stopped the file upload.',
+    ][ $_FILES['upload']['error'] ];
+    $_SESSION['error'] = "Error uploading file: $msg";
   }
   else {
     $realpath = tempnam(UPLOAD_DIR, "upload-");

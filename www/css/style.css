@@ -28,6 +28,38 @@ body {
   }
 }
 
+/* edit calendar page */
+#editor {
+  position: fixed;
+  top: 0;
+  left: -290px;
+  width: 300px;
+  z-index: 1;
+  background: var(--color-bg);
+  padding: 1rem;
+  border: 2px solid var(--color-bg-alt);
+  transition: .2s left;
+}
+#editor:hover {
+  left: -1px;
+}
+.chapters {
+  display: flex;
+  flex-flow: row wrap;
+}
+.chapters small {
+  width: 50%;
+}
+.edit-input {
+  font-size: 70%;
+  padding: 0;
+  width: 75px;
+  height: 35px;
+}
+.today .date, .future .date {
+  cursor: pointer;
+}
+
 /* read page */
 #date-header {
   display: flex;
@@ -191,7 +223,6 @@ th, td {
   bottom: 0;
   transition: .1s all;
 }
-
 @keyframes yAxis {
   50% {
     animation-timing-function: cubic-bezier(0.02, 0.01, 0.21, 1);
@@ -211,4 +242,57 @@ th, td {
   width: 100px;
   height: 50px;
   margin-left: 14px;
+}
+
+/* navigation */
+.admin-navigation {
+  margin: 21px 0;
+}
+.nav-item {
+  margin: 0 14px;
+  padding: 10px 15px;
+  font-size: 1.3rem;
+  border: none;
+  background: none;
+}
+.nav-item.active-page {
+  border-radius: 4px;
+  background: var(--color-blossom);
+  color: var(--color-bg) !important;
+  border: 2px solid var(--color-blossom);
+}
+
+/* tabs */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+}
+.tabs label {
+  order: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 2rem;
+  margin-right: 0.2rem;
+  cursor: pointer;
+  font-weight: bold;
+  border-bottom: 2px solid var(--color-bg);
+}
+.tabs .tab {
+  order: 9;
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  display: none;
+  padding: 1rem;
+  padding: 20px;
+}
+.tabs input[type="radio"] {
+  display: none;
+}
+.tabs input[type="radio"]:checked + label {
+  border-bottom: 2px solid var(--color-text);
+}
+.tabs input[type="radio"]:checked + label + .tab {
+  display: block;
 }

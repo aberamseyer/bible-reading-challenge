@@ -6,9 +6,17 @@ Written with php 8.2.3 and apache 2.4.38
 ## Configuration
 Set the system time zone and php time zone (`date.timezone` in `php.ini`) to the same thing.
 
-In `php.ini`, set `max_input_vars` to `3000`. This is sufficient for editing a schedule that is up to 4 years long.
+In `php.ini`, set the following:
+```
+max_input_vars = 3000;
+upload_max_filesize = 10M;
+```
+
+This is sufficient for editing a schedule that is up to 4 years long and typical picture uploads.
 
 Install [composer](https://getcomposer.org/) dependencies in root of project with `composer install`
+
+In apache and nginx configuration, be sure file uploads are also set to be at least 10MB.
 
 ## Database
 create an SQLite database file named "brc.db" in root of project from schema.sql

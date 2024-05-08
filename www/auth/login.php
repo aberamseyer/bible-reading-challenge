@@ -27,7 +27,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
         $_SESSION['error'] = "Please confirm your email.";
       }
       else {
-        $_SESSION['succes'] = "Welcome back!";
+        $_SESSION['success'] = "Welcome back!";
         log_user_in($user_row['id']);        
       }
     }

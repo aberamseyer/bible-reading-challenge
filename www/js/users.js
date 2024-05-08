@@ -23,7 +23,14 @@ const compareRows = (a, b, currentSortColumn) => {
     return a_arr.reduce((acc, curr) => acc + curr) > b_arr.reduce((acc, curr) => acc + curr) ? 1 : -1
   }
   else if (column === 'period') {
-    return a.querySelectorAll('.active').length > b.querySelectorAll('.active').length ? 1 : -1
+    const aLength = a.querySelectorAll('.active').length
+    const bLength = b.querySelectorAll('.active').length
+    if (aLength !== bLength) {
+      return aLength > bLength ? 1 : -1
+    }
+    else {
+      return compareRows(b, a, 'name') // order is switched to get ascending
+    }
   }
 }
 initTable(compareRows, 'period')

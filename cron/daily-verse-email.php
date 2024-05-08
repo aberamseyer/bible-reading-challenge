@@ -65,6 +65,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     
     $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
     
+    usleep(1_000_000 / 5); // 5 per second at most
     $site->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
   }
 }

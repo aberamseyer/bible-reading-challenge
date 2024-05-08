@@ -25,8 +25,8 @@ if ($_POST) {
     $db->insert('schedules', [
       'site_id' => $new_site_id,
       'name' => 'Default Schedule',
-      'start_date' => date('Y-m-d'),
-      'end_date' => date('Y-m-d'),
+      'start_date' => date('Y-m-d', strtotime('January 1')),
+      'end_date' => date('Y-m-d', strtotime('December 31')),
       'active' => 1
     ]);
     $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
