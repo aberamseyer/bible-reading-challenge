@@ -27,7 +27,7 @@
       else if ($day['id'] && !$day['passage']) {
         // delete
         $db->query("DELETE FROM schedule_dates WHERE schedule_id = $calendar_sched[id] AND id = ".(int)$day['id']);
-        $db->query("DELETE FROM read_dates WHERE schedule_id = $calendar_sched[id] AND schedule_date_id = ".(int)$day['id']);
+        $db->query("DELETE FROM read_dates WHERE schedule_date_id = ".(int)$day['id']);
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
