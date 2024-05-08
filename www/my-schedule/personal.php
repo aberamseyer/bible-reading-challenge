@@ -1,9 +1,7 @@
 <?php
   require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
-  $allow_personal_schedules = $site->data('allow_personal_schedules');
-
-  if (!$allow_personal_schedules) {
+  if (!$site->data('allow_personal_schedules')) {
     redirect('/my-schedule/corporate');
   }
 

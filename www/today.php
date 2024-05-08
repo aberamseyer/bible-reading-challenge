@@ -35,8 +35,11 @@ if (strtotime($_GET['today'])) {
 }
 
 
-$personal_schedule = new BibleReadingChallenge\Schedule(true);
-$schedules = [ &$schedule, &$personal_schedule ];
+$schedules = [ &$schedule ];
+if ($site->data('allow_personal_schedules')) {
+  $personal_schedule = new BibleReadingChallenge\Schedule(true);
+  $schedules []= &$personal_schedule;
+}
 foreach($schedules as $each_schedule) {
   $scheduled_reading = $each_schedule->get_reading($today);
   if (!$scheduled_reading) {
@@ -55,17 +58,18 @@ foreach($schedules as $each_schedule) {
   
   // determine if today's reading is completed
   $today_completed = $each_schedule->day_completed($my_id, $scheduled_reading['id'] ?: 0);
-  $schedule_just_completed = false; // only true on the day we finish the schedule
   // "Done!" clicked
   if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
     $valid = true;
     if ($_REQUEST['complete_key']) {
       // we need a way to bypass the wpm check from an email.
-      // when the email is generated, a '-e' is appended to the complete key (see daily-verse-email.php)
-      list($complete_key, $e) = explode('-', $_REQUEST['complete_key']);      
-      $valid = $complete_key === $scheduled_reading['complete_key'];
+      // when the email is generated, a '-e' is appended to the complete key (see daily-verse-email.php's call to html_for_scheduled_reading() and Site.php)
+      list($complete_key, $e) = explode('-', $_REQUEST['complete_key']);
+      if ($e !== 'e') {
+        $valid = $complete_key === $scheduled_reading['complete_key'];
+      }
     }
-    if ($e !== 'e' && $reading_timer_wpm) {
+    if ($reading_timer_wpm) {
       $words_per_second = round($reading_timer_wpm / 60.0, 4);
       $elapsed = time() - $saved_start_time;
       $words_on_page = (int)$db->col("
@@ -251,11 +255,11 @@ foreach($schedules as $i => $each_schedule) {
   echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
   if ($site->data('allow_personal_schedules')) {
     echo "
-      </div>";
+      </div><!-- .tab -->";
   }
 }
 if ($site->data('allow_personal_schedules')) {
-  echo "</div>";
+  echo "</div><!-- .tabs -->";
 }
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

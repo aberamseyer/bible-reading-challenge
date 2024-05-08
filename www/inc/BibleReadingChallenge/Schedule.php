@@ -241,8 +241,15 @@ class Schedule {
       }
       else if ($day['id'] && !$day['passage']) {
         // delete
+        $this->db->query("
+          DELETE FROM read_dates
+          WHERE id IN (
+            SELECT rd.id
+            FROM read_dates rd
+            JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+            WHERE sd.schedule_id = ".$this->ID." AND rd.schedule_date_id = ".intval($day['id'])."
+        )");
         $this->db->query("DELETE FROM schedule_dates WHERE schedule_id = ".$this->ID." AND id = ".(int)$day['id']);
-        $this->db->query("DELETE FROM read_dates WHERE schedule_id = ".$this->ID." AND schedule_date_id = ".(int)$day['id']);
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
