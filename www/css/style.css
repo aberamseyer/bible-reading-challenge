@@ -133,9 +133,6 @@ th, td {
 .active-page {
   border-bottom: 2px solid var(--color-blossom);
 }
-.active { 
-  background: var(--color-success) !important;
-}
 .reading-day {
   width: 102px;
   height: 90px;

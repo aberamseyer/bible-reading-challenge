@@ -90,3 +90,13 @@
   max-width: 80px;
   height: auto;
 }
+
+.draggable [draggable] {
+  cursor: move;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
+.draggable [draggable].dragging {
+  opacity: 0.5;
+}

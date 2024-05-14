@@ -420,11 +420,13 @@ require_once __DIR__."/BibleReadingChallenge/Database.php";
 
 	function schedule_completed($user_id, $schedule_id) {
 		$db = BibleReadingChallenge\Database::get_instance();
-		return $db->col("SELECT COUNT(*)
-			FROM read_dates rd
-			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-			WHERE user_id = $user_id AND schedule_id = $schedule_id")
-			== $db->col("SELECT COUNT(*)
+		return intval(total_words_in_schedule($schedule_id)) && 
+			$db->col("SELECT COUNT(*)
+				FROM read_dates rd
+				JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+				WHERE user_id = $user_id AND schedule_id = $schedule_id")
+			== 
+			$db->col("SELECT COUNT(*)
 				FROM schedule_dates WHERE schedule_id = $schedule_id");
 	}
 
@@ -580,17 +582,17 @@ function badges_for_user($user_id) {
 		HAVING unique_chapters_read = b.chapters");
 }
 
-function badges_html_for_user($user_id) {
+function badges_html_for_user($user_id, $badges) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	$books = $db->select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
-	$badges = badges_for_user($user_id);
   foreach([
     // [0, 10],
     // [17, 5],
     // [22, 17],
-    [39, 4],
-    [43, 23]
+    [39, 6],
+		[45, 12],
+		[57, 9]
   ] as $section) {
 		echo "<div class='badges'>";
 		foreach(array_slice($books, $section[0], $section[1]) as $book) {
@@ -693,5 +695,15 @@ function chartjs_js() {
 	<script src='/js/lib/chart.min.js'></script>
   <script src='/js/lib/chartjs-adapter-date-fns.min.js'></script>
   <script src='/js/lib/chart.inc.js'></script>";
+}
 
+function create_schedule_date($schedule_id, $date, $passage, $chp_ids) {
+	$db = BibleReadingChallenge\Database::get_instance();
+	$db->insert("schedule_dates", [
+		'schedule_id' => $schedule_id,
+		'date' => $date,
+		'passage' => $passage,
+		'passage_chapter_ids' => json_encode($chp_ids),
+		'complete_key' => bin2hex(random_bytes(16))
+	]);
 }

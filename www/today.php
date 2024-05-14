@@ -8,11 +8,11 @@ $db->update('users', [
 ], 'id = '.$me['id']);
 
 // set translation, update it if the select box changed
-$tranlsations = ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt'];
+
 if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
-  if (!in_array($new_trans, $tranlsations)) {
-    $new_trans = 'rcv';
+  if (!$site->check_translation($new_trans)) {
+    $new_trans = $site->get_translations_for_site()[0];
   }
   
   $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
@@ -133,7 +133,7 @@ echo "<div id='date-header'>
     </label>
     <input type='hidden' name='today' value='".$today->format('Y-m-d')."'>
     <select name='change_trans' onchange='this.form.submit();'>";
-    foreach($tranlsations as $trans_opt)
+    foreach($site->get_translations_for_site() as $trans_opt)
       echo "
         <option value='$trans_opt' ".($trans_opt == $trans ? "selected" : "").">".strtoupper($trans_opt)."</option>";
   echo "</select>

@@ -19,19 +19,24 @@ if ($_POST) {
       'domain_www' => $_POST['domain_www'],
       'domain_www_test' => $_POST['domain_www_test'],
       'default_emoji' => '😁',
-      'start_of_week' => 0,
+      'start_of_week' => 1,
+      'time_zone_id' => 'America/Chicago',
+      'tranlsations' => json_encode(ALL_TRANSLATIONS)
     ]);
     // create default schedule so everything doesn't break
-    $db->insert('schedules', [
+    $start_date = date('Y-m-d', strtotime('January 1'));
+    $new_sched_id = $db->insert('schedules', [
       'site_id' => $new_site_id,
       'name' => 'Default Schedule',
-      'start_date' => date('Y-m-d', strtotime('January 1')),
+      'start_date' => $start_date,
       'end_date' => date('Y-m-d', strtotime('December 31')),
       'active' => 1
     ]);
+    create_schedule_date($new_sched_id, $start_date, 'Genesis 1', [1]);
     $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
+    
     // create user and assign as staff
-    $ret = $new_site->create_user($_POST['email'], $_POST['name']);
+    $ret = $new_site->create_user($_POST['email'], $_POST['name'], false, false, true);
     $db->update('users', [ 'staff' => 1 ], 'id = '.$ret['insert_id']);
 
     $_SESSION['success'] = 'Created '.html($_POST['site_name']);

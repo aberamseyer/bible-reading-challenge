@@ -381,9 +381,8 @@ class Site extends SiteRegistry {
     return $progress;
   }
 
-  public function create_user($email, $name, $password=false, $emoji=false) {
+  public function create_user($email, $name, $password=false, $emoji=false, $verified=false) {
     $uuid = uniqid();
-    $hash = password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
     return [
       'insert_id' => $this->db->insert("users", [ 
@@ -391,8 +390,8 @@ class Site extends SiteRegistry {
           'uuid' => $uuid,
           'name' => $name,
           'email' => $email,
-          'password' => $hash,
-          'trans_pref' => 'rcv',
+          'password' => password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT),
+          'trans_pref' => $this->get_translations_for_site()[0],
           'date_created' => time(),
           'email_verify_token' => $verify_token,
           'emoji' => $emoji ?: $this->data('default_emoji')
@@ -400,5 +399,19 @@ class Site extends SiteRegistry {
       'verify_token' => $verify_token,
       'uuid' => $uuid
     ];
+  }
+
+  function get_translations_for_site()
+  {
+    static $translations;
+    if (!$translations) {
+      $translations = json_decode($this->data('translations'), true);
+    }
+    return $translations;
+  }
+
+  function check_translation($trans)
+  {
+    return in_array($trans, $this->get_translations_for_site(), true);
   }
 }

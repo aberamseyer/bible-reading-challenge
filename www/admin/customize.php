@@ -161,7 +161,9 @@ if ($_POST['color_primary'] && $_POST['color_secondary']) {
 }
 
 // Site Configuration handler
-if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_POST['contact_email'] || $_POST['contact_phone'] || $_POST['default_emoji']) {
+if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_POST['contact_email'] || 
+    $_POST['contact_phone'] || $_POST['default_emoji'] || $_POST['reading_timer_wpm'] || $_POST['start_of_week'] || 
+    $_POST['time_zone_id'] || $_POST['trans_pref']) {
   $site_name = $_POST['site_name'];
   $short_name = $_POST['short_name'];
   $contact_name = $_POST['contact_name'];
@@ -171,6 +173,13 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   $reading_timer_wpm = (int)$_POST['reading_timer_wpm'];
   $start_of_week = (int)$_POST['start_of_week'];
   $timezone = $_POST['time_zone_id'];
+  $trans_pref_arr = $_POST['trans_pref'];
+  $trans_pref_arr_for_db = [];
+  foreach($trans_pref_arr as $val) {
+    if (in_array($val, ALL_TRANSLATIONS, true)) {
+      $trans_pref_arr_for_db []= $val;
+    }
+  }
   if (!$site_name) {
     $_SESSION['error'] = 'Dont forget to include a site name';
   }
@@ -198,6 +207,9 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   else if ($reading_timer_wpm < 0 || 800 < $reading_timer_wpm) {
     $_SESSION['error'] = 'Choose a wpm value between 0 (off) and 800 (slow)';
   }
+  else if (!$trans_pref_arr || !is_array($trans_pref_arr)) {
+    $_SESSION['error'] = 'Allow at least one translation';
+  }
   else {
     $db->update('sites', [
       'site_name' => $site_name,
@@ -208,8 +220,15 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'default_emoji' => $default_emoji,
       'reading_timer_wpm' => $reading_timer_wpm,
       'start_of_week' => $start_of_week,
-      'time_zone_id' => $timezone
+      'time_zone_id' => $timezone,
+      'translations' => json_encode($trans_pref_arr_for_db)
     ], 'id = '.$site->ID);
+    foreach(ALL_TRANSLATIONS as $trans) {
+      // anyone using a translation that is not allowed gets the default translation
+      if (!in_array($trans, $trans_pref_arr_for_db, true)) {
+        $db->query("UPDATE users SET trans_pref = '".$trans_pref_arr_for_db[0]."' WHERE site_id = ".$site->ID." AND trans_pref = '$trans'");
+      }
+    }
     $_SESSION['success'] = 'Site Configuration updated';
   }
 
@@ -320,7 +339,15 @@ echo "
       }
 echo "  </select>
     </label>
-    <button type='submit'>Save Site Configuration</button>
+    <div class='form-group draggable'>
+    Available Tranlsations ".help('These translations will be available for reading. Drag to re-order them; the first one in will be the default translation.');
+    $difference = array_diff(ALL_TRANSLATIONS, $site->get_translations_for_site());
+    foreach([ ...$site->get_translations_for_site(), ...$difference ] as $trans) {
+      echo "<label draggable='true'><input type='checkbox' name='trans_pref[]' value='$trans' ".($site->check_translation($trans) ? 'checked' : '')."> $trans</label>";
+    }
+    echo "</div>";
+    $add_to_foot .= "<script src='/js/customize.js'></script>";
+    echo "<button type='submit'>Save Site Configuration</button>
   </fieldset>
 </form>";
 

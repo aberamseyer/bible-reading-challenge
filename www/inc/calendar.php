@@ -37,13 +37,7 @@
           'chapter'),
         'id');
 
-        $db->insert("schedule_dates", [
-          'schedule_id' => $calendar_sched['id'],
-          'date' => $date,
-          'passage' => $day['passage'],
-          'passage_chapter_ids' => json_encode($chp_ids),
-          'complete_key' => bin2hex(random_bytes(16))
-        ]);
+        create_schedule_date($calendar_sched['id'], $date, $day['passage'], $chp_ids);
       }
     }
     $_SESSION['success'] = 'Schedule saved';

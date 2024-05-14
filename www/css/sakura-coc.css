@@ -223,3 +223,13 @@ label, legend, fieldset {
   font-weight: 600;
   padding: 0 7px;
 }
+
+.active { 
+  background: var(--color-success) !important;
+}
+.future.active {
+  background: var(--color-blossom) !important;
+}
+.future.active * {
+  color: var(--color-bg);
+}

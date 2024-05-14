@@ -36,77 +36,80 @@ echo "<p><a href='/auth/logout'>Logout</a></p>";
 echo "
 <div>
   <h3>Progress</h3>";
-$badges = badges_html_for_user($my_id);
-if (!$badges) {
+$badges = badges_for_user($my_id);
+$badges_html = badges_html_for_user($my_id, $badges);
+if (!$badges_html) {
   echo "Badges for books you complete will be displayed here.";
 }
 else {
-  echo $badges;
+  echo $badges_html;
 }
+echo "</div>";
 
 $words_read = words_read($me, $schedule['id']);
-
-$total_words_in_challenge = total_words_in_schedule($schedule['id']);
-
-echo "</div>
-<div class='two-columns'>
-  <div>
-    <h5>Current Challenge Stats</h5>
-    <ul>
-      <li>".round($words_read / $total_words_in_challenge * 100, 2)."% Complete</li>
-      <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
-      <li>Chapters I've read: ".number_format($db->col(
-        ($chp_qry = 
-          "SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
-          FROM schedule_dates sd
-          JOIN read_dates rd ON rd.schedule_date_id = sd.id"
-        )."
-        WHERE rd. user_id = $my_id"))."</li>
-      <li>Words I've read: ".number_format($words_read)."</li>
-    </ul>
-  </div>
-  <div>
-    <h5>Cross Challenge Stats</h5>
-    <ul>
-      <li>All-club chapters read: ".number_format($db->col($chp_qry))."</li>
-      <li>All-club words read: ".number_format(words_read())."</li>
-    </ul>
-  </div>
-</div>";
-
-// mountain
 $total_words_in_schedule = total_words_in_schedule($schedule['id']);
-$emojis = $db->select("
-  SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
-  FROM schedule_dates sd
-  JOIN JSON_EACH(passage_chapter_ids)
-  JOIN chapters c on c.id = value
-  JOIN read_dates rd ON sd.id = rd.schedule_date_id
-  JOIN users u ON u.id = rd.user_id
-  WHERE sd.schedule_id = $schedule[id]
-  GROUP BY u.id
-  ORDER BY 
-    CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
-    ELSE COUNT(*)
-    END DESC
-  LIMIT 20");
-echo "
-  <h5 class='text-center'>Top 20 Readers (and you)</h5>";
 
-  echo $site->mountain_for_emojis($emojis, $me['id']);
+if ($total_words_in_schedule) {
+  echo "
+    <div class='two-columns'>
+      <div>
+        <h5>Current Challenge Stats</h5>
+        <ul>
+          <li>".round($words_read / $total_words_in_schedule * 100, 2)."% Complete</li>
+          <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
+          <li>Chapters I've read: ".number_format($db->col(
+            ($chp_qry = 
+              "SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
+              FROM schedule_dates sd
+              JOIN read_dates rd ON rd.schedule_date_id = sd.id"
+            )."
+            WHERE rd. user_id = $my_id"))."</li>
+          <li>Words I've read: ".number_format($words_read)."</li>
+        </ul>
+      </div>
+      <div>
+        <h5>Cross Challenge Stats</h5>
+        <ul>
+          <li>All-club chapters read: ".number_format($db->col($chp_qry))."</li>
+          <li>All-club words read: ".number_format(words_read())."</li>
+        </ul>
+      </div>
+    </div>";
 
-  echo "<p>
-  <div class='two-columns'>
-    <div>
-      <h6 class='text-center'>Progress</h6>
-      ".$site->progress_canvas($me['id'], $schedule['id'])."
+  // mountain
+  $total_words_in_schedule = total_words_in_schedule($schedule['id']);
+  $emojis = $db->select("
+    SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
+    FROM schedule_dates sd
+    JOIN JSON_EACH(passage_chapter_ids)
+    JOIN chapters c on c.id = value
+    JOIN read_dates rd ON sd.id = rd.schedule_date_id
+    JOIN users u ON u.id = rd.user_id
+    WHERE sd.schedule_id = $schedule[id]
+    GROUP BY u.id
+    ORDER BY 
+      CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
+      ELSE COUNT(*)
+      END DESC
+    LIMIT 20");
+  echo "
+    <h5 class='text-center'>Top 20 Readers (and you)</h5>";
+
+    echo $site->mountain_for_emojis($emojis, $me['id']);
+
+    echo "<p>
+    <div class='two-columns'>
+      <div>
+        <h6 class='text-center'>Progress</h6>
+        ".$site->progress_canvas($me['id'], $schedule['id'])."
+      </div>
+      <div>
+        <h6 class='text-center'>Days read each week</h6>
+        ".$site->weekly_progress_canvas($me['id'], $schedule)."
+      </div>
     </div>
-    <div>
-      <h6 class='text-center'>Days read each week</h6>
-      ".$site->weekly_progress_canvas($me['id'], $schedule)."
-    </div>
-  </div>
-  </p>";
+    </p>";
+}
 
 echo "<form method='post'>
   <fieldset>
