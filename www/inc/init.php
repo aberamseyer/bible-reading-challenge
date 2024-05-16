@@ -23,7 +23,7 @@ session_start();
 // GLOBAL VARIABLES
 
 $my_id = (int)$_SESSION['my_id'] ?: 0;
-$me = $db->row("SELECT * FROM users WHERE id = ".(int) $my_id);
+$me = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int) $my_id);
 if ($me) {
   $db->update("users", [
     'last_seen' => time()

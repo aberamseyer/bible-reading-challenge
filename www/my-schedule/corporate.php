@@ -2,7 +2,7 @@
   require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
 
-  $calendar_sched = new BibleReadingChallenge\Schedule(false);
+  $calendar_sched = new BibleReadingChallenge\Schedule();
   if ($_REQUEST['get_dates']) {
     print_json($calendar_sched->get_dates($my_id));
   }

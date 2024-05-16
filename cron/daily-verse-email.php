@@ -59,12 +59,13 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     /* the banner image at the top of the email is part of the email template in Sendgrid */
   
     /* chapter contents */
-    $html = $site->html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $scheduled_reading['complete_key'], $schedule, true);
+    $html = $site->html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $scheduled_reading['complete_key'], $schedule, $today, true);
     /* unsubscribe */
     $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
     
     $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
     
+    usleep(1_000_000 / 5); // 5 per second at most
     $site->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
   }
 }

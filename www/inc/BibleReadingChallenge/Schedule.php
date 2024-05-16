@@ -11,21 +11,22 @@ class Schedule {
   private array $just_completed_arr;
   private array $day_completed_arr;
 
-  public function __construct($private, $id=false)
+  public function __construct($id_or_private=false)
   {
     global $me, $site;
-    $this->private = $private;
+
     $this->db = Database::get_instance();
-    if (!$private && !$id) {
-      $data = $this->db->row("SELECT * FROM schedules WHERE active = 1 AND site_id = ".$site->ID);
+    if (is_bool($id_or_private)) {
+      $data = $id_or_private
+        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".((int)$me['id'])." AND site_id = ".$site->ID)
+        : $this->db->row("SELECT * FROM schedules WHERE active = 1 AND site_id = ".$site->ID);
     }
-    else {
-      $data = $private
-        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".$me['id'])
-        : $this->db->row("SELECT * FROM schedules WHERE id = ".((int)$id)." AND site_id = ".$site->ID);
+    else { // id was passed as an int/string, not a boolean
+      $data = $this->db->row("SELECT * FROM schedules WHERE id = ".((int)$id_or_private)." AND site_id = ".$site->ID);
     }
     if ($data) {
       $this->data = $data;
+      $this->private = (bool)$data['user_id'];
       $this->ID = $data['id'];
     }
     else {
@@ -221,7 +222,8 @@ class Schedule {
       LEFT JOIN (
         SELECT * FROM read_dates WHERE user_id = ".intval($user_id)."
       ) rd ON rd.schedule_date_id = sd.id
-      WHERE schedule_id = ".$this->ID);
+      WHERE sd.schedule_id = ".$this->ID."
+      ORDER BY sd.date ASC");
   }
 
   public function edit($days)
@@ -333,7 +335,7 @@ class Schedule {
       SELECT * FROM schedules
       WHERE user_id IS NULL AND site_id = ".intval($site_id)."
       ORDER BY active DESC, start_date DESC") as $id) {
-        $schedules[] = new Schedule(false, $id);
+        $schedules[] = new Schedule((int)$id);
     }
     return $schedules;
   }
@@ -399,7 +401,10 @@ class Schedule {
 	public function get_schedule_days()
   {
     if (!isset($this->schedule_days)) {
-      $schedule_dates = $this->db->select("SELECT * FROM schedule_dates WHERE schedule_id = ".$this->ID);
+      $schedule_dates = $this->db->select("
+        SELECT * FROM schedule_dates 
+        WHERE schedule_id = ".$this->ID."
+        ORDER BY date ASC");
       $days = [];
       foreach ($schedule_dates as $sd) {			
         $days[] = [
@@ -412,7 +417,7 @@ class Schedule {
       }
       $this->schedule_days = $days;
     }
-    
+
 		return $this->schedule_days;
 	}
 

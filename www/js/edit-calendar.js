@@ -168,6 +168,9 @@
         tableCell.querySelector('input[data-passage]').value = matchingDay.passage
         tableCell.querySelector('input[data-id]').value = matchingDay.id
         tableCell.querySelector('small').textContent = matchingDay.passage
+        if (matchingDay.read) {
+          tableCell.classList.add('active')
+        }
       }
     })
   })

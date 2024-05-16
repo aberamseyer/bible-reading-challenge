@@ -19,19 +19,24 @@ if ($_POST) {
       'domain_www' => $_POST['domain_www'],
       'domain_www_test' => $_POST['domain_www_test'],
       'default_emoji' => '😁',
-      'start_of_week' => 0,
+      'start_of_week' => 1,
+      'time_zone_id' => 'America/Chicago',
+      'tranlsations' => json_encode(ALL_TRANSLATIONS)
     ]);
     // create default schedule so everything doesn't break
-    $db->insert('schedules', [
+    $start_date = date('Y-m-d', strtotime('January 1'));
+    $new_sched_id = $db->insert('schedules', [
       'site_id' => $new_site_id,
       'name' => 'Default Schedule',
-      'start_date' => date('Y-m-d'),
-      'end_date' => date('Y-m-d'),
+      'start_date' => $start_date,
+      'end_date' => date('Y-m-d', strtotime('December 31')),
       'active' => 1
     ]);
+    create_schedule_date($new_sched_id, $start_date, 'Genesis 1', [1]);
     $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
+    
     // create user and assign as staff
-    $ret = $new_site->create_user($_POST['email'], $_POST['name']);
+    $ret = $new_site->create_user($_POST['email'], $_POST['name'], false, false, true);
     $db->update('users', [ 'staff' => 1 ], 'id = '.$ret['insert_id']);
 
     $_SESSION['success'] = 'Created '.html($_POST['site_name']);
@@ -62,6 +67,7 @@ if ($_POST) {
     }
   }
 }
+$active_edit_site = $_SESSION['edit_site_id'];
 
 $page_title = "Sites";
 $hide_title = true;
@@ -138,7 +144,7 @@ else {
     <tbody>";
   foreach($sites as $each_site) {
     echo "
-      <tr>
+      <tr class='".($each_site['id'] == $active_edit_site ? 'active' : '')."'>
         <td data-name><small>".html($each_site['site_name'])."</small></td>
         <td data-enabled='".($each_site['enabled'] == 1 ? 1 : 0)."'>".($each_site['enabled'] == 1 ? '<img src="/img/static/circle-check.svg" class="icon">' : '<img src="/img/static/circle-x.svg" class="icon">')."</td>
         <td data-domain='$each_site[domain_www]'><small><a href='".SCHEME."://$each_site[domain_www]' target='_blank'>".html($each_site['domain_www'])."</a></small></td>

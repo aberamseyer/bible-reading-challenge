@@ -38,3 +38,37 @@
   max-width: 80px;
   height: auto;
 }
+#editor:hover {
+  left: -1px;
+}
+.chapters {
+  display: flex;
+  flex-flow: row wrap;
+}
+.chapters small {
+  width: 50%;
+}
+.edit-input {
+  font-size: 70%;
+  padding: 0;
+  width: 75px;
+  height: 35px;
+}
+.today .date, .future .date {
+  cursor: pointer;
+}
+
+.thumbnail {
+  max-width: 80px;
+  height: auto;
+}
+
+.draggable [draggable] {
+  cursor: move;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
+.draggable [draggable].dragging {
+  opacity: 0.5;
+}

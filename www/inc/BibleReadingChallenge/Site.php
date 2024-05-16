@@ -137,7 +137,7 @@ class Site extends SiteRegistry {
 
 	public function get_active_schedule()
   {
-    return new Schedule(false);
+    return new Schedule();
 	}
 
   public function all_users($stale = false) {
@@ -200,7 +200,7 @@ class Site extends SiteRegistry {
 	 * @param email bool whether this is going in an email or not
 	 * @return the html of all the verses we are reading
 	 */ 
-	public function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $email=false)
+	public function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $today, $email=false)
   {
 		ob_start();
 		$article_style = "";
@@ -215,10 +215,7 @@ class Site extends SiteRegistry {
 			}
 			foreach($scheduled_reading['passages'] as $passage) {
 				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
-				$book = $passage['book'];
 				$verses = $this->db->select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
-	
-				$abbrev = json_decode($passage['book']['abbreviations'], true)[0];
 
 				$ref_style = "class='ref'";
 				$verse_style = "class='verse-text'";
@@ -256,7 +253,6 @@ class Site extends SiteRegistry {
 	
 			// look for the next time to read in the schedule.
 			$days = $schedule->get_schedule_days();
-			$today = new \Datetime();
 			foreach($days as $day) {
 				$dt = new \Datetime($day['date']);
 				if ($today < $dt) {
@@ -382,7 +378,7 @@ class Site extends SiteRegistry {
     return $progress;
   }
 
-  public function create_user($email, $name, $password=false, $emoji=false) {
+  public function create_user($email, $name, $password=false, $emoji=false, $verified=false) {
     $uuid = uniqid();
     $hash = password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
@@ -395,6 +391,7 @@ class Site extends SiteRegistry {
       'trans_pref' => 'rcv',
       'date_created' => time(),
       'email_verify_token' => $verify_token,
+      '__email_verified' => $verified,
       'emoji' => $emoji ?: $this->data('default_emoji')
     ]);
     $this->db->insert('schedules', [
@@ -409,5 +406,19 @@ class Site extends SiteRegistry {
       'verify_token' => $verify_token,
       'uuid' => $uuid
     ];
+  }
+
+  function get_translations_for_site()
+  {
+    static $translations;
+    if (!$translations) {
+      $translations = json_decode($this->data('translations'), true);
+    }
+    return $translations;
+  }
+
+  function check_translation($trans)
+  {
+    return in_array($trans, $this->get_translations_for_site(), true);
   }
 }

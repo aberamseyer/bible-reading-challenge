@@ -70,7 +70,6 @@
     </ol>
     <p>If you would like to stop using the personal schedule, you can simply ignore it, or use the 'Clear after selected' button to delete all the future
     readings and choose 'Save readings'</p>";
-  $calendar_sched = new BibleReadingChallenge\Schedule(true);
 
   echo "<form method='post'>
     <fieldset>

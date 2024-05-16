@@ -8,7 +8,7 @@
 
   // all actions from the 'manage schedules' table actions column
   if ($_POST['schedule_id']) {
-    $change_sched = new BibleReadingChallenge\Schedule(false, (int)$_POST['schedule_id']);
+    $change_sched = new BibleReadingChallenge\Schedule((int)$_POST['schedule_id']);
     if ($change_sched) {
       if ($_POST['set_active']) {
         $change_sched->set_active();

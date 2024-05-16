@@ -21,54 +21,55 @@ $end_date = new Datetime($schedule->data('end_date'));
 $next = clone($start); $next->modify('+1 month');
 $prev = clone($start);
 
-$total_words_in_schedule = total_words_in_schedule($schedule->ID);
-$graphs = [];
-$sum = 0;
-do {
-  $data = $db->select("
-    SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id
-    FROM schedule_dates sd
-    JOIN JSON_EACH(passage_chapter_ids)
-    JOIN chapters c on c.id = value
-    JOIN read_dates rd ON sd.id = rd.schedule_date_id
-    JOIN users u ON u.id = rd.user_id
-    WHERE sd.schedule_id = ".$schedule->ID." AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
-    GROUP BY u.id
-    ORDER BY COUNT(*) DESC, RANDOM()
-    LIMIT 20");
-    $graphs[] = [ 
-      'dates' => [ 'start' => clone($prev), 'end' => clone($next) ], 
-      'data' => $data
-    ];
-  $next->modify('+1 month');
-  $prev->modify('+1 month');
-} while ($next->format('U') <= strtotime('+1 month', $end_date->format('U')));
+$total_words_in_schedule = (int)total_words_in_schedule($schedule->ID);
+if ($total_words_in_schedule) { // graphs are meaningless if there is nothing in the schedule
+  $graphs = [];
+  $sum = 0;
+  do {
+    $data = $db->select("
+      SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id
+      FROM schedule_dates sd
+      JOIN JSON_EACH(passage_chapter_ids)
+      JOIN chapters c on c.id = value
+      JOIN read_dates rd ON sd.id = rd.schedule_date_id
+      JOIN users u ON u.id = rd.user_id
+      WHERE sd.schedule_id = ".$schedule->ID." AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
+      GROUP BY u.id
+      ORDER BY COUNT(*) DESC, RANDOM()
+      LIMIT 20");
+      $graphs[] = [ 
+        'dates' => [ 'start' => clone($prev), 'end' => clone($next) ], 
+        'data' => $data
+      ];
+    $next->modify('+1 month');
+    $prev->modify('+1 month');
+  } while ($next->format('U') <= strtotime('+1 month', $end_date->format('U')));
 
-foreach($graphs as $i => $graph) {
-  echo "<div class='historical-mountain ".($i !== count($graphs)-1 ? 'hidden' : '')."'>";
-  $format = "M j";
-  if ($graph['dates']['start']->format('Y') != $graph['dates']['end']->format('Y')) {
-    $format = "M j, Y";
+  foreach($graphs as $i => $graph) {
+    echo "<div class='historical-mountain ".($i !== count($graphs)-1 ? 'hidden' : '')."'>";
+    $format = "M j";
+    if ($graph['dates']['start']->format('Y') != $graph['dates']['end']->format('Y')) {
+      $format = "M j, Y";
+    }
+    echo "<h6 class='text-center'>";
+    if ($i > 0) {
+      echo "<button type='button' onclick='toggleMountains(($i-1) % ".count($graphs).")' style='cursor: pointer;'>&lt;&lt;</button>";
+    }
+    else {
+      echo "<button type='button' style='visibility: hidden;' disabled>&lt;&lt;</button>";
+    }
+    echo "<span style='display: inline-block; width: 350px;'>".$graph['dates']['start']->format($format)." - ".$graph['dates']['end']->format($format)."</span>";
+    if ($i < count($graphs)-1) {
+      echo "<button type='button' onclick='toggleMountains((".count($graphs)."+$i+1) % ".count($graphs).")' style='cursor: pointer;'>&gt;&gt;</button>";
+    }
+    else {
+      echo "<button type='button' style='visibility: hidden;' disabled>&gt;&gt;</button>";
+    }
+    echo "</h6>";
+    echo $site->mountain_for_emojis($graph['data'], 0); // one of the mountains must start visible in order for the js that measures its height to function
+    echo "</div>";
   }
-  echo "<h6 class='text-center'>";
-  if ($i > 0) {
-    echo "<button type='button' onclick='toggleMountains(($i-1) % ".count($graphs).")' style='cursor: pointer;'>&lt;&lt;</button>";
-  }
-  else {
-    echo "<button type='button' style='visibility: hidden;' disabled>&lt;&lt;</button>";
-  }
-  echo "<span style='display: inline-block; width: 350px;'>".$graph['dates']['start']->format($format)." - ".$graph['dates']['end']->format($format)."</span>";
-  if ($i < count($graphs)-1) {
-    echo "<button type='button' onclick='toggleMountains((".count($graphs)."+$i+1) % ".count($graphs).")' style='cursor: pointer;'>&gt;&gt;</button>";
-  }
-  else {
-    echo "<button type='button' style='visibility: hidden;' disabled>&gt;&gt;</button>";
-  }
-  echo "</h6>";
-  echo $site->mountain_for_emojis($graph['data'], 0); // one of the mountains must start visible in order for the js that measures its height to function
-  echo "</div>";
 }
-
 
 echo "<h5>Individual User Progress</h5>";
 $all_users = $site->all_users($_GET['stale']);
@@ -102,7 +103,9 @@ foreach($all_users as $user) {
   $days_behind = 
     $db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$schedule->ID." AND date <= '".date('Y-m-d')."'") - 
     $db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$schedule->ID." AND rd.user_id = $user[id]");
-  $percent_complete = words_read($user,$schedule->ID) / total_words_in_schedule($schedule->ID) * 100;
+    $percent_complete = $total_words_in_schedule
+      ? words_read($user, $schedule->ID) / $total_words_in_schedule * 100
+      : 0;
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
   <td data-behind='$days_behind'>-$days_behind</td>

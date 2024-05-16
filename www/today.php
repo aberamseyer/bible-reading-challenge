@@ -8,11 +8,11 @@ $db->update('users', [
 ], 'id = '.$me['id']);
 
 // set translation, update it if the select box changed
-$tranlsations = ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt'];
+
 if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
-  if (!in_array($new_trans, $tranlsations)) {
-    $new_trans = 'rcv';
+  if (!$site->check_translation($new_trans)) {
+    $new_trans = $site->get_translations_for_site()[0];
   }
   
   $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
@@ -34,18 +34,20 @@ if (strtotime($_GET['today'])) {
     : $today;
 }
 
-
+// get list of schedules (corporate and personal)
 $schedules = [ &$schedule ];
 if ($site->data('allow_personal_schedules')) {
   $personal_schedule = new BibleReadingChallenge\Schedule(true);
   $schedules []= &$personal_schedule;
 }
+
 foreach($schedules as $each_schedule) {
   $scheduled_reading = $each_schedule->get_reading($today);
   if (!$scheduled_reading) {
     continue;
   }
-
+  
+  // determine reading timer to use
   $reading_timer_wpm = (int)$site->data('reading_timer_wpm');
   if ($reading_timer_wpm) {
     $saved_start_time = (int)$_SESSION['reading_start_time'];
@@ -56,10 +58,8 @@ foreach($schedules as $each_schedule) {
     }
   }
   
-  // determine if today's reading is completed
-  $today_completed = $each_schedule->day_completed($my_id, $scheduled_reading['id'] ?: 0);
   // "Done!" clicked
-  if ($_REQUEST['done'] && !$today_completed && $scheduled_reading) {
+  if ($_REQUEST['done'] && !$each_schedule->day_completed($my_id, $scheduled_reading['id'])) {
     $valid = true;
     if ($_REQUEST['complete_key']) {
       // we need a way to bypass the wpm check from an email.
@@ -84,6 +84,7 @@ foreach($schedules as $each_schedule) {
       }
     }
   
+    // handle "Done" click
     if ($valid) {
       $db->insert("read_dates", [
         'user_id' => $my_id,
@@ -111,7 +112,7 @@ echo "<div id='date-header'>
     </label>
     <input type='hidden' name='today' value='".$today->format('Y-m-d')."'>
     <select name='change_trans' onchange='this.form.submit();'>";
-    foreach($tranlsations as $trans_opt)
+    foreach($site->get_translations_for_site() as $trans_opt)
       echo "
         <option value='$trans_opt' ".($trans_opt == $trans ? "selected" : "").">".strtoupper($trans_opt)."</option>";
   echo "</select>
@@ -133,7 +134,6 @@ if ($site->data('allow_personal_schedules')) {
   echo "
   <div class='tabs'>";
 }
-$has_css = false;
 foreach($schedules as $i => $each_schedule) {
   $personal = (bool)$each_schedule->data('user_id');
   if ($site->data('allow_personal_schedules')) {
@@ -143,6 +143,8 @@ foreach($schedules as $i => $each_schedule) {
       <div class='tab'>";
   }
   $scheduled_reading = $each_schedule->get_reading($today);
+  $today_completed = $scheduled_reading && $each_schedule->day_completed($my_id, $scheduled_reading['id']);
+
   if (!$personal && $scheduled_reading) {
     // how many have read today
     $total_readers = $db->col("SELECT COUNT(*)
@@ -159,15 +161,16 @@ foreach($schedules as $i => $each_schedule) {
         echo "You and ".($total_readers-1)." other".xs($total_readers-1)." have completed this reading";
       }
     }
-    else {
-      $nf = new NumberFormatter("", NumberFormatter::SPELLOUT);
-      $words = $nf->format($total_readers);
-      echo ucwords($words)." other".xs($total_readers)." ".($total_readers == 1 ? "has" : "have")." completed this reading.";
-    }
     echo "</small></p>";
-
-    if (!$has_css) {
-      $has_css = true;
+  }
+  if ($scheduled_reading) {
+    // how many have read today
+    $total_readers = $db->col("SELECT COUNT(*)
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      WHERE sd.id = ".$scheduled_reading['id']);
+    
+    if ($i === 0) {
       $add_to_foot .= "<style>
         article {
           position: relative;
@@ -211,48 +214,44 @@ foreach($schedules as $i => $each_schedule) {
     }
   }
 
-  if ($scheduled_reading) {
-    $today_completed = $each_schedule->day_completed($my_id, $scheduled_reading['id']);
-    $schedule_just_completed = $each_schedule->get_just_completed($my_id);
-    if (!$personal && $each_schedule->completed($my_id)) {
-      echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
-      $add_to_foot .= "
-        <script src='/js/lib/js-confetti.js'></script>
-        <script>
-          const jsConfetti = new JSConfetti()
-          function party() {
-            const mess = () => {
-              jsConfetti.addConfetti({  
-                emojis: ['$me[emoji]'],
-                emojiSize: 80,
-                confettiNumber: 10,
-              })
-              jsConfetti.addConfetti({
-                confettiNumber: 100,
-              })
-            }
-            setTimeout(mess, 0)
-            setTimeout(mess, 1300)
-            setTimeout(mess, 2000)
-            setTimeout(mess, 3300)
+  if (!$personal && $each_schedule->completed($my_id)) {
+    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+    $add_to_foot .= "
+      <script src='/js/lib/js-confetti.js'></script>
+      <script>
+        const jsConfetti = new JSConfetti()
+        function party() {
+          const mess = () => {
+            jsConfetti.addConfetti({  
+              emojis: ['$me[emoji]'],
+              emojiSize: 80,
+              confettiNumber: 10,
+            })
+            jsConfetti.addConfetti({
+              confettiNumber: 100,
+            })
           }
-          ".($schedule_just_completed ? "party()" : "")."
-        </script>";
-    }
-    if ($today_completed) {
-      $next_reading = null;
-      foreach($each_schedule->get_schedule_days() as $reading) {
-        $dt = new Datetime($reading['date']);
-        if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
-          $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading >></a>";
-          break;
+          setTimeout(mess, 0)
+          setTimeout(mess, 1300)
+          setTimeout(mess, 2000)
+          setTimeout(mess, 3300)
         }
+        ".($each_schedule->get_just_completed($my_id) ? "party()" : "")."
+      </script>";
+  }
+  if ($today_completed) {
+    $next_reading = null;
+    foreach($each_schedule->get_schedule_days() as $reading) {
+      $dt = new Datetime($reading['date']);
+      if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
+        $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading >></a>";
+        break;
       }
-      echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
     }
+    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
   }
 
-  echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $schedule);
+  echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
   if ($site->data('allow_personal_schedules')) {
     echo "
       </div><!-- .tab -->";
@@ -261,5 +260,6 @@ foreach($schedules as $i => $each_schedule) {
 if ($site->data('allow_personal_schedules')) {
   echo "</div><!-- .tabs -->";
 }
+
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

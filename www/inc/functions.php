@@ -260,10 +260,11 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			$calendar .= "
 				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
 					<span class='date'>$day</span><br>";
-			if ($editable)
+			if ($editable) {
 				$calendar .= "
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
+			}
 			$calendar .= "
 					<small class='label'></small>
 				</td>";
@@ -485,17 +486,17 @@ function badges_for_user($user_id) {
 		HAVING unique_chapters_read = b.chapters");
 }
 
-function badges_html_for_user($user_id) {
+function badges_html_for_user($user_id, $badges) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	$books = $db->select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
-	$badges = badges_for_user($user_id);
   foreach([
     // [0, 10],
     // [17, 5],
     // [22, 17],
-    [39, 4],
-    [43, 23]
+    [39, 6],
+		[45, 12],
+		[57, 9]
   ] as $section) {
 		echo "<div class='badges'>";
 		foreach(array_slice($books, $section[0], $section[1]) as $book) {
@@ -598,5 +599,15 @@ function chartjs_js() {
 	<script src='/js/lib/chart.min.js'></script>
   <script src='/js/lib/chartjs-adapter-date-fns.min.js'></script>
   <script src='/js/lib/chart.inc.js'></script>";
+}
 
+function create_schedule_date($schedule_id, $date, $passage, $chp_ids) {
+	$db = BibleReadingChallenge\Database::get_instance();
+	$db->insert("schedule_dates", [
+		'schedule_id' => $schedule_id,
+		'date' => $date,
+		'passage' => $passage,
+		'passage_chapter_ids' => json_encode($chp_ids),
+		'complete_key' => bin2hex(random_bytes(16))
+	]);
 }

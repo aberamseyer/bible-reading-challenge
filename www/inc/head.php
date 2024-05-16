@@ -77,6 +77,7 @@
       if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['email']) {
         echo "
           <blockquote id='message'>";
+
         if ($_SESSION['error']) {
           echo "<img class='icon' src='/img/static/circle-x.svg'>&nbsp;<small>".$_SESSION['error']."</small>";
         }
@@ -86,6 +87,7 @@
         else if ($_SESSION['email']) {
           echo "<img class='icon' src='/img/static/email.svg'>&nbsp;<small>".$_SESSION['email']."</small>";
         }
+        
         $_SESSION['error'] = $_SESSION['success'] = $_SESSION['email'] = '';
         echo "
           </blockquote>";

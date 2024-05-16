@@ -14,7 +14,7 @@ if (!$csrf) {
 
 if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
   $_POST['email'] = strtolower($_POST['email']);
-  $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($_POST['email'])."' AND email_verified = 1");
+  $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($_POST['email'])."' AND email_verified = 1");
   if (!$user_row) {
     $_SESSION['error'] = "Invalid credentials.";
   }
@@ -27,7 +27,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
         $_SESSION['error'] = "Please confirm your email.";
       }
       else {
-        $_SESSION['succes'] = "Welcome back!";
+        $_SESSION['success'] = "Welcome back!";
         log_user_in($user_row['id']);        
       }
     }

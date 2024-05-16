@@ -15,11 +15,11 @@ else {
     $_SESSION['error'] = "Problem with Google Sign in";
   } else {
     $payload['email'] = strtolower($payload['email']);
-    $user_row = $db->row("SELECT * FROM users WHERE email = '".$db->esc($payload['email'])."'");
+    $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
       $ret = $site->create_user($payload['email'], $payload['name']);
-      $_SESSION['succes'] = "Welcome to the challenge!";
+      $_SESSION['success'] = "Welcome to the challenge!";
     }
     else {
       // account exists
@@ -29,7 +29,7 @@ else {
           'email_verified' => 1
         ], 'id = '.$user_row['id']);
       }
-      $_SESSION['succes'] = "Welcome back!";
+      $_SESSION['success'] = "Welcome back!";
     }
 
     log_user_in($id);

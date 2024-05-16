@@ -59,6 +59,38 @@ body {
   cursor: pointer;
 }
 
+/* edit calendar page */
+#editor {
+  position: fixed;
+  top: 0;
+  left: -290px;
+  width: 300px;
+  z-index: 1;
+  background: var(--color-bg);
+  padding: 1rem;
+  border: 2px solid var(--color-bg-alt);
+  transition: .2s left;
+}
+#editor:hover {
+  left: -1px;
+}
+.chapters {
+  display: flex;
+  flex-flow: row wrap;
+}
+.chapters small {
+  width: 50%;
+}
+.edit-input {
+  font-size: 70%;
+  padding: 0;
+  width: 75px;
+  height: 35px;
+}
+.today .date, .future .date {
+  cursor: pointer;
+}
+
 /* read page */
 #date-header {
   display: flex;
@@ -131,9 +163,6 @@ th, td {
 }
 .active-page {
   border-bottom: 2px solid var(--color-blossom);
-}
-.active { 
-  background: var(--color-success) !important;
 }
 .reading-day {
   width: 102px;
@@ -222,7 +251,6 @@ th, td {
   bottom: 0;
   transition: .1s all;
 }
-
 @keyframes yAxis {
   50% {
     animation-timing-function: cubic-bezier(0.02, 0.01, 0.21, 1);
@@ -248,7 +276,6 @@ th, td {
 .admin-navigation {
   margin: 21px 0;
 }
-
 .nav-item {
   margin: 0 14px;
   padding: 10px 15px;
@@ -256,7 +283,6 @@ th, td {
   border: none;
   background: none;
 }
-
 .nav-item.active-page {
   border-radius: 4px;
   background: var(--color-blossom);

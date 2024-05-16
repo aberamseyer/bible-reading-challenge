@@ -1,13 +1,13 @@
 <?php
 
-  $calendar_sched = new BibleReadingChallenge\Schedule(false, $_REQUEST['calendar_id']);
+  $calendar_sched = new BibleReadingChallenge\Schedule();
 
   if (!$calendar_sched->ID) {
     redirect('/admin/schedules');
   }
 
   if ($_REQUEST['get_dates']) {
-    print_json($calendar_sched->get_dates($my_id));
+    print_json($calendar_sched->get_dates(0));
   }
 
   if ($_POST['edit']) {
@@ -32,6 +32,7 @@
   echo admin_navigation();
 
   echo "<p><a href='/admin/schedules'>&lt;&lt; Back</a></p>";
+
   echo $calendar_sched->html_instructions();
   echo $calendar_sched->html_calendar();
 

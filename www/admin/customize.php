@@ -1,8 +1,5 @@
 <?php
 
-ini_set('upload_max_filesize', '20M');
-ini_set('post_max_size', '20M');
-
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 
 if (!$staff) {
@@ -23,7 +20,7 @@ if ($abe) {
 
 
 // Uploaded pictures handler
-if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK) {
+if ($_FILES && $_FILES['upload']) {
   $ext = '.'.pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
   $mime = mime_content_type($_FILES['upload']['tmp_name']);
   $valid_mime = strpos($mime, 'image/') === 0 || ($mime == 'text/plain' && $ext == '.svg'); // svg files appear as text/plain sometimes
@@ -33,6 +30,19 @@ if ($_FILES && $_FILES['upload'] && $_FILES['upload']['error'] == UPLOAD_ERR_OK)
   }
   else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '".$db->esc($md5)."' AND site_id = ".$site->ID)) { 
     $_SESSION['error'] = "A file like that seems to already exist by the name '".html($existing_match)."'";
+  }
+  else if ($_FILES['upload']['error'] != UPLOAD_ERR_OK) {
+    $msg = [
+      0 => 'There is no error, the file uploaded with success',
+      1 => 'The uploaded file exceeds the maximum: '.ini_get('upload_max_filesize'),
+      2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
+      3 => 'The uploaded file was only partially uploaded',
+      4 => 'No file was uploaded',
+      6 => 'Missing a temporary folder',
+      7 => 'Failed to write file to disk.',
+      8 => 'A PHP extension stopped the file upload.',
+    ][ $_FILES['upload']['error'] ];
+    $_SESSION['error'] = "Error uploading file: $msg";
   }
   else {
     $realpath = tempnam(UPLOAD_DIR, "upload-");
@@ -151,7 +161,9 @@ if ($_POST['color_primary'] && $_POST['color_secondary']) {
 }
 
 // Site Configuration handler
-if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_POST['contact_email'] || $_POST['contact_phone'] || $_POST['default_emoji']) {
+if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_POST['contact_email'] || 
+    $_POST['contact_phone'] || $_POST['default_emoji'] || $_POST['reading_timer_wpm'] || $_POST['start_of_week'] || 
+    $_POST['time_zone_id'] || $_POST['trans_pref']) {
   $site_name = $_POST['site_name'];
   $short_name = $_POST['short_name'];
   $contact_name = $_POST['contact_name'];
@@ -162,6 +174,13 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   $start_of_week = (int)$_POST['start_of_week'];
   $timezone = $_POST['time_zone_id'];
   $allow_personal_schedules = (int)$_POST['allow_personal_schedules'];
+  $trans_pref_arr = $_POST['trans_pref'];
+  $trans_pref_arr_for_db = [];
+  foreach($trans_pref_arr as $val) {
+    if (in_array($val, ALL_TRANSLATIONS, true)) {
+      $trans_pref_arr_for_db []= $val;
+    }
+  }
   if (!$site_name) {
     $_SESSION['error'] = 'Dont forget to include a site name';
   }
@@ -189,6 +208,9 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   else if ($reading_timer_wpm < 0 || 800 < $reading_timer_wpm) {
     $_SESSION['error'] = 'Choose a wpm value between 0 (off) and 800 (slow)';
   }
+  else if (!$trans_pref_arr || !is_array($trans_pref_arr)) {
+    $_SESSION['error'] = 'Allow at least one translation';
+  }
   else {
     $db->update('sites', [
       'site_name' => $site_name,
@@ -200,8 +222,15 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'reading_timer_wpm' => $reading_timer_wpm,
       'start_of_week' => $start_of_week,
       'time_zone_id' => $timezone,
-      'allow_personal_schedules' => $allow_personal_schedules
+      'allow_personal_schedules' => $allow_personal_schedules,
+      'translations' => json_encode($trans_pref_arr_for_db)
     ], 'id = '.$site->ID);
+    foreach(ALL_TRANSLATIONS as $trans) {
+      // anyone using a translation that is not allowed gets the default translation
+      if (!in_array($trans, $trans_pref_arr_for_db, true)) {
+        $db->query("UPDATE users SET trans_pref = '".$trans_pref_arr_for_db[0]."' WHERE site_id = ".$site->ID." AND trans_pref = '$trans'");
+      }
+    }
     $_SESSION['success'] = 'Site Configuration updated';
   }
 
@@ -313,10 +342,18 @@ echo "
 echo "  </select>
     </label>
     <label>
-    Allow personal reading schedules ".help('Allow the creation of personal reading schedules alongside the corporate schedule.')."
-    <input type='checkbox' name='allow_personal_schedules' value='1' ".($site->data('allow_personal_schedules') ? 'checked' : '').">
+      Allow personal reading schedules ".help('Allow the creation of personal reading schedules alongside the corporate schedule.')."
+      <input type='checkbox' name='allow_personal_schedules' value='1' ".($site->data('allow_personal_schedules') ? 'checked' : '').">
     </label>
-    <button type='submit'>Save Site Configuration</button>
+    <div class='form-group draggable'>
+    Available Tranlsations ".help('These translations will be available for reading. Drag to re-order them; the first one in will be the default translation.');
+    $difference = array_diff(ALL_TRANSLATIONS, $site->get_translations_for_site());
+    foreach([ ...$site->get_translations_for_site(), ...$difference ] as $trans) {
+      echo "<label draggable='true'><input type='checkbox' name='trans_pref[]' value='$trans' ".($site->check_translation($trans) ? 'checked' : '')."> $trans</label>";
+    }
+    echo "</div>";
+    $add_to_foot .= "<script src='/js/customize.js'></script>";
+    echo "<button type='submit'>Save Site Configuration</button>
   </fieldset>
 </form>";
 

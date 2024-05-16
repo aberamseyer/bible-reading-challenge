@@ -9,3 +9,5 @@ define('SESSION_LENGTH', 60*60*24*30); // 30-day sessions
 
 define('UPLOAD_DIR', __DIR__."/../../upload/");
 define('IMG_DIR', __DIR__."/../img/");
+
+define('ALL_TRANSLATIONS', ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt']);
