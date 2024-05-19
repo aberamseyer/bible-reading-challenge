@@ -423,13 +423,16 @@ class Schedule {
 
 	public function completed($user_id)
   {
-    return $this->db->col("
+    $days_in_schedule = $this->db->col("
+      SELECT COUNT(*)
+      FROM schedule_dates
+      WHERE schedule_id = ".$this->ID);
+
+    return $days_in_schedule > 0 && $days_in_schedule == $this->db->col("
       SELECT COUNT(*)
       FROM read_dates rd
       JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-      WHERE user_id = $user_id AND schedule_id = ".$this->ID)
-      == $this->db->col("SELECT COUNT(*)
-        FROM schedule_dates WHERE schedule_id = ".$this->ID);
+      WHERE user_id = $user_id AND schedule_id = ".$this->ID);
 	}
 
   public function set_just_completed($user_id, bool $complete)
