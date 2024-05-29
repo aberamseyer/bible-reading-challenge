@@ -116,7 +116,7 @@ if ($_GET['create']) {
   </form>";
 }
 else {
-  // all schedules summary
+  // all sites summary
   $sites = $db->select("SELECT * FROM sites ORDER BY enabled DESC, site_name ASC");
   echo "<p><button type='button' onclick='window.location = `?create=1`'>+ Create Site</button></p>";
   echo "<table>
