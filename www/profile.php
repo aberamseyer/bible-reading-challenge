@@ -48,7 +48,7 @@ echo "</div>";
 
 $words_read = words_read($me, $schedule->ID);
 
-$total_words_in_challenge = total_words_in_schedule($schedule->ID);
+$total_words_in_schedule = total_words_in_schedule($schedule->ID);
 
 if ($total_words_in_schedule) {
   echo "
@@ -78,7 +78,6 @@ if ($total_words_in_schedule) {
     </div>";
 
   // mountain
-  $total_words_in_schedule = total_words_in_schedule($schedule->ID);
   $emojis = $db->select("
     SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
     FROM schedule_dates sd
