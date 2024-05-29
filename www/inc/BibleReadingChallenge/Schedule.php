@@ -112,8 +112,8 @@ class Schedule {
       <script>
         const CALENDAR_ID = ".$this->data['id']."
         const BOOK_CHAPTERS = ".json_encode($book_chapters)."
-      </script>
-      <script src='/js/edit-calendar.js'></script>";
+      </script>".
+      cached_file('js', '/js/edit-calendar.js');
   
 
     return ob_get_clean();

@@ -251,8 +251,7 @@ if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain
 
 $page_title = "Customize System";
 $hide_title = true;
-$add_to_head .= "
-<link rel='stylesheet' href='/css/admin.css' media='screen'>";
+$add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   
 echo admin_navigation();
@@ -352,7 +351,7 @@ echo "  </select>
       echo "<label draggable='true'><input type='checkbox' name='trans_pref[]' value='$trans' ".($site->check_translation($trans) ? 'checked' : '')."> $trans</label>";
     }
     echo "</div>";
-    $add_to_foot .= "<script src='/js/customize.js'></script>";
+    $add_to_foot .= cached_file('js', '/js/customize.js');
     echo "<button type='submit'>Save Site Configuration</button>
   </fieldset>
 </form>";

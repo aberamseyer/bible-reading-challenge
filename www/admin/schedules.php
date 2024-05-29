@@ -88,8 +88,7 @@
   else {
     $page_title = "Manage Schedules";
     $hide_title = true;
-    $add_to_head .= "
-    <link rel='stylesheet' href='/css/admin.css' media='screen'>";
+    $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
     require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
     echo admin_navigation();
@@ -170,9 +169,9 @@
         </tbody>
       </table>";
 
-      $add_to_foot .= "
-      <script src='/js/lib/tableSort.js'></script>
-      <script src='/js/schedules.js'></script>";
+      $add_to_foot .= 
+        cached_file('js', '/js/lib/tableSort.js').
+        cached_file('js', '/js/schedules.js');
     }
   }
 

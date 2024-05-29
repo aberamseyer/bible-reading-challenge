@@ -209,16 +209,16 @@ foreach($schedules as $i => $each_schedule) {
       <script>
         const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
         const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'
-      </script>
-      <script src='/js/client.js'></script>";
+      </script>".
+      cached_file('js', '/js/client.js');
     }
   }
 
   if (!$personal && $each_schedule->completed($my_id)) {
     echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
-    $add_to_foot .= "
-      <script src='/js/lib/js-confetti.js'></script>
-      <script>
+    $add_to_foot .= 
+      cached_file('js', '/js/lib/js-confetti.js').
+      "<script>
         const jsConfetti = new JSConfetti()
         function party() {
           const mess = () => {

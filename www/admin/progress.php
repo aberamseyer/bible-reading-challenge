@@ -9,8 +9,7 @@ if (!$staff) {
 
 $page_title = "Progress";
 $hide_title = true;
-$add_to_head .= "
-<link rel='stylesheet' href='/css/admin.css' media='screen'>";
+$add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 echo admin_navigation();
@@ -126,7 +125,8 @@ else {
   echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?'>Click here to see active users</a>.</small>";
 }
 
-$add_to_foot .= chartjs_js()."
-<script src='/js/lib/tableSort.js'></script>
-<script src='/js/progress.js'></script>";
+$add_to_foot .= 
+  chartjs_js().
+  cached_file('js', '/js/lib/tableSort.js').
+  cached_file('js', '/js/progress.js');
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

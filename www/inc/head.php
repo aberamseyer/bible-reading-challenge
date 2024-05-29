@@ -4,9 +4,9 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta charset="utf-8">
     <link rel="icon" type="image/x-icon" href="<?= $site->resolve_img_src('favico') ?>">
-    <link rel="stylesheet" href="/css/normalize.css" media="screen" />
-    <link rel="stylesheet" href="/css/sakura-coc.css" media="screen" />
-    <link rel="stylesheet" href="/css/style.css" media="screen" />
+    <?= cached_file('css', '/css/normalize.css', 'media="screen"') ?>
+    <?= cached_file('css', '/css/sakura-coc.css', 'media="screen"') ?>
+    <?= cached_file('css', '/css/style.css', 'media="screen"') ?>
     <?= $add_to_head ?>
     <title><?= html($site->data('short_name')) ?><?= $page_title ? " - ".$page_title : ""?></title>
     <style>

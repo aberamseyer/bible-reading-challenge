@@ -71,8 +71,7 @@ $active_edit_site = $_SESSION['edit_site_id'];
 
 $page_title = "Sites";
 $hide_title = true;
-$add_to_head .= "
-<link rel='stylesheet' href='/css/admin.css' media='screen'>";
+$add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 echo admin_navigation();
@@ -166,9 +165,9 @@ else {
     </tbody>
   </table>";
   
-  $add_to_foot .= "
-  <script src='/js/lib/tableSort.js'></script>
-  <script src='/js/sites.js'></script>";
+  $add_to_foot .= 
+    cached_file('js', '/js/lib/tableSort.js').
+    cached_file('js', '/js/sites.js');
 }
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";

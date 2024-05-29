@@ -6,6 +6,7 @@ define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 define('DB_FILE', __DIR__."/../../brc.db");
 define('SCHEME', PROD ? 'https' : 'http');
 define('SESSION_LENGTH', 60*60*24*30); // 30-day sessions
+define('VERSION', trim(`git rev-parse --short HEAD`));
 
 define('UPLOAD_DIR', __DIR__."/../../upload/");
 define('IMG_DIR', __DIR__."/../img/");

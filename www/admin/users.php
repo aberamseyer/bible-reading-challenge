@@ -101,8 +101,7 @@ if ($_POST['merge_from_account']) {
 
 $page_title = "Manage Users";
 $hide_title = true;
-$add_to_head .= "
-<link rel='stylesheet' href='/css/admin.css' media='screen'>";
+$add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   echo admin_navigation();
   
@@ -124,7 +123,7 @@ if ($_GET['user_id'] &&
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
   echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b>";
-  echo badges_html_for_user($user['id'])."</p>";
+  echo badges_html(badges_for_user($user['id']))."</p>";
   echo "<p>
   <div class='two-columns'>
     <div>
@@ -165,9 +164,9 @@ if ($_GET['user_id'] &&
   </form>";
   echo "<h5>Progress</h5>";
   echo $schedule->generate_schedule_calendar();
-  $add_to_foot .= chartjs_js();
-  $add_to_foot .= "
-  <script src='/js/user.js'></script>
+  $add_to_foot .= 
+    chartjs_js().
+    cached_file('js', '/js/user.js')."
   <script>
     const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
     fetch(`?get_dates=1&user_id=".$user['id']."`).then(rsp => rsp.json())
@@ -405,9 +404,10 @@ else {
     echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
 
-  $add_to_foot .= chartjs_js()."
-  <script src='/js/lib/tableSort.js'></script>
-  <script src='/js/users.js'></script>";
+  $add_to_foot .= 
+    chartjs_js().
+    cached_file('js', '/js/lib/tableSort.js').
+    cached_file('js', '/js/users.js');
 }
 
 

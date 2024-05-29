@@ -26,8 +26,7 @@
 
   $page_title = "Edit Schedule Calendar";
   $hide_title = true;
-  $add_to_head .= "
-  <link rel='stylesheet' href='/css/admin.css' media='screen'>";
+  $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
   require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   echo admin_navigation();
 

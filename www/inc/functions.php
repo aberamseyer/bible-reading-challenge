@@ -434,7 +434,6 @@ function toggle_all_users($initial_count) {
 		}
 	</style>";
 	$add_to_foot .= "<script>
-
 	document.addEventListener('DOMContentLoaded', function() {
 		// search box
 		document.getElementById('filter-table').addEventListener('keyup', e => {
@@ -486,7 +485,7 @@ function badges_for_user($user_id) {
 		HAVING unique_chapters_read = b.chapters");
 }
 
-function badges_html_for_user($user_id, $badges) {
+function badges_html($badges) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	$books = $db->select("SELECT id, name FROM books ORDER BY id");
 	ob_start();
@@ -594,11 +593,10 @@ function clamp($value, $min, $max) {
 }
 
 function chartjs_js() {
-	global $add_to_foot;
-	return "
-	<script src='/js/lib/chart.min.js'></script>
-  <script src='/js/lib/chartjs-adapter-date-fns.min.js'></script>
-  <script src='/js/lib/chart.inc.js'></script>";
+	return 
+		cached_file('js', '/js/lib/chart.min.js').
+		cached_file('js', '/js/lib/chartjs-adapter-date-fns.min.js').
+		cached_file('js', '/js/lib/chart.inc.js');
 }
 
 function create_schedule_date($schedule_id, $date, $passage, $chp_ids) {
@@ -610,4 +608,14 @@ function create_schedule_date($schedule_id, $date, $passage, $chp_ids) {
 		'passage_chapter_ids' => json_encode($chp_ids),
 		'complete_key' => bin2hex(random_bytes(16))
 	]);
+}
+
+function cached_file($type, $path, $attrs='') {
+	if ($type == 'css') {
+		return "<link rel='stylesheet' href='$path?v=".VERSION."' $attrs>";
+	}
+	else if ($type == 'js') {
+		return "<script src='$path?v=".VERSION."' $attrs></script>";
+	}
+	return '';
 }

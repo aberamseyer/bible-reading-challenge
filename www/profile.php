@@ -37,7 +37,7 @@ echo "
 <div>
   <h3>Progress</h3>";
 $badges = badges_for_user($my_id);
-$badges_html = badges_html_for_user($my_id, $badges);
+$badges_html = badges_html($badges);
 if (!$badges_html) {
   echo "Badges for books you complete will be displayed here.";
 }
@@ -130,7 +130,8 @@ echo "
 </form>";
 
 
-$add_to_foot .= chartjs_js()."
-  <script src='/js/profile.js'></script>";
+$add_to_foot .= 
+  chartjs_js().
+  cached_file('js', '/js/profile.js');
 
 require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
