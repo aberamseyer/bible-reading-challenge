@@ -274,7 +274,9 @@ th, td {
 
 /* navigation */
 .admin-navigation {
-  margin: 21px 0;
+  margin: 21px 7px;
+  max-width: 100%;
+  overflow-x: scroll;
 }
 .nav-item {
   margin: 0 14px;
