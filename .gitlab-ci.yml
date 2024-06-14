@@ -1,10 +1,10 @@
 stage_deploy:
-  image: aberamseyer/cicd_brc:2
+  image: aberamseyer/cicd_brc:3
   rules:
     - if: $CI_COMMIT_BRANCH == "personal"
   before_script:
+    - composer install
     - cd socket && npm install
-    - cd ..
     - mkdir -p ~/.ssh
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
