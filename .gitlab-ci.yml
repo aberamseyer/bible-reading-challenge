@@ -10,7 +10,7 @@ deploy:
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
-    - tar czf archive.tar.gz .*
+    - tar czf archive.tar.gz .
     - ssh-add <(echo "$SSH_PRIVATE_KEY")
     - ssh -p2223 gitlab-deployer@$RAMSEYER "mkdir -p /home/gitlab-deployer/brc"
     - scp -P2223 archive.tar.gz gitlab-deployer@$RAMSEYER:/home/gitlab-deployer/brc/
