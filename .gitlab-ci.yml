@@ -9,6 +9,6 @@ deploy:
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
     - ssh -p2223 gitlab-deployer@$RAMSEYER "mkdir -p /home/gitlab-deployer/brc"
-    - scp -P2223 -r * gitlab-deployer@$RAMSEYER:/home/gitlab-deployer/brc
+    - scp -P2223 -r . gitlab-deployer@$RAMSEYER:/home/gitlab-deployer/brc
