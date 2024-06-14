@@ -4,7 +4,7 @@ stage_deploy:
     - if: $CI_COMMIT_BRANCH == "personal"
   before_script:
     - apk update
-    - apk install zip unzip
+    - apk add zip unzip
     - cd socket && npm install
     - cd ..
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
