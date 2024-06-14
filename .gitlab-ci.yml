@@ -3,8 +3,8 @@ stage_deploy:
   rules:
     - if: $CI_COMMIT_BRANCH == "personal"
   before_script:
-    - apt-get update
-    - apt-get install zip unzip
+    - apk update
+    - apk install zip unzip
     - cd socket && npm install
     - cd ..
     - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
