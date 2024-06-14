@@ -18,8 +18,8 @@ class Schedule {
     $this->db = Database::get_instance();
     if (is_bool($id_or_private)) {
       $data = $id_or_private
-        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".((int)$me['id'])." AND site_id = ".$site->ID)
-        : $this->db->row("SELECT * FROM schedules WHERE active = 1 AND site_id = ".$site->ID);
+        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".((int)$me['id'])." AND active = 1 AND site_id = ".$site->ID)
+        : $this->db->row("SELECT * FROM schedules WHERE user_id IS NULL AND active = 1 AND site_id = ".$site->ID);
     }
     else { // id was passed as an int/string, not a boolean
       $data = $this->db->row("SELECT * FROM schedules WHERE id = ".((int)$id_or_private)." AND site_id = ".$site->ID);
@@ -297,7 +297,7 @@ class Schedule {
       'name' => $name,
       'start_date' => $start_date->format('Y-m-d'),
       'end_date' => $end_date->format('Y-m-d'),
-      'active' => 0
+      'active' => $active ? 1 : 0
     ]);
   }
 
@@ -332,10 +332,25 @@ class Schedule {
   {
     $schedules = [];
     foreach(Database::get_instance()->cols("
-      SELECT * FROM schedules
+      SELECT id FROM schedules
       WHERE user_id IS NULL AND site_id = ".intval($site_id)."
       ORDER BY active DESC, start_date DESC") as $id) {
         $schedules[] = new Schedule((int)$id);
+    }
+    return $schedules;
+  }
+
+  public static function schedules_for_user($site_id, $user_id)
+  {
+    $schedules = [];
+    foreach(Database::get_instance()->cols("
+      SELECT id FROM schedules
+      WHERE 
+        user_id = ".intval($user_id)." AND 
+        site_id = ".intval($site_id)."
+      ORDER BY active DESC, start_date DESC
+      ") as $id) {
+      $schedules[] = new Schedule((int)$id);
     }
     return $schedules;
   }

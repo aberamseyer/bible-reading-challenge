@@ -397,9 +397,10 @@ class Site extends SiteRegistry {
     $this->db->insert('schedules', [
       'site_id' => $this->ID,
       'user_id' => $user_id,
-      'name' => "$name's Schedule",
+      'name' => "$name's Default Schedule",
       'start_date' => date('Y-m-d', strtotime('January 1')),
       'end_date' => date('Y-m-d', strtotime('December 1')),
+      'active' => 1
     ]);
     return [
       'insert_id' => $user_id,

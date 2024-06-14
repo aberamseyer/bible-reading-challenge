@@ -71,6 +71,48 @@
     <p>If you would like to stop using the personal schedule, you can simply ignore it, or use the 'Clear after selected' button to delete all the future
     readings and choose 'Save readings'</p>";
 
+
+  $my_schedules = BibleReadingChallenge\Schedule::schedules_for_user($site->ID, $my_id);
+  echo "<table>
+    <thead>
+      <tr>
+        <th data-sort='name'>
+          Name
+        </th>
+        <th data-sort='start'>
+          Start
+        </th>
+        <th data-sort='end'>
+          End
+        </th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>";
+
+  foreach($my_schedules as $schedule) {
+    echo "
+      <tr class='".($schedule->data('active') ? 'active' : '')."'>
+        <td data-name><a href='?edit=".$schedule->ID."'><small>".html($schedule->data('name'))."</small></a></td>
+        <td data-start='".$schedule->data('start_date')."'><small>".date('F j, Y', strtotime($schedule->data('start_date')))."</small></td>
+        <td data-end='".$schedule->data('end_date')."'><small>".date('F j, Y', strtotime($schedule->data('end_date')))."</small></td>
+        <td>
+          <form method='post'>
+            <small>
+              <input type='hidden' name='schedule_id' value='".$schedule->ID."'>
+              <button type='submit' name='set_active' value='1' ".($schedule->data('active') ? 'disabled' : '').">Set active</button>
+              <button type='submit' name='duplicate' value='1'>Duplicate</button>
+              <button type='button' onclick='window.location = `/my-schedule/personal?calendar_id=".$schedule->ID."`'>Edit Calendar</button>
+            </small>
+          </form>
+        </td>
+      </tr>";
+  }
+  echo "
+      </tbody>
+    </table>
+    <br>";
+
   echo "<form method='post'>
     <fieldset>
       <legend>Edit schedule start and end dates</legend>

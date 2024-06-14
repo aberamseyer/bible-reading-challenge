@@ -107,7 +107,7 @@
         <button type='submit'>Save</button>
       </form>";
     }
-    else if ($edit_sched = $db->row("SELECT * FROM schedules WHERE site_id = ".$site->ID." AND id = ".(int)$_GET['edit'])) {
+    else if ($edit_sched = $db->row("SELECT * FROM schedules WHERE user_id IS NULL AND site_id = ".$site->ID." AND id = ".(int)$_GET['edit'])) {
       // viewing single schedule
       echo "<p><a href='/admin/schedules'>&lt;&lt; Back to schedules</a></p>";
 
