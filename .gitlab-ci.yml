@@ -1,13 +1,10 @@
 stage_deploy:
-  image: aberamseyer/cicd_brc:1
+  image: aberamseyer/cicd_brc:2
   rules:
     - if: $CI_COMMIT_BRANCH == "personal"
   before_script:
-    - apk update
-    - apk add zip unzip
     - cd socket && npm install
     - cd ..
-    - 'which ssh-agent || ( apk update -y && apk add openssh-client -y )'
     - mkdir -p ~/.ssh
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
