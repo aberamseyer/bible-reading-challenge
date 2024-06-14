@@ -14,5 +14,5 @@ deploy:
     - ssh-add <(echo "$SSH_PRIVATE_KEY")
     - ssh -p2223 gitlab-deployer@$RAMSEYER "mkdir -p /home/gitlab-deployer/brc"
     - scp -P2223 archive.tar.gz gitlab-deployer@$RAMSEYER:/home/gitlab-deployer/brc/
-    - ssh -p2223 gitlab-deployer@RAMSEYER "cd /home/gitlab-deployer/brc/ && tar xzf archive.tar.gz"
-    - ssh -p2223 gitlab-deployer@RAMSEYER "cd /home/gitlab-deployer/brc/ && rm archive.tar.gz"
+    - ssh -p2223 gitlab-deployer@$RAMSEYER "cd /home/gitlab-deployer/brc/ && tar xzf archive.tar.gz"
+    - ssh -p2223 gitlab-deployer@$RAMSEYER "cd /home/gitlab-deployer/brc/ && rm archive.tar.gz"
