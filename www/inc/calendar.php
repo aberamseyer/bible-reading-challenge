@@ -1,6 +1,7 @@
 <?php
 
-  $calendar_sched = new BibleReadingChallenge\Schedule();
+  // this should be safe only if this file is explicitly called from a staff page
+  $calendar_sched = new BibleReadingChallenge\Schedule((int)$_GET['calendar_id']);
 
   if (!$calendar_sched->ID) {
     redirect('/admin/schedules');

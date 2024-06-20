@@ -68,8 +68,8 @@
     redirect();
   }
   else if ($_POST['new_schedule']) {
-    $start_date = new Datetime('@'.$_POST['start_date']);
-    $end_date = new Datetime('@'.$_POST['end_date']);
+    $start_date = new Datetime($_POST['start_date']);
+    $end_date = new Datetime($_POST['end_date']);
     if (!$start_date || !$end_date || $start_date >= $end_date) {
       $_SESSION['error'] = "Start date must be before end date.";
     }
