@@ -290,10 +290,10 @@ class Schedule {
       )");
   }
 
-  public static function create(\Datetime $start_date, \Datetime $end_date, $name, $site, $active)
+  public static function create(\Datetime $start_date, \Datetime $end_date, $name, $site_id, $active)
   {
     return Database::get_instance()->insert('schedules', [
-      'site_id' => $site->ID,
+      'site_id' => $site_id,
       'name' => $name,
       'start_date' => $start_date->format('Y-m-d'),
       'end_date' => $end_date->format('Y-m-d'),
