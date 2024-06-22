@@ -19,9 +19,17 @@ Install [composer](https://getcomposer.org/) dependencies in root of project wit
 In apache and nginx configuration, be sure file uploads are also set to be at least 10MB.
 
 ## Database
+
+#### SQLite
 create an SQLite database file named "brc.db" in root of project from schema.sql
 
 Initialize it with the data from `migrations/bible-import.sql`
+
+#### Redis
+Redis is used for session management.
+
+Run a Redis (or compatible) server, default ports.
+`docker run -v ./:/data --rm -it -p 6379:6379 redis:7-alpine`
 
 ### Schema
 to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > migrations/schema.sql`

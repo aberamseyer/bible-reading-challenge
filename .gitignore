@@ -1,8 +1,15 @@
-vendor
-brc.db
 .DS_Store
-node_modules
 
+# packages
+node_modules
+vendor
+
+# unsure what this is from
 test.sql
 
+# File uploads
 **/img/upload-*
+
+# sqlite and redis data
+brc.db
+dump.rdb

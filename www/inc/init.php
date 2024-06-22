@@ -1,12 +1,14 @@
 <?php
 
 require_once "env.php";
+require_once $_SERVER['DOCUMENT_ROOT']."/../vendor/autoload.php";
 require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 
 // phpinfo();
 // die;
 
-require_once "session.php";
+require_once "session/DBSessionHandler.php";
+require_once "session/RedisSessionHandler.php";
 session_name("brc-sessid");
 
 $site = BibleReadingChallenge\Site::get_site();
@@ -17,7 +19,7 @@ ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
 ini_set('session.gc_maxlifetime', SESSION_LENGTH);
 session_set_cookie_params(SESSION_LENGTH, "/", $site->DOMAIN, PROD, true);
-session_set_save_handler(new MySessionHandler($db), true);
+session_set_save_handler(new RedisSessionHandler(), true);
 session_start();
 
 // GLOBAL VARIABLES

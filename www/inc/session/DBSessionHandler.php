@@ -1,7 +1,6 @@
 <?php
-require_once "functions.php";
 
-class MySessionHandler implements SessionHandlerInterface
+class DBSessionHandler implements SessionHandlerInterface
 {
     private BibleReadingChallenge\Database $s_db;
     private const DATE_FORMAT = 'Y-m-d H:i:s';
@@ -35,7 +34,7 @@ class MySessionHandler implements SessionHandlerInterface
     {
       $this->s_db->query("
         INSERT INTO sessions (data, id, last_updated)
-        VALUES ('".$this->s_db->esc($data)."', '".$this->s_db->esc($id)."', '".date(MySessionHandler::DATE_FORMAT)."')
+        VALUES ('".$this->s_db->esc($data)."', '".$this->s_db->esc($id)."', '".date(DBSessionHandler::DATE_FORMAT)."')
         ON CONFLICT (id) DO UPDATE
         SET data=excluded.data, last_updated=excluded.last_updated
       ", "");
@@ -50,7 +49,7 @@ class MySessionHandler implements SessionHandlerInterface
 
     public function gc($maxlifetime): int|false
     {
-      $rows_deleted = $this->s_db->query("DELETE FROM sessions WHERE last_updated < '".date(MySessionHandler::DATE_FORMAT, time() - $maxlifetime)."'", "num_rows");
+      $rows_deleted = $this->s_db->query("DELETE FROM sessions WHERE last_updated < '".date(DBSessionHandler::DATE_FORMAT, time() - $maxlifetime)."'", "num_rows");
       error_log('Cleaned up '.$rows_deleted.' sessions.');
       return true;
     }
