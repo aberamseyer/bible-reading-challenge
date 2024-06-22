@@ -1,7 +1,5 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT']."../vendor/autoload.php";
-
 $insecure = true;
 require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
 

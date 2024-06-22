@@ -22,24 +22,11 @@ CREATE TABLE verses(
   orig text NOT NULL,
   asv TEXT
 );
-CREATE TABLE sessions(
-  id TEXT PRIMARY KEY,
-  data TEXT,
-  last_updated DATETIME DEFAULT(CURRENT_TIMESTAMP)
-);
 CREATE TABLE read_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
   schedule_date_id INTEGER,
   timestamp TEXT
-);
-CREATE TABLE schedule_dates(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  schedule_id INTEGER,
-  date TEXT,
-  passage INTEGER,
-  passage_chapter_ids TEXT,
-  complete_key TEXT
 );
 CREATE TABLE chapters(
   id INTEGER NOT NULL
@@ -82,14 +69,15 @@ CREATE TABLE images(
   mime_type TEXT,
   date_uploaded TEXT DEFAULT(CURRENT_TIMESTAMP)
 );
-CREATE INDEX "idx_books_name" ON "books"(`name`);
-CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
-CREATE INDEX idx_verses_esv ON verses(esv);
-CREATE INDEX idx_verses_kjv ON verses(kjv);
-CREATE INDEX idx_verses_niv ON verses(niv);
-CREATE INDEX idx_verses_nlt ON verses(nlt);
-CREATE INDEX idx_verses_text ON verses(rcv);
-CREATE INDEX idx_chapters_book_id ON chapters(book_id);
+CREATE TABLE schedules(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id INTEGER,
+  user_id INTEGER,
+  name TEXT,
+  start_date TEXT,
+  end_date TEXT,
+  active INTEGER DEFAULT(0)
+);
 CREATE TABLE sites(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   enabled INTEGER DEFAULT(1),
@@ -106,14 +94,43 @@ CREATE TABLE sites(
   logo_image_id INTEGER,
   login_image_id INTEGER,
   progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(0), time_zone_id TEXT, env TEXT, allow_personal_schedules INTEGER DEFAULT(0)
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'),
+color_primary TEXT DEFAULT('rgb(0, 0, 0)'),
+color_secondary TEXT DEFAULT('rgb(0, 0, 0)'),
+color_fade TEXT DEFAULT('rgb(0, 0, 0)'),
+default_emoji TEXT,
+reading_timer_wpm INTEGER DEFAULT(0),
+start_of_week INTEGER DEFAULT(1),
+time_zone_id TEXT DEFAULT('America/Chicago'),
+env TEXT,
+allow_personal_schedules INTEGER DEFAULT(0),
+translations TEXT DEFAULT ["rcv",
+  "kjv",
+  "esv",
+  "asv",
+  "niv",
+  "nlt"]
 );
-CREATE TABLE schedules(
+CREATE TABLE schedule_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  site_id INTEGER,
-  user_id INTEGER,
-  name TEXT,
-  start_date TEXT,
-  end_date TEXT,
-  active INTEGER DEFAULT(0)
+  schedule_id INTEGER,
+  date TEXT,
+  passage INTEGER,
+  passage_chapter_ids TEXT,
+  passage_chapter_verse_segments TEXT,
+  complete_key TEXT
 );
+CREATE INDEX "idx_books_name" ON "books"(`name`);
+CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
+CREATE INDEX idx_verses_esv ON verses(esv);
+CREATE INDEX idx_verses_kjv ON verses(kjv);
+CREATE INDEX idx_verses_niv ON verses(niv);
+CREATE INDEX idx_verses_nlt ON verses(nlt);
+CREATE INDEX idx_verses_text ON verses(rcv);
+CREATE INDEX idx_chapters_book_id ON chapters(book_id);
+CREATE VIEW read_dates_dated AS SELECT rd.id, rd.user_id, u.name, rd.timestamp, DATETIME(rd.timestamp, 'unixepoch') date, sd.passage
+FROM read_dates rd
+JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
+JOIN users u ON rd.user_id = u.id
+ORDER BY rd.id DESC
+/* read_dates_dated(id,user_id,name,timestamp,date,passage) */;
