@@ -14,7 +14,7 @@ if (!$version) {
   $REDIS_CLIENT->set('config/version', $version);
   $REDIS_CLIENT->expire('config/version', 60);
 }
-define('VERSION', $vesion);
+define('VERSION', $version);
 
 define('UPLOAD_DIR', __DIR__."/../../upload/");
 define('IMG_DIR', __DIR__."/../img/");
