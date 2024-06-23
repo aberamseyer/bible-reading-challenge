@@ -4,10 +4,11 @@ class RedisSessionHandler implements SessionHandlerInterface
 {
     private Predis\Client $client;
     private const DATE_FORMAT = 'Y-m-d H:i:s';
+    private const KEY_NAMESPACE = 'sessions/';
 
-    public function __construct()
+    public function __construct($client)
     {
-      $this->client = new Predis\Client(null, [ 'prefix' => 'bible-reading-challenge:sessions/' ]);
+      $this->client = $client;
     }
     
     public function open($savePath, $sessionName): bool
@@ -23,22 +24,24 @@ class RedisSessionHandler implements SessionHandlerInterface
 
     public function read($id): string|false
     {
-      $hgetall = $this->client->hgetall($id);
+      $hgetall = $this->client->hgetall(RedisSessionHandler::KEY_NAMESPACE.$id);
       return $hgetall ? $hgetall['data'] : '';
     }
 
     public function write($id, $data): bool
     {
-      $this->client->hset($id, "data", $data);
-      $this->client->hset($id, "id", $id);
-      $this->client->hset($id, "last_updated", date(RedisSessionHandler::DATE_FORMAT));
-      $this->client->expire($id, SESSION_LENGTH);
+      $this->client->hmset(RedisSessionHandler::KEY_NAMESPACE.$id, [
+        "data" => $data,
+        "id" => $id,
+        "last_updated" => date(RedisSessionHandler::DATE_FORMAT)
+      ]);
+      $this->client->expire(RedisSessionHandler::KEY_NAMESPACE.$id, SESSION_LENGTH);
       return true;
     }
 
     public function destroy($id): bool
     {
-      $this->client->del($id);
+      $this->client->del(RedisSessionHandler::KEY_NAMESPACE.$id);
       return true;
     }
 
