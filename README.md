@@ -29,7 +29,7 @@ Initialize it with the data from `migrations/bible-import.sql`
 Redis is used for session management.
 
 Run a Redis (or compatible) server, default ports.
-`docker run -v ./:/data --rm -it -p 6379:6379 redis:7-alpine`
+`docker run -v /home/bible-reading-challenge/:/data --restart unless-stopped -d -it -p 6379:6379 redis:7-alpine`
 
 ### Schema
 to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > migrations/schema.sql`

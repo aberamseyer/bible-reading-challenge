@@ -13,3 +13,4 @@ test.sql
 # sqlite and redis data
 brc.db
 dump.rdb
+sessions.db

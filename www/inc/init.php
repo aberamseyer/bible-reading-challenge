@@ -1,7 +1,15 @@
 <?php
 
-require_once "env.php";
 require_once $_SERVER['DOCUMENT_ROOT']."/../vendor/autoload.php";
+try {
+  $REDIS_CLIENT = new Predis\Client(null, [ 'prefix' => 'bible-reading-challenge:' ]);
+  $REDIS_CLIENT->connect();
+}
+catch (Exception $e) {
+  error_log("redis offline");
+  $REDIS_CLIENT = null;
+}
+require_once "env.php";
 require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 
 // phpinfo();
@@ -15,11 +23,12 @@ $site = BibleReadingChallenge\Site::get_site();
 $db = BibleReadingChallenge\Database::get_instance();
 
 ini_set('session.use_strict_mode', 1);
-ini_set('session.gc_probability', 1);
-ini_set('session.gc_divisor', 100);
-ini_set('session.gc_maxlifetime', SESSION_LENGTH);
 session_set_cookie_params(SESSION_LENGTH, "/", $site->DOMAIN, PROD, true);
-session_set_save_handler(new RedisSessionHandler(), true);
+session_set_save_handler(
+  $REDIS_CLIENT
+  ? new RedisSessionHandler($REDIS_CLIENT)
+  : new DBSessionHandler(new SQLite3(SESSIONS_DB_FILE))
+  , true);
 session_start();
 
 // GLOBAL VARIABLES
