@@ -30,12 +30,14 @@ class RedisSessionHandler implements SessionHandlerInterface
 
     public function write($id, $data): bool
     {
-      $this->client->hmset(RedisSessionHandler::KEY_NAMESPACE.$id, [
-        "data" => $data,
-        "id" => $id,
-        "last_updated" => date(RedisSessionHandler::DATE_FORMAT)
-      ]);
-      $this->client->expire(RedisSessionHandler::KEY_NAMESPACE.$id, SESSION_LENGTH);
+      if ($data) { // don't bother saving the session if no one is logged in
+        $this->client->hmset(RedisSessionHandler::KEY_NAMESPACE.$id, [
+          "data" => $data,
+          "id" => $id,
+          "last_updated" => date(RedisSessionHandler::DATE_FORMAT)
+        ]);
+        $this->client->expire(RedisSessionHandler::KEY_NAMESPACE.$id, SESSION_LENGTH);
+      }
       return true;
     }
 
