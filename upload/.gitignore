@@ -1,5 +1,6 @@
 # Ignore everything in the folder
 *
 
-# Except the .gitignore file
+# Except the .gitignore and placeholder image
 !.gitignore
+!missing-placeholder.svg

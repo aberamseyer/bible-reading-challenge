@@ -15,6 +15,7 @@ require_once $_SERVER['DOCUMENT_ROOT']."/inc/functions.php";
 // phpinfo();
 // die;
 
+// session setup
 require_once "session/DBSessionHandler.php";
 require_once "session/RedisSessionHandler.php";
 session_name("brc-sessid");

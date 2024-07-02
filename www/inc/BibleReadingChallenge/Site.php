@@ -183,10 +183,19 @@ class Site extends SiteRegistry {
   {
     static $pictures;
     if ($pictures[$type]) {
+      // return cached value
       return '/img/'.$pictures[$type];
     }
     else {
-      $pictures[$type] = $this->data($type.'_image_id') ? $this->db->col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id')) : '';
+      // find the active image
+      if ($this->data($type.'_image_id')) {
+        $img_filename = $this->db->col("SELECT uploads_dir_filename FROM images WHERE id = ".$this->data($type.'_image_id'));
+      }
+      // if the active image doesn't exist e.g., in development environment
+      if (!$img_filename || !file_exists(IMG_DIR.$img_filename)) {
+        $img_filename = "static/".$type."-placeholder.svg";
+      }
+      $pictures[$type] = $img_filename;
     }
     return '/img/'.$pictures[$type];
   }
