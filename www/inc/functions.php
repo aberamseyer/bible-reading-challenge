@@ -619,3 +619,7 @@ function cached_file($type, $path, $attrs='') {
 	}
 	return '';
 }
+
+function back_button($text) {
+	return "<a href='' onclick='history.back()'>&lt;&lt; $text</a>";
+}

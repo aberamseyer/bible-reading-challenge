@@ -100,7 +100,6 @@ if ($_POST['merge_from_account']) {
 }
 
 $page_title = "Manage Users";
-$hide_title = true;
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   echo admin_navigation();
@@ -114,7 +113,7 @@ if ($_GET['user_id'] &&
   // specific user's stats
   $deviation = $site->deviation_for_user($user['id'], $schedule);
   
-  echo "<p><a href='' onclick='history.back()'>&lt;&lt; Back</a></p>";
+  echo "<p>".back_button("Back")."</p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
@@ -163,7 +162,7 @@ if ($_GET['user_id'] &&
     </fieldset>
   </form>";
   echo "<h5>Progress</h5>";
-  echo $schedule->generate_schedule_calendar();
+  echo $schedule->html_calendar();
   $add_to_foot .= 
     chartjs_js().
     cached_file('js', '/js/user.js')."

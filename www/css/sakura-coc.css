@@ -227,9 +227,12 @@ label, legend, fieldset {
 .active { 
   background: var(--color-success) !important;
 }
-.future.active {
-  background: var(--color-blossom) !important;
-}
-.future.active * {
-  color: var(--color-bg);
+.future.active, .today.active {
+  & {
+    background: var(--color-blossom) !important;
+  }
+
+  &:not(textarea) {
+    color: var(--color-bg);
+  }
 }

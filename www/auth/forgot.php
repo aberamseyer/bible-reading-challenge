@@ -68,7 +68,6 @@ else if ($_REQUEST['reset']) {
         $_SESSION['error'] = "Password reset link expired.";
       }
       else {
-        $hide_title = true;
         $page_title = "Reset Password";
         require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         ?>
@@ -103,7 +102,6 @@ else if ($_REQUEST['reset']) {
   redirect();
 }
 
-$hide_title = true;
 $page_title = "Forgot Password";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>

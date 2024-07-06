@@ -48,7 +48,7 @@ class Schedule {
     $end_date = new \Datetime($this->data['end_date']);
   
     return "
-      <h5>Editing calendar for '".html($this->data['name'])."'</h5>
+      <h3>Editing calendar for '".html($this->data['name'])."'</h3>
       <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
       <h6>Instructions</h6>
       <ul>
@@ -70,7 +70,7 @@ class Schedule {
     
   }
 
-  public function html_calendar()
+  public function html_calendar_with_editor()
   {
     global $add_to_foot;
     ob_start();
@@ -106,7 +106,7 @@ class Schedule {
         <button type='button' id='clear' disabled>Clear after selected</button>
       </div>
     </div>";
-    echo $this->generate_schedule_calendar(true);
+    echo $this->html_calendar(true);
   
     $add_to_foot .= "
       <script>
@@ -290,15 +290,28 @@ class Schedule {
       )");
   }
 
-  public static function create(\Datetime $start_date, \Datetime $end_date, $name, $site_id, $active)
+  public static function create(\Datetime $start_date, \Datetime $end_date, $name, $site_id, $active, $user_id=null)
   {
-    return Database::get_instance()->insert('schedules', [
+    $values = [
       'site_id' => $site_id,
       'name' => $name,
       'start_date' => $start_date->format('Y-m-d'),
       'end_date' => $end_date->format('Y-m-d'),
-      'active' => $active ? 1 : 0
-    ]);
+      'active' => $active ? 1 : 0,
+    ];
+    if ($user_id) {
+      $values['user_id'] = $user_id;
+    }
+    return Database::get_instance()->insert('schedules', $values);
+  }
+
+  public static function too_many_personal_schedules(int $user_id)
+  {
+    if ($user_id) {
+      $num_schedules = (int) Database::get_instance()->col("SELECT COUNT(*) FROM schedules WHERE user_id = ".$user_id);
+      return $num_schedules >= 20;
+    }
+    return false;
   }
 
   public function set_active()
@@ -320,7 +333,7 @@ class Schedule {
 
   public function duplicate()
   {
-    $s_id = Schedule::create(new \Datetime($this->data('start_date')), new \Datetime($this->data('end_date')), "Copy of ".$this->data('name'), $this->data('site_id'), 0);
+    $s_id = Schedule::create(new \Datetime($this->data('start_date')), new \Datetime($this->data('end_date')), "Copy of ".$this->data('name'), $this->data('site_id'), 0, $this->data('user_id') ?: null);
     $this->db->query("
       INSERT INTO schedule_dates (schedule_id, date, passage)
         SELECT $s_id, date, passage
@@ -342,6 +355,9 @@ class Schedule {
 
   public static function schedules_for_user($site_id, $user_id)
   {
+    if (!$user_id) {
+      return Schedule::schedules_for_site($site_id);
+    }
     $schedules = [];
     foreach(Database::get_instance()->cols("
       SELECT id FROM schedules
@@ -355,7 +371,7 @@ class Schedule {
     return $schedules;
   }
 
-	public function generate_schedule_calendar($editable = false)
+	public function html_calendar($editable = false)
   {
 		$start_date = new \Datetime($this->data('start_date'));
 		$end_date = new \Datetime($this->data('end_date'));
@@ -470,5 +486,262 @@ class Schedule {
           AND user_id = $user_id");
     }
     return $this->day_completed_arr[ $user_id ];
+  }
+
+  public static function create_schedule_form()
+  {
+    ob_start();
+    echo "<p>".back_button("Back to schedules")."</p>";
+    
+    echo "<h5>Create New Schedule</h5>";
+    echo "<form method='post'>
+      <input type='hidden' name='new_schedule' value='1'>
+
+      <label>Start date: <input type='date' name='start_date'></label>
+      <label>End date: <input type='date' name='end_date'></label>
+      <label>Name: <input type='text' name='name' minlength='1'></label>
+      <button type='submit'>Save</button>
+    </form>";
+    return ob_get_clean();
+  }
+
+  public static function edit_schedule_form($id, $name, $start_date, $end_date, $active)
+  {
+    ob_start();
+
+    $start_date = new \Datetime($start_date);
+    $end_date = new \Datetime($end_date);
+    echo "<h5>Editing '".html($name)."' schedule</h5>";
+    echo "<form method='post'>
+      <input type='hidden' name='schedule_id' value='$id'>
+
+      <label>Start date: <input type='date' name='start_date' value='".$start_date->format('Y-m-d')."'></label>
+      <label>End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'></label>
+      <label>Name: <input type='text' name='name' minlength='1' value='".html($name)."'></label>
+      <button type='submit'>Save</button>
+      <button type='submit' ".($active ? "disabled title='You cannot delete the active schedule'" : "")." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete ".html($name)."? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
+      <button type='button' onclick='window.location = \"?calendar_id=$id\"'>Edit Calendar</button>
+    </form>";
+    return ob_get_clean();
+  }
+
+  public static function handle_create_sched_post($site_id, $user_id=null)
+  {
+    $start_date = new \Datetime($_POST['start_date']);
+    $end_date = new \Datetime($_POST['end_date']);
+    if (!$start_date || !$end_date || $start_date >= $end_date) {
+      $_SESSION['error'] = "Start date must be before end date.";
+    }
+    else if (!$_POST['name']) {
+      $_SESSION['error'] = "Schedule must have a name.";
+    }
+    else if (Schedule::too_many_personal_schedules((int)$user_id)) {
+      $_SESSION['error'] = "You are only permitted to create 20 personal schedules.";
+    }
+    else {
+      $new_id = Schedule::create($start_date, $end_date, $_POST['name'], $site_id, 0, $user_id);
+      $_SESSION['success'] = "Created schedule.&nbsp;<a href='?calendar_id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
+      redirect("?edit=$new_id");
+    }
+  }
+
+  public function handle_edit_sched_days_post($for_user_id=0)
+  {
+    if ($_REQUEST['get_dates']) {
+      print_json($this->get_dates($for_user_id));
+    }
+    else if ($_REQUEST['fill_dates'] && $_REQUEST['d'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
+      print_json(
+        $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['days'])
+      );
+    }
+    else if ($_POST['start_date'] && $_POST['end_date']) {
+      $start = new \Datetime($_POST['start_date']);
+      $end = new \Datetime($_POST['end_date']);
+      if (!$start || !$end) {
+        $_SESSION['error'] = "Invalid dates";
+      }
+      else {
+        $difference = $start->diff($end);
+        if ($start >= $end) {
+          $_SESSION['error'] = 'Start date must come before end date';
+        }
+        else if ($difference->y > 4) {
+          $_SESSION['error'] = 'Schedule must be shorter than 4 years';
+        }
+        else {
+          $this->update($start, $end, $this->data('name'));
+          $_SESSION['success'] = "Updated your schedule's dates.";
+          redirect();
+        }
+      }
+    }
+    else if ($_POST['edit']) {
+      $this->edit($_POST['days']);
+
+      $_SESSION['success'] = 'Schedule saved';
+      redirect();
+    }
+  }
+
+  public function handle_edit_sched_post()
+  {
+    if ($_POST['set_active']) {
+      $this->set_active();
+      $_SESSION['success'] = "<b>".html($this->data('name'))."</b> is now the active schedule";
+    }
+    else if ($_POST['delete']) {
+      if ($this->data('active')) {
+        $_SESSION['error'] = "Can't delete the active schedule.";
+      }
+      else {
+        $this->delete();
+        $_SESSION['success'] = 'Schedule deleted';
+        redirect('?');
+      }
+    }
+    else if ($_POST['duplicate']) {
+      if (Schedule::too_many_personal_schedules((int)$this->data('user_id'))) {
+        $_SESSION['error'] = "You are only permitted to create up to 20 schedules.";
+      }
+      else {
+        $new_id = $this->duplicate();
+        $_SESSION['success'] = "Schedule duplicated.&nbsp;<a href='?calendar_id=$new_id'>Edit new schedule's calendar &gt;&gt;</a>";
+      }
+      redirect();
+    }
+    else {
+      $start_date = strtotime($this->data('start_date'));
+      if ($new_date = strtotime($_POST['start_date']))
+        $start_date = $new_date;
+      $end_date = strtotime($this->data('end_date'));
+      if ($new_date = strtotime($_POST['end_date']))
+        $end_date = $new_date;
+
+      $start_date_obj = new \Datetime('@'.$start_date);
+      $end_date_obj = new \Datetime('@'.$end_date);
+      $interval = $start_date_obj->diff($end_date_obj);
+      if ($interval->y > 3) {
+        $_SESSION['error'] = "Schedule must be shorter 4 years";
+      }
+      else if ($start_date_obj >= $end_date_obj) {
+        $_SESSION['error'] = "Start date must be before end date.";
+      }
+      else if (!$_POST['name']) {
+        $_SESSION['error'] = "Schedule must have a name.";
+      }
+      else if (
+        ($this->data('start_date') != $start_date_obj->format('Y-m-d') || $this->data('end_date') != $end_date_obj->format('Y-m-d'))
+         && $this->db->col("
+              SELECT COUNT(*)
+              FROM read_dates rd
+              JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+              WHERE sd.schedule_id = ".$this->ID)) {
+        $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
+      }
+      else {
+        $this->update($start_date_obj, $end_date_obj, $_POST['name']);
+
+        $_SESSION['success'] = "Saved schedule";
+      }   
+    }
+    redirect();
+  }
+
+  public function personal_schedule_instructions($for_user_id)
+  {
+    return "
+      <details ".(count($this->get_dates($for_user_id)) ? "" : "open").">
+        <summary>Introduction</summary>
+        <p>
+          From here, you can create and edit your very own Bible reading schedule. This is useful if you already read the Bible on your own schedule
+          and want to track everything on the website. Everything read here will be recorded and count toward your personal streak and statistics, but it will
+          not count toward the all-club schedule, goals, or rewards (if any).
+        </p>
+        <ol>
+          <li>Click a schedule's name to edit the start and end dates</li>
+          <li>Click 'Edit Calendar' to go to the reading editor</li>
+          <li>On that page, follow the editor instructions, and use the popout tool on the left edge of the page to fill in the dates.</li>
+          <li>Click 'Save readings'</li>
+        </ol>
+        <p>If you would like to stop using the personal schedule, you can simply ignore it, or use the 'Clear after selected' button to delete all the future
+        readings and choose 'Save readings'</p>
+      </details>";
+  }
+
+  public static function fill_read_dates_js()
+  {
+    return "
+      <script>
+      const readingDays = document.querySelectorAll('.reading-day:not(.disabled)')
+      fetch(`?get_dates=1`).then(rsp => rsp.json())
+      .then(data => {
+        readingDays.forEach(tableCell => {
+          const date = tableCell.getAttribute('data-date')
+          const matchingDay = data.find(sd => sd.date === date)
+          if (matchingDay) {
+            tableCell.querySelector('.label').textContent = matchingDay.passage
+            if (matchingDay.read) {
+              tableCell.classList.add('active')
+            }
+            if (!tableCell.classList.contains('future')) {
+              tableCell.setAttribute('href', '/today?today=' + date)
+              tableCell.onclick = () => window.location = tableCell.getAttribute('href')
+              tableCell.classList.add('cursor')
+
+            }
+          }
+        })
+        // Array.from(document.querySelectorAll('.active')).at(-1).scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+      </script>";
+  }
+
+  public static function schedules_table($site_id, $user_id)
+  {
+    ob_start();
+    $my_schedules = Schedule::schedules_for_user($site_id, $user_id);
+    echo "
+    <table>
+      <thead>
+        <tr>
+          <th data-sort='name'>
+            Name
+          </th>
+          <th data-sort='start'>
+            Start
+          </th>
+          <th data-sort='end'>
+            End
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>";
+
+    foreach($my_schedules as $each_schedule) {
+        echo "
+          <tr class='".($each_schedule->data('active') ? 'active' : '')."'>
+            <td data-name><a href='?edit=".$each_schedule->ID."'><small>".html($each_schedule->data('name'))."</small></a></td>
+            <td data-start='".$each_schedule->data('start_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('start_date')))."</small></td>
+            <td data-end='".$each_schedule->data('end_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('end_date')))."</small></td>
+            <td>
+              <form method='post'>
+                <small>
+                  <input type='hidden' name='schedule_id' value='".$each_schedule->ID."'>
+                  <button type='submit' name='set_active' value='1' ".($each_schedule->data('active') ? 'disabled' : '').">Set active</button>
+                  <button type='submit' name='duplicate' value='1'>Duplicate</button>
+                  <button type='button' onclick='window.location = `?calendar_id=".$each_schedule->ID."`'>Edit Calendar</button>
+                </small>
+              </form>
+            </td>
+          </tr>";
+    }
+    echo "
+        </tbody>
+      </table>
+      <br>";
+    
+    return ob_get_clean();
   }
 }

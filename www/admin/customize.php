@@ -250,13 +250,11 @@ if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain
 }
 
 $page_title = "Customize Site";
-$hide_title = true;
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
   
 echo admin_navigation();
 
-echo "<h2>Customize Site</h2>";
 if ($edit_site_id) {
   echo "
   <blockquote>You're editing '<b>".$site->data('site_name')."</b>'.

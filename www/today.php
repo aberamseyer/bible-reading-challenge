@@ -98,7 +98,6 @@ foreach($schedules as $each_schedule) {
   }
 }
 
-
 $page_title = "Read";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 

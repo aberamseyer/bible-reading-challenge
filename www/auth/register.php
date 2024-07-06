@@ -46,7 +46,6 @@ else if ($_POST['email']) {
   }
 }
 
-$hide_title = true;
 $page_title = "Register";
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 ?>

@@ -8,7 +8,6 @@ if (!$staff) {
 
 
 $page_title = "Progress";
-$hide_title = true;
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 

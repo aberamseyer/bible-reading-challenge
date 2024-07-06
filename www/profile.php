@@ -30,8 +30,9 @@ if (isset($_POST['name'])) {
 }
 
 $page_title = "Profile";
+$show_title = true;
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
-echo "<p><a href='/auth/logout'>Logout</a></p>";
+echo "<p><a href='/auth/logout'>↩ Logout</a></p>";
 
 echo "
 <div>

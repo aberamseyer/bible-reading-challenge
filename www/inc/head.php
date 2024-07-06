@@ -67,11 +67,8 @@
     </div>
     <hr>
     <?php endif; ?>
-    <h1 id='title'><?= $page_title ?></h1>
-    <?php if($hide_title): ?>
-      <style>
-        #title { display: none; }
-      </style>
+    <?php if($show_title): ?>
+      <h1 id='title'><?= $page_title ?></h1>
     <?php endif; ?>
     <?php
       if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['email']) {

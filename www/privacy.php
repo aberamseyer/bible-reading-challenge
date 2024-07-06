@@ -4,7 +4,6 @@ $insecure = true;
 require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
 
 $page_title = "Privacy Policy";
-$hide_title = true;
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
 ?>

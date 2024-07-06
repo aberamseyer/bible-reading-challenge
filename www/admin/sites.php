@@ -70,7 +70,6 @@ if ($_POST) {
 $active_edit_site = $_SESSION['edit_site_id'];
 
 $page_title = "Sites";
-$hide_title = true;
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 
