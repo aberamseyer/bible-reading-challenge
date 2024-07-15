@@ -402,17 +402,6 @@ function four_week_trend_data($user_id) {
 		return array_column($values, 'count', 'day_start');
 }
 
-function number_chapters_in_book_read($book_id, $user_id) {
-	$db = BibleReadingChallenge\Database::get_instance();
-	return $db->num_rows("
-      SELECT json_each.value
-      FROM read_dates rd
-      JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
-      WHERE json_each.value IN (SELECT id FROM chapters WHERE book_id = $book_id)
-        AND user_id = $user_id
-      GROUP BY json_each.value");
-}
-
 function toggle_all_users($initial_count) {
 	global $add_to_foot;
 

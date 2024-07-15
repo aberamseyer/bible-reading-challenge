@@ -374,7 +374,7 @@ class Site extends SiteRegistry {
       WHERE sd.schedule_id = $schedule_id and rd.user_id = $user_id
       ORDER BY timestamp");
     
-      $sum = 0;
+    $sum = 0;
     foreach($read_dates as $rd) {
       $sum += (int)$rd['word_count'];
       foreach ($threshholds as $thresh => $words) {
