@@ -20,15 +20,16 @@ foreach([UPLOAD_DIR, IMG_DIR] as $directory) {
   // Filter out the "." and ".." entries
   $files = array_values(array_diff($files, ['.', '..', '.gitignore']));
 
-  // put the entire directory in there
+  // make the filename include the entire absolute path
   $files = array_map(function($file) use ($directory) {
     return $directory.$file;
   }, $files);
 
   // Filter out directories and keep only files
   $files = array_filter($files, function($file) {
-      return is_file($file);
+      return is_file($file) && strpos($file, '-placeholder') === false;
   });
+
   array_push($all_files, ...$files);
 }
 
