@@ -76,13 +76,9 @@ class Redis {
 		return $version;
 	}
 
-	public function update_last_seen($id, $time): bool
+	public function update_last_seen($id, $time): \Predis\Response\Status
 	{
-		if ($this->client()) {
-			$this->client->set('last-seen/'.$id, $time);
-			return true;
-		}
-		return false;
+		return $this->client->set('last-seen/'.$id, $time);
 	}
 
 	public function user_iterator(): null|\Predis\Collection\Iterator\Keyspace {

@@ -36,19 +36,15 @@ session_start();
 
 $my_id = (int)$_SESSION['my_id'] ?: 0;
 $me = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int) $my_id);
-if ($me) {
-  if (!BibleReadingChallenge\Redis::get_instance()->update_last_seen($my_id, time())) {
-    $db->update("users", [
-      'last_seen' => time()
-    ], 'id = '.$my_id);  
-  }
-}
 $staff = $me['staff'];
 $schedule = $site->get_active_schedule();
 
 if (!$insecure && !$me) {
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];
 	redirect('/auth/login');
+}
+else if ($my_id) {
+  $redis->update_last_seen($my_id, time());
 }
 
 define('BOOK_NAMES_AND_ABBREV', array_column(

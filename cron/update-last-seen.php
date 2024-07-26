@@ -5,7 +5,7 @@
 //
 // crontab entry: 47 3 * * * php /home/bible-reading-challenge/cron/update-last-seen.php
 
-require DOCUMENT_ROOT."inc/env.php";
+require __DIR__."/../www/inc/env.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 $redis = BibleReadingChallenge\Redis::get_instance();
