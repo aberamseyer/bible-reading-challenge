@@ -51,7 +51,7 @@ class Schedule {
       <h3>Editing calendar for '".html($this->data('name'))."'</h3>
       <p>
         <b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b><br>
-        <small>To edit these dates, go to the <a href='/my-schedule/personal?edit=".$this->ID."'>schedule editing</a> page.<br>
+        <small>To edit these dates, go to the <a href='".($this->data('user_id') ? '/my-schedule/personal' : '/admin/schedules')."?edit=".$this->ID."'>schedule editing</a> page.<br>
         Only <b>future</b> days can be edited</small>
       </p>
       <details>
