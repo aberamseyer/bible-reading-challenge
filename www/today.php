@@ -160,13 +160,7 @@ foreach($schedules as $i => $each_schedule) {
     }
     echo "</small></p>";
   }
-  if ($scheduled_reading) {
-    // how many have read today
-    $total_readers = $db->col("SELECT COUNT(*)
-      FROM read_dates rd
-      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-      WHERE sd.id = ".$scheduled_reading['id']);
-    
+  if ($scheduled_reading) {    
     if ($i === 0) {
       $add_to_foot .= "<style>
         article {
