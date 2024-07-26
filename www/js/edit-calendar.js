@@ -106,7 +106,7 @@
 
     // set the currently active day and the previous day
     const activeDay = document.querySelector('.reading-day.active')
-    const allDays = Array.from(document.querySelectorAll('.reading-day'))
+    const allDays = Array.from(calendarDays)
     const i = allDays.findIndex(el => el === activeDay)
     const prevDay = i <= 0
       ? activeDay
