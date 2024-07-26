@@ -17,7 +17,7 @@ class Database {
       // Do nothing
   }
 
-  private function __wakeup()
+  public function __wakeup()
   {
       // Do nothing
 			throw new \Exception("Cannot unserialize a singleton.");

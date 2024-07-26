@@ -18,19 +18,16 @@ function removeUser(connectionId) {
   broadcast({
       type: 'remove-user',
       id: connectionId
-    }, -1, p.site_id)
+    }, null, p.site_id)
 }
 
 // broadcasts to all websockets (optionally, except one) of an event to a specific site
 function broadcast (obj, exceptId, siteId) {
   for(let [userId, person] of people) {
-    if (exceptId) {
-      if (userId !== exceptId && person.site_id === siteId) {
+    if (!siteId || person.site_id === siteId) {
+      if (!exceptId || userId !== exceptId) {
         person.ws.send(JSON.stringify(obj))
       }
-    }
-    else {
-      person.ws.send(JSON.stringify(obj))
     }
   }
 }
@@ -140,7 +137,7 @@ server.on('connection', ws => {
       console.log(`invalid initialization code: ${event.data}`)
       ws.terminate()
     }
-  }, { 'once': true })
+  }, { once: true })
 })
 
 setInterval(() => {

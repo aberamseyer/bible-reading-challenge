@@ -1,6 +1,6 @@
 <?php
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$staff) {
   redirect('/');
@@ -8,14 +8,7 @@ if (!$staff) {
 
 // get dates for single user's progress view
 if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
-  print_json(
-    $db->select("
-    SELECT sd.id, sd.date, sd.passage, rd.id read
-    FROM schedule_dates sd
-    LEFT JOIN (
-      SELECT * FROM read_dates WHERE user_id = ".intval($_REQUEST['user_id'])."
-    ) rd ON rd.schedule_date_id = sd.id
-    WHERE schedule_id = ".$schedule->ID));
+  print_json($schedule->get_dates((int)$_REQUEST['user_id']));
 }
     
 // edit/delete user
@@ -60,8 +53,8 @@ if ($_POST['user_id']) {
 
 // merge accounts
 if ($_POST['merge_from_account']) {
-  $merge_from_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_from_account']);
-  $merge_to_account = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_to_account']);
+  $merge_from_account = $db->row("SELECT id, name, email FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_from_account']);
+  $merge_to_account = $db->row("SELECT id, name, email FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['merge_to_account']);
 
   if (!$merge_from_account || !$merge_to_account) {
     $_SESSION['error'] = "Invalid accounts for merge.";
@@ -90,6 +83,9 @@ if ($_POST['merge_from_account']) {
         )");
     }
 
+    $db->query(
+      "UPDATE schedules SET user_id = $merge_to_account[id] 
+      WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM read_dates WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM users WHERE id = $merge_from_account[id]");
 
@@ -101,7 +97,7 @@ if ($_POST['merge_from_account']) {
 
 $page_title = "Manage Users";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
   echo admin_navigation();
   
 if ($_GET['user_id'] &&
@@ -111,27 +107,29 @@ if ($_GET['user_id'] &&
     ORDER BY name DESC")
 ) {
   // specific user's stats
-  $deviation = $site->deviation_for_user($user['id'], $schedule);
+  $deviation = $site->deviation_for_user($user['id']);
+  $on_target = $site->on_target_for_user((int)$user['id']);
   
   echo "<p>".back_button("Back")."</p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
-  echo "Created: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
+  echo "Joined: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
   echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
   $last_read_ts = $db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
   echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
-  echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b>";
+  echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b><br>";
+  echo "Percentage On-target days ".help('The percentage of days that were recorded on the day that they were scheduled').": <b>".$on_target."</b>";
   echo badges_html(badges_for_user($user['id']))."</p>";
   echo "<p>
   <div class='two-columns'>
     <div>
       <h6 class='text-center'>Progress</h6>
-     ".$site->progress_canvas($user['id'], $schedule->ID)."
+     ".$site->progress_canvas($user['id'])."
     </div>
     <div>
       <h6 class='text-center'>Days read each week</h6>
-      ".$site->weekly_progress_canvas($user['id'], $schedule)."
+      ".$site->weekly_progress_canvas($user['id'])."
     </div>
   </div>
   <br>
@@ -185,10 +183,10 @@ if ($_GET['user_id'] &&
 
     // merge accounts
     $read_days_sql = "
-      SELECT COUNT(*) read_days, u.*
+      SELECT COUNT(rd.id) read_days, u.*
       FROM users u
-      JOIN read_dates rd ON rd.user_id = u.id
-      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      LEFT JOIN read_dates rd ON rd.user_id = u.id
+      LEFT JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
       %s
       GROUP BY u.id
       ORDER BY name";
@@ -410,4 +408,4 @@ else {
 }
 
 
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

@@ -3,14 +3,13 @@
 // creates schedules for existing users
 
 require __DIR__."/../www/inc/env.php";
-require __DIR__."/../www/inc/functions.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 
-$schedule_user_ids = $db->cols("SELECT user_id FROM schedules");
+$schedule_user_ids = $db->cols("SELECT user_id FROM schedules WHERE active = 1");
 
 foreach($db->select("SELECT id, name, site_id FROM users") as $user) {
-  if (!in_array($user['id'], $schedule_user_ids, true)) {
+  if (!in_array($user['id'], $schedule_user_ids)) {
     echo $user['name']."[$user[id]] is getting a schedule.\n";
     $first_name = explode(' ', $user['name'])[0];
     $db->insert('schedules', [

@@ -7,17 +7,23 @@ class MailSenderSendgrid implements MailSender {
 	private readonly string $register_email_template;
 	private readonly string $forgot_password_template;
 	private readonly string $api_key;
+	private readonly string $from_email;
+	private readonly string $from_name;
 
 	public function __construct(
 			$sendgrid_api_key, 
 			$sendgrid_daily_email_template, 
 			$sendgrid_register_email_template, 
-			$sendgrid_forgot_password_template)
+			$sendgrid_forgot_password_template,
+			$from_email,
+			$from_name)
 	{
 		$this->api_key = $sendgrid_api_key;
 		$this->daily_email_template = $sendgrid_daily_email_template;
 		$this->register_email_template = $sendgrid_register_email_template;
 		$this->forgot_password_template = $sendgrid_forgot_password_template;
+		$this->from_email = $from_email;
+		$this->from_name = $from_name;
 	}
 
 	public function daily_email_template()
@@ -39,8 +45,8 @@ class MailSenderSendgrid implements MailSender {
 	{
 		$body = [
 			"from" => [
-				"email" => "accounts@uoficoc.com",
-				"name" => "U of I Christians on Campus Accounts"
+				"email" => $this->from_email,
+				"name" => $this->from_name
 			],
 			"template_id" => $template,
 			"personalizations" => [

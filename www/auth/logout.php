@@ -1,5 +1,5 @@
 <?php
-  require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+  require __DIR__."/../inc/init.php";
 
   session_destroy();
 

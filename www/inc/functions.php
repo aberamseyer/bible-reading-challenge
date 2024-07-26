@@ -1,18 +1,21 @@
 <?php
 
-require_once __DIR__."/MailSender/MailSender.php";
-require_once __DIR__."/MailSender/MailSenderSES.php";
-require_once __DIR__."/MailSender/MailSenderSendgrid.php";
-require_once __DIR__."/BibleReadingChallenge/Site.php";
-require_once __DIR__."/BibleReadingChallenge/Database.php";
-require_once __DIR__."/BibleReadingChallenge/Schedule.php";
+	require_once __DIR__."/../../vendor/autoload.php";
+	
+	require_once __DIR__."/MailSender/MailSender.php";
+	require_once __DIR__."/MailSender/MailSenderSES.php";
+	require_once __DIR__."/MailSender/MailSenderSendgrid.php";
+	require_once __DIR__."/BibleReadingChallenge/Site.php";
+	require_once __DIR__."/BibleReadingChallenge/Database.php";
+	require_once __DIR__."/BibleReadingChallenge/Redis.php";
+	require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 
 	function html ($str, $lang_flag = ENT_HTML5) {
 		return htmlspecialchars($str, ENT_QUOTES|$lang_flag);
 	}
 
 	function debug() {
-		global $my_id;
+		ob_start();
 		$args = func_get_args();
 		$num_args = count($args);
 		if (!$num_args)
@@ -54,6 +57,12 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			</div>
 		";
 
+		$output = ob_get_clean();
+		if (php_sapi_name() === 'cli') {
+			$output = strip_tags(nl2br($output));
+		}
+
+		echo $output;
 		if ($die)
 			die;
 	}
@@ -205,21 +214,20 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			<table>
 				<thead>
 					<tr>';
-		$weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-		foreach ($weekdays as $weekday) {
+		foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday) {
 			$calendar .= '
 				<th>' . $weekday . '</th>';
 		}
 		$calendar .= '
-			</tr>
-		</thead>
-		<tbody>';
+				</tr>
+			</thead>
+			<tbody>';
 		
 		// first day of the month
 		$current_day = date_create_from_format("Y-F-d", "$year-$month-01");
 		$current_day->setTime(0, 0, 0, 0);
 		
-		//  of days in the month
+		// # of days in the month
 		$days_in_month = $current_day->format('t');
 		
 		// day of the week for the first day of the month
@@ -245,29 +253,52 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 			
 			// each individual day on the calendar
 			$class = '';
-			if ($current_day < $start_date || $current_day > $end_date)
+			$availble_day = true;
+			if ($current_day < $start_date || $current_day > $end_date) {
 				$class = "inactive";
-			else if ($current_day->format('Y-m-d') > $today->format('Y-m-d'))
+				$availble_day = false;
+			}
+			else if ($current_day > $today)
 				$class .= " future";
-			else if ($current_day->format('Y-m-d') < $today->format('Y-m-d'))
+			else if ($current_day < $today)
 				$class .= " past";
 			else
 				$class .= " today";
-			if ($current_day->format('Y-m-d') == $start_date->format('Y-m-d'))
+			if ($current_day == $start_date)
 				$class .= " start";
-			if ($current_day->format('Y-m-d') == $end_date->format('Y-m-d'))
+			if ($current_day == $end_date)
 				$class .= " end";
 			$calendar .= "
-				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>
-					<span class='date'>$day</span><br>";
-			if ($editable) {
+				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>";
+			if ($editable)
+					$calendar .= "<div class='date-container'>
+						<small class='arrow-container'>
+							<div title='Shift left'>&larr;</div>
+							<div title='Merge left'>&#8606;</div>
+						</small>
+						<span class='date'>$day</span>
+						<small class='arrow-container'>
+							<div title='Shift right'>&rarr;</div>
+							<div title='Merge right'>&#8608;</div>
+						</small>
+					</div>";
+			else
+				$calendar .= "
+					<div class='date-container'>
+						<span class='date'>$day</span>
+					</div>";
+			if ($editable && $availble_day) {
 				$calendar .= "
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
+					$calendar .= "
+						<input type='text' class='label' size='1'>";
 			}
-			$calendar .= "
-					<small class='label'></small>
-				</td>";
+			else if ($availble_day) {
+				$calendar .= "
+					<small class='label'></small>";
+			}
+			$calendar .= "</td>";
 			
 			// Move to the next day and update the day of the week
 			$current_day->modify("+1 day");
@@ -288,63 +319,187 @@ require_once __DIR__."/BibleReadingChallenge/Schedule.php";
 		return $calendar;
 	}
 
+	function preg_match_reference($reference) {
+		static $replacer_strings;
+		static $replacement_strings;
+		if (!$replacement_strings || !$replacer_strings) {
+			$replacer_strings = array_map(fn($key) => '/\b'.preg_quote($key).'\b/i', array_keys(BOOK_NAMES_AND_ABBREV));
+			$replacement_strings = array_column(BOOK_NAMES_AND_ABBREV, 'name');
+		}
 
-	/**
-	 * This parses a passage that appears in the schedule calendar
-	 * $passage string e.g., Matthew 1-3; Mark 12-14; Jude 1
-	 * @return [
-	 *   'book' => (book info)
-	 *   'chapter' => (chapter info)
-	 * ]
-	 */
-	function parse_passage($passage) {
-		$parts = explode(";", $passage);
-		$chps = [];
-		foreach($parts as $reference) {
-			$reference = trim($reference);
-			
-			$pieces = explode(" ", $reference);
-			if (count($pieces) > 3) {
-				$book_str = $pieces[0]." ".$pieces[1]." ".$pieces[2];
-				$chapter_str = $pieces[3];
-			}
-			else if(count($pieces) > 2) {
-				// book name contains a space (e.g., 1 John)
-				$book_str = $pieces[0]." ".$pieces[1];
-				$chapter_str = $pieces[2];
-			}
-			else {
-				// all other cases
-				$book_str = $pieces[0];
-				$chapter_str = $pieces[1];
-			}
-			$chapters = [ $chapter_str ];
-			if (strpos($chapter_str, '-') !== false) {
-				// reference contains multiple chapters via a '-'
-				list($begin, $end) = explode("-", $chapter_str);
-				$chapters = range($begin, $end);
-			}
-			
-			// match the book and chapters to the database
-			$db = BibleReadingChallenge\Database::get_instance();
-			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book_str)."'");
-			foreach($db->select("
-				SELECT *
-				FROM chapters
-				WHERE book_id = $book_row[id]
-					AND number IN(".implode(',', $chapters).")")
-			as $chapter_row) {
-				$chps[] = [
-					'book' => $book_row,
-					'chapter' => $chapter_row
-				];
+		$reference = strtolower(str_replace('–', '-', trim($reference)));
+		for($i = 0; $i < count($replacement_strings); $i++) {
+			$reference_formatted = preg_replace(
+				$replacer_strings[$i],
+				$replacement_strings[$i], 
+				$reference, 
+				1, 
+				$count
+			);
+			if ($count) {
+				// debug(
+				// 	$replacer_strings[$i],
+				// 	$replacement_strings[$i], 
+				// 	$reference, 
+				// 	1, 
+				// 	$count,
+				// 	$reference_formatted,
+				// 	preg_match(BOOKS_RE, $reference_formatted, $matches),
+				// 	$matches
+				// );
+				break;
 			}
 		}
-		return $chps;
+		
+		return preg_match(BOOKS_RE, $reference_formatted, $matches)
+			? $matches
+			: false;
+	}
+
+	/**
+	 * This parses a passage using a simplified syntax that appears in the schedule calendar
+	 * Full book name must be included
+	 * Verses must either be ommitted (entire chapter) or include ranges (same start and end verse is ok)
+	 * $passage string e.g., 'Gen 1:3-4; Song of Songs 1:5-8; Leviticus 3; Jude 1:8-12; Genesis 3-4'
+	 * 								THIS DOES NOT SUPPORT full verse syntax: Jude 1-4; 2 Cor 1:4, 5-6; 4:8
+	 * @return [
+	 * 	[
+	 *   		'book' => (book info)
+	 *   		'chapter' => (chapter info)
+	 * 		 	'verse_numbers' => (the verse numbers that are parsed, in order)
+	 * 	]...
+	 * ]
+	 */
+	function parse_passages($passages_reference) {
+		$db = BibleReadingChallenge\Database::get_instance();
+		$parts = explode(";", $passages_reference);
+		$passages = [];
+		foreach($parts as $reference) {
+			$matches = preg_match_reference($reference);
+			if (!$matches) {
+				continue;
+			}
+			$book = $matches[1];
+			$chapter = (int)$matches[2];
+			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book)."'");
+			$chp_row = $db->row("SELECT * FROM chapters WHERE book_id = ".intval($book_row['id'])." AND number = $chapter");
+			if ($book_row && $chp_row) {
+				if ($matches[4] && $matches[5] && $matches[6]) {
+					// Format: Genesis 12:3-15:10
+					$v_start = (int)$matches[4];
+					$chp_end = (int)$matches[5];
+					$v_end = (int)$matches[6];
+					$chp_end_row = $db->row("SELECT * FROM chapters WHERE book_id = $book_row[id] AND number = $chp_end");
+					if ($chp_end_row && // ending chapter exists (valid within book)
+						$chapter < $chp_end && // first chapter is less than last chapter
+						$v_start <= $chp_row['verses'] && // starting verse is within starting chapter
+						$v_end <= $chp_end_row['verses'] && // ending verse is within ending chapter
+						$chp_end - $chapter < 10 // no more than 10 chapters requested
+					) {
+						for($i = $chapter; $i <= $chp_end; $i++) {
+							$curr_chp_row = null;
+							$verse_numbers = null;
+							if ($i === $chapter) {
+								// first chapter in reference (chp 12 in Gen 12:3)
+								$curr_chp_row = $chp_row;
+								$verse_numbers = range($v_start, $chp_row['verses']);
+							}
+							else if ($i === $chp_end) {
+								// last chapter in reference (chp 15 in Gen 15:10)
+								$curr_chp_row = $chp_end_row;
+								$verse_numbers = range(1, $v_end);
+							}
+							else {
+								// every chapter in between that range
+								$curr_chp_row = $db->row("SELECT * FROM chapters WHERE book_id = $book_row[id] AND number = $i");
+								$verse_numbers = range(1, $curr_chp_row['verses']);
+							}
+							$passages[] = [
+								'book' => $book_row,
+								'chapter' => $curr_chp_row,
+								'verse_numbers' => $verse_numbers
+							];
+						}
+					}
+				}
+				else if ($matches[7] && $matches[8]) {
+					// Format: Genesis 12:3-20
+					$v_start = (int)$matches[7];
+					$v_end = (int)$matches[8];
+					if (1 <= $v_start && $v_start < $v_end && $v_end <= (int)$chp_row['verses']) {
+						// verse ranges check out, we're good
+						$verse_numbers = $db->cols("SELECT number FROM verses WHERE chapter_id = $chp_row[id] AND number BETWEEN $v_start AND $v_end ORDER BY number");
+						$passages[] = [
+							'book' => $book_row,
+							'chapter' => $chp_row,
+							'verse_numbers' => $verse_numbers
+						];
+					}
+				}
+				else if ($matches[3]
+				) {
+					// Format: Genesis 3-4 (multiple chapters)
+					if ($chp_row['number'] < $matches[3] &&		// in order
+						$matches[3] <= $book_row['chapters']	// valid chapter end
+					) {
+						foreach($db->select("
+							SELECT *
+							FROM chapters
+							WHERE book_id = $book_row[id]
+								AND number IN(".implode(',', range($chp_row['number'], $matches[3])).")
+							ORDER BY number"
+						) as $range_chp_row) {
+							$passages[] = [
+								'book' => $book_row,
+								'chapter' => $range_chp_row,
+								'verse_numbers' => $db->cols("
+										SELECT v.number
+										FROM verses v
+										JOIN chapters c ON c.id = v.chapter_id
+										WHERE c.id = $range_chp_row[id]
+										ORDER BY v.number")
+							];
+						}
+					}
+				}
+				else if ($matches[9]) {
+					// Format: Genesis 12:3 (single verse in a chapter)
+					if (1 <= $matches[9] && // valid verse start
+						$matches[9] <= $chp_row['verses']
+					) {
+						$passages[] = [
+							'book' => $book_row,
+							'chapter' => $chp_row,
+							'verse_numbers' => $db->cols("SELECT number FROM verses WHERE chapter_id = $chp_row[id] AND number = ".(int)$matches[9])
+						];
+					}
+				}
+				else { 
+					// Format: Genesis 2 (single entire chapter)
+					$passages[] = [
+						'book' => $book_row,
+						'chapter' => $chp_row,
+						'verse_numbers' => $db->cols("SELECT number FROM verses WHERE chapter_id = $chp_row[id] ORDER BY number")
+					];
+				}
+			}
+		}
+		return $passages;
+	}
+
+	/**
+	 * @param $parsed_passages	array		the return value of parse_passages()
+	 * @return array expected value to go into the db schedule_dates.passage_chapter_readings
+	 */
+	function parsed_passages_to_passage_readings($parsed_passages) {
+		return array_map(fn($pas) => [
+			'id' => (int)$pas['chapter']['id'],
+			's' => (int)$pas['verse_numbers'][0],
+			'e' => (int)$pas['verse_numbers'][ count($pas['verse_numbers'])-1 ]
+		], $parsed_passages);
 	}
 
 function log_user_in($id) {
-	global $me;
 	$_SESSION['my_id'] = $id;
 	if ($_SESSION['login_redirect']) {
 		$redir = $_SESSION['login_redirect'];
@@ -374,17 +529,18 @@ function four_week_trend_data($user_id) {
 	$site = BibleReadingChallenge\Site::get_site();
 	$db = BibleReadingChallenge\Database::get_instance();
 	// reach back 5 weeks so that we don't count the current week in the graph
+	$weeks = 4;
 	$values = $db->select("
 		SELECT COALESCE(count, 0) count, day_start
 		FROM (
-			-- generates last 4 weeks to join what we read to
+			-- generates last $weeks weeks to join what we read to
 			WITH RECURSIVE week_sequence AS (
 				SELECT
 					date('now', '".$site->TZ_OFFSET." hours') AS cdate
 				UNION ALL
 				SELECT date(cdate, '-7 days')
 				FROM week_sequence
-				LIMIT 5
+				LIMIT ".($weeks+1)."
 			)
 			SELECT strftime('%Y-%W', cdate) AS week, strftime('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
 		) sd
@@ -396,9 +552,9 @@ function four_week_trend_data($user_id) {
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-35 days', '".$site->TZ_OFFSET." hours'))
+		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-".(($weeks+1)*7)." days', '".$site->TZ_OFFSET." hours'))
 		ORDER BY sd.week ASC
-		LIMIT 4");
+		LIMIT $weeks");
 		return array_column($values, 'count', 'day_start');
 }
 
@@ -460,18 +616,22 @@ function toggle_all_users($initial_count) {
 function badges_for_user($user_id) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	return $db->cols("
-		SELECT b.name, COUNT(*) unique_chapters_read
-		FROM
-		(SELECT json_each.value chapter_id, b.id book_id, c.number
-					FROM read_dates rd
-					JOIN schedule_dates sd, json_each(sd.passage_chapter_ids) ON sd.id = rd.schedule_date_id
-					JOIN chapters c ON c.id = json_each.value
-					JOIN books b ON b.id = c.book_id
-						AND user_id = $user_id
-					GROUP BY json_each.value) chapter_read_counts
-		JOIN books b ON b.id = book_id
-		GROUP BY book_id
-		HAVING unique_chapters_read = b.chapters");
+		SELECT b.name
+		FROM books b
+		JOIN (
+			-- total words in distinct verses read
+			SELECT book_id, SUM(word_count) book_sum
+			FROM (
+				-- distinct verses read
+				SELECT DISTINCT sdv.book_id, sdv.book_name, sdv.chapter_number, sdv.verse_number, sdv.word_count
+				FROM read_dates rd
+				JOIN schedule_date_verses sdv ON sdv.schedule_date_id = rd.schedule_date_id
+				WHERE rd.user_id = $user_id
+      )
+			GROUP BY book_id
+		) words_read_in_distinct_verse_in_book ON b.id = words_read_in_distinct_verse_in_book.book_id
+		-- book is complete if total words read is the same as the words in the book
+		WHERE book_sum = b.word_count;");
 }
 
 function badges_html($badges) {
@@ -499,37 +659,6 @@ function badges_html($badges) {
 
 function last_read_attr($last_read) {
 	return "data-last-read='".($last_read ? date('Y-m-d', $last_read) : "2200-01-01")."'";
-}
-
-function words_read($user = 0, $schedule_id = 0) {
-	$db = BibleReadingChallenge\Database::get_instance();
-	$word_qry = "
-			SELECT SUM(word_count)
-			FROM schedule_dates sd
-			JOIN JSON_EACH(passage_chapter_ids)
-			JOIN chapters c on c.id = value
-			JOIN read_dates rd ON sd.id = rd.schedule_date_id
-			WHERE 1 %s
-	";
-	$schedule_where = $schedule_id ? " AND sd.schedule_id = ".$schedule_id : "";
-	if (!$user) {
-		$words_read = $db->col(sprintf($word_qry, ''));
-	}
-	else {
-		$words_read = $db->col(sprintf($word_qry, " AND rd.user_id = ".$user['id'].$schedule_where));
-	}
-
-	return $words_read;
-}
-
-function total_words_in_schedule($schedule_id) {
-	$db = BibleReadingChallenge\Database::get_instance();
-	return $db->col("
-			SELECT SUM(word_count)
-			FROM schedule_dates sd
-			JOIN JSON_EACH(passage_chapter_ids)
-			JOIN chapters c ON c.id = value
-			WHERE sd.schedule_id = $schedule_id");
 }
 
 function hex_to_rgb($hex) {
@@ -588,13 +717,13 @@ function chartjs_js() {
 		cached_file('js', '/js/lib/chart.inc.js');
 }
 
-function create_schedule_date($schedule_id, $date, $passage, $chp_ids) {
+function create_schedule_date($schedule_id, $date, $passage, $passage_readings) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	$db->insert("schedule_dates", [
 		'schedule_id' => $schedule_id,
 		'date' => $date,
 		'passage' => $passage,
-		'passage_chapter_ids' => json_encode($chp_ids),
+		'passage_chapter_readings' => json_encode($passage_readings),
 		'complete_key' => bin2hex(random_bytes(16))
 	]);
 }
@@ -611,4 +740,41 @@ function cached_file($type, $path, $attrs='') {
 
 function back_button($text) {
 	return "<a href='' onclick='history.back()'>&lt;&lt; $text</a>";
+}
+
+function site_logo() {
+	global $site;
+	return "<img class='logo' src='".$site->resolve_img_src('logo')."' onclick='window.location = `/`'>";
+}
+
+function down_for_maintenance() {
+	?>
+	<!doctype html>
+	<html lang="en-US">
+		<head>
+			<meta content="width=device-width, initial-scale=1" name="viewport">
+			<meta charset="utf-8">
+			<title>Site Busy</title>
+			<style>
+				body {
+					max-width: 48em;
+					margin: auto;
+					padding: 15px 25px;
+				}
+			</style>
+		</head>
+		<body>
+			<h3>Down for Maintenance!</h3>
+			<p>
+				Sorry, but we're working on some technical stuff right now. We should be back up shortly.
+			</p>
+			<details>
+				<summary>Still not working?</summary>
+				<p>
+					If this has been here a while, please <a href='mailto:brc@ramseyer.dev?subject=<?= rawurlencode("Site is down").'&body='.rawurlencode("The BRC site is broken: \n".var_export($_SERVER, true))?>'>let Abe know</a>.
+				</p>
+			</details>
+		</body>
+	<?php
+	die;
 }

@@ -1,5 +1,5 @@
 <?php
-  require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
+  require __DIR__."/../inc/init.php";
 
 
   $calendar_sched = new BibleReadingChallenge\Schedule();
@@ -10,7 +10,7 @@
   $allow_personal = $site->data('allow_personal_schedules');
 
   $page_title = "Schedule".($allow_personal ? 's' : '');
-  require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";  
+  require DOCUMENT_ROOT."inc/head.php";  
 
   if ($allow_personal) {
     echo do_nav([
@@ -26,4 +26,4 @@
   
   $add_to_foot .= BibleReadingChallenge\Schedule::fill_read_dates_js();
     
-  require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+  require DOCUMENT_ROOT."inc/foot.php";

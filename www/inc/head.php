@@ -24,24 +24,28 @@
           
           --color-text: #c9c9c9;
           --color-success: rgb(73, 138, 73);
+          --color-warning: rgb(143, 132, 48);
+          --color-danger: rgb(143, 48, 48);
         }
       }
       @media(prefers-color-scheme: light) {
         :root {
-          --color-blossom: <?= $site->data('color_primary') ?>; /* buttons, horizontal lines, links */
-          --color-secondary: <?= $site->data('color_secondary') ?>;
-          --color-fade: <?= $site->data('color_fade') ?>;
+          --color-blossom: <?= $site->data('color_primary') ?>;     /* buttons, horizontal lines, links */
+          --color-secondary: <?= $site->data('color_secondary') ?>; /* currently unused */
+          --color-fade: <?= $site->data('color_fade') ?>;           /* hovered buttons */
           
-          --color-bg: #f9f9f9; /* background */
+          --color-bg: #f9f9f9;     /* background */
           --color-bg-alt: #eeeeee; /* background for info banners at the top, translation selector, etc */
           
-          --color-text: #4a4a4a; /* text color */
+          --color-text: #4a4a4a;               /* text color */
           --color-success: rgb(153, 205, 153); /* currently selected schedule, completed days */
+          --color-warning: rgb(251, 239, 139); /* warnings */
+          --color-danger: rgb(251, 139, 139);  /* errors */
         }
       }
       .mountain-wrap .emoji {
-        bottom: <?= $coords['1'] ?>%;
-        left: <?= $coords['0'] ?>%;
+        bottom: <?= $coords[1] ?>%;
+        left: <?= $coords[0] ?>%;
       }
     </style>
     <script>
@@ -60,9 +64,9 @@
     </script>
   </head>
   <body>
-    <?php if ($me): ?>
+    <?php if ($me && !$insecure): ?>
     <div class='navigation-wrap'>
-      <img class='logo' src='<?= $site->resolve_img_src('logo') ?>' onclick='window.location = `/`'>
+      <?= site_logo() ?>
       <?= navigation() ?>
     </div>
     <hr>

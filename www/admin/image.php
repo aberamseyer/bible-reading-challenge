@@ -1,14 +1,14 @@
 <?php
 
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$staff) {
   redirect('/');
 }
 session_write_close();
 
-ini_set('open_basedir', $_SERVER['DOCUMENT_ROOT']."../upload");
+ini_set('open_basedir', DOCUMENT_ROOT."../upload");
 $img_path = UPLOAD_DIR.$_GET['f'];
 if (!file_exists($img_path) || is_dir($img_path)) {
   $img_path = UPLOAD_DIR."missing-placeholder.svg";

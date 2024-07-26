@@ -1,7 +1,7 @@
 <?php
 
 $insecure = true;
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$_POST['g_csrf_token'] || $_POST['g_csrf_token'] != $_COOKIE['g_csrf_token']) {
   $_SESSION['error'] = "Invalid CSRF token";

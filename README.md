@@ -1,7 +1,7 @@
 # Dependencies
 
 ## Language
-Written with php 8.2.3 and apache 2.4.38
+Written with php 8.2.20 and apache 2.4.61
 
 ## Configuration
 Set the system time zone and php time zone (`date.timezone` in `php.ini`) to the same thing.
@@ -21,7 +21,9 @@ In apache and nginx configuration, be sure file uploads are also set to be at le
 ## Database
 
 #### SQLite
-create an SQLite database file named "brc.db" in root of project from schema.sql
+Requires minimum version 3.46 (support for GROUP_CONCAT(..ORDER BY..) and ->> syntax)
+
+Create an SQLite database file named "brc.db" in root of project from schema.sql
 
 Initialize it with the data from `migrations/bible-import.sql`
 
@@ -33,7 +35,7 @@ Run a Redis (or compatible) server, default ports.
 # Server
 docker run -v /home/bible-reading-challenge/:/data --restart unless-stopped -d -it -p 6379:6379 redis:7-alpine
 # locally
-docker run -v ./:/data -it -p 6379:6379 redis:7-alpine
+docker run -it --rm -v ./:/data -p 6379:6379 redis:7-alpine
 ```
 
 ### Schema

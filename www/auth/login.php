@@ -1,7 +1,7 @@
 <?php
 
 $insecure = true;
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if ($me) {
   redirect("/");
@@ -35,7 +35,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
 }
 
 $page_title = "Log in";
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
@@ -69,8 +69,9 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-size="large"
         data-logo_alignment="left">
       </div>
+      <div class='text-center'><small><a href='/privacy'>Privacy Policy</a></small></div>
       <?php $add_to_foot .= "<script src='https://accounts.google.com/gsi/client' async></script>"; ?>
     </div>
   </div>
 <?php
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

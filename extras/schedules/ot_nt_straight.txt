@@ -1,368 +1,366 @@
-OT+NT
-
-Gen 1–4
-Gen 5–7
-Gen 8–10
-Gen 11–14
-Gen 15–17
-Gen 18–20
-Gen 21–23
-Gen 24–25
-Gen 26:1–28:9
-Gen 28:10–30:24
-Gen 30:25–32:21
-Gen 32:22–35:15
-Gen 35:16–37:36
-Gen 38–40
-Gen 41–42
-Gen 43–44
-Gen 45–47
-Gen 48:1–50:21
-Gen 50:22–26; Ex 1:1–4:17
-Ex 4:18–7:13
-Ex 7:14–10:20
-Ex 10:21–12:51
-Ex 13–15
-Ex 16–19
-Ex 20:1–22:15
-Ex 22:16–25:22
-Ex 25:23–27:21
-Ex 28–29
-Ex 30:1–33:6
-Ex 33:7–35:35
-Ex 36–37
-Ex 38:1–40:33
-Ex 40:34–38; Lev 1–3
-Lev 4:1–7:10
-Lev 7:11–9:24
-Lev 10–12
-Lev 13:1–14:32
-Lev 14:33–16:34
-Lev 17–19
-Lev 20–22
-Lev 23:1–25:7
-Lev 25:8–26:46
-Lev 27; Num 1
-Num 2–3
-Num 4–5
-Num 6–7
-Num 8:1–10:10
-Num 10:11–13:25
-Num 13:26–15:21
-Num 15:22–17:13
-Num 18:1–20:21
-Num 20:22–22:41
-Num 23–25
-Num 26:1–28:10
-Num 28:11–31:24
-Num 31:25–32:42
-Num 33–34
-Num 35–36; Deut 1
-Deut 2:1–4:14
-Deut 4:15–6:25
-Deut 7–9
-Deut 10–12
-Deut 13:1–16:12
-Deut 16:13–20:20
-Deut 21–25
-Deut 24–27
-Deut 28–29
-Deut 30:1–32:47
-Deut 32:48–34:12; Josh 1
-Josh 2:1–5:12
-Josh 5:13–8:29
-Josh 8:30–10:43; Josh 12–11
-Josh 12–14
-Josh 15–17
-Josh 18–19
-Josh 20–22
-Josh 23–24; Jdg 1
-Jdg 2–5
-Jdg 6–7
-Jdg 8–9
-Jdg 10–12
-Jdg 13:1–16:22
-Jdg 16:23–19:30
-Jdg 20–21; Rut 1
-Rut 2–4; 1 Sa 1:1–20
-1 Sa 1:21–4:11
-1 Sa 4:12–8:22
-1 Sa 9–12
-1 Sa 13–14
-1 Sa 15–17
-1 Sa 18–19
-1 Sa 20:1–23:6
-1 Sa 23:7–25:44
-1 Sa 26–30
-1 Sa 31; 2 Sa 1:1–3:5
-2 Sa 3:6–5:25
-2 Sa 6–9
-2 Sa 10:1–13:22
-2 Sa 13:23–15:37
-2 Sa 16:1–18:18
-2 Sa 18:19–20:26
-2 Sa 21–23
-2 Sa 24; 1 Kgs 1
-1 Kgs 2–3
-1 Kgs 4–6
-1 Kgs 7:1–8:21
-1 Kgs 8:22–10:13
-1 Kgs 10:14–12:24
-1 Kgs 12:25–15:24
-1 Kgs 15:25–18:15
-1 Kgs 18:16–20:34
-1 Kgs 20:35–22:40
-1 Kgs 22:41–53; 2 Kgs 1–3
-2 Kgs 4:1–6:23
-2 Kgs 6:24–9:13
-2 Kgs 9:14–12:21
-2 Kgs 13:1–15:16
-2 Kgs 15:17–17:41
-2 Kgs 18:1–20:11
-2 Kgs 20:12–23:30
-2 Kgs 23:31–25:30; 1 Chr 1:1–27
-1 Chr 1:28–3:24
-1 Chr 4:1–5:22
-1 Chr 5:23–6:81
-1 Chr 7:1–9:34
-1 Chr 9:35–11:47
-1 Chr 12–14
-1 Chr 15:1–17:15
-1 Chr 17:16–22:1
-1 Chr 22:2–24:31
-1 Chr 25:1–27:24
-1 Chr 27:25–29:30; 2 Chr 1–2
-2 Chr 3–6
-2 Chr 7:1–9:28
-2 Chr 9:29–14:1
-2 Chr 14:2–18:27
-2 Chr 18:28–21:20
-2 Chr 22–25
-2 Chr 26–29
-2 Chr 30:1–32:23
-2 Chr 32:24–35:19
-2 Chr 35:20–36:23; Ezr 1–2
-Ezr 3–5
-Ezr 6–8
-Ezr 9–10; Neh 1–2
-Neh 3:1–6:15
-Neh 6:16–7:73
-Neh 8–10
-Neh 11–12
-Neh 13; Est 1–2
-Est 3–8
-Est 9–10; Job 1–3
-Job 4–7
-Job 8–10
-Job 11–14
-Job 15–17
-Job 18–20
-Job 21–23
-Job 24–28
-Job 29–31; Job 30
-Job 31–33
-Job 34–36
-Job 38–39
-Job 40–42
-Ps 1–8
-Ps 9–16
-Ps 17–20
-Ps 21–25
-Ps 26–32
-Ps 33–36
-Ps 37–40
-Ps 41–45
-Ps 46–51
-Ps 52–58
-Ps 59–65
-Ps 66–69
-Ps 70–73
-Ps 74–77
-Ps 78–80
-Ps 81–86
-Ps 87–89
-Ps 90–95
-Ps 96–102
-Ps 103–105
-Ps 106–107
-Ps 108–111
-Ps 112–118
-Ps 119:1–80
-Ps 119:81–160
-Ps 119:161–130:8
-Ps 131–137
-Ps 138–144
-Ps 145–150
-Pro 1–3
-Pro 4–6
-Pro 7–9
-Pro 10–12
-Pro 13–15
-Pro 16–18
-Pro 19–21
-Pro 22–23
-Pro 24–26
-Pro 27–29
-Pro 30–31; Ecc 1
-Ecc 2–6
-Ecc 7–10
-Ecc 11–12; Sos 1–4
-Sos 5–8; Isa 1
-Isa 2–5
-Isa 6:1–10:4
-Isa 10:5–14:27
-Isa 14:28–19:25
-Isa 20–24
-Isa 25–28
-Isa 29:1–32:8
-Isa 32:9–36:22
-Isa 37–40
-Isa 41–43
-Isa 44–47
-Isa 48:1–52:12
-Isa 52:13–57:13
-Isa 57:14–62:12
-Isa 63–66
-Jer 1:1–4:4
-Jer 4:5–6:30
-Jer 7–9
-Jer 10–13
-Jer 14:1–17:18
-Jer 17:19–22:30
-Jer 23:1–25:14
-Jer 25:15–28:17
-Jer 29–31
-Jer 32–33
-Jer 34–37
-Jer 38–41
-Jer 42–46
-Jer 47:1–49:22
-Jer 49:23–50:46
-Jer 51:1–52:30
-Jer 52:31–34; Lam 1–3
-Lam 4–5; Eze 1
-Eze 2–5
-Eze 6–10
-Eze 11–13
-Eze 14–16
-Eze 17:1–20:29
-Eze 20:30–22:31
-Eze 23:1–24:14
-Eze 24:15–27:36
-Eze 28–31
-Eze 32–34
-Eze 35:1–37:14
-Eze 37:15–40:49
-Eze 41:1–43:12
-Eze 43:13–46:24
-Eze 47–48; Dan 1
-Dan 2–3
-Dan 4–6
-Dan 7:1–9:19
-Dan 9:20–12:13
-Hos 1–7
-Hos 8–12
-Hos 13–14; Joe 1:1–3:16
-Joe 3:17–21; Amo 1:1–5:17
-Amo 5:18–9:15; Oba 1
-Jon 1–4; Mic 1:1–2:5
-Mic 2:6–7:20; Nah 1
-Nah 2:1–Hab 3:19
-Zep 1–3; Hag 1
-Hag 2; Zec 1:1–5:4
-Zec 5:5–11:3
-Zec 11:4–14:21; Mal 1:1–2:9
-Mal 2:10–4:6; Mat 1:1–3:12
-Mat 3:13–5:48
-Mat 6:1–8:22
-Mat 8:23–10:42
-Mat 11:1–12:45
-Mat 12:46–14:36
-Mat 15:1–17:13
-Mat 17:14–19:30
-Mat 20:1–22:14
-Mat 22:15–24:35
-Mat 24:36–25:46
-Mat 26
-Mat 27–28
-Mk 1:1–3:12
-Mk 3:13–5:20
-Mk 5:21–7:23
-Mk 7:24–9:29
-Mk 9:30–10:52
-Mk 11:1–13:31
-Mk 13:32–14:65
-Mk 14:66–16:20
-Luk 1:1–2:21
-Luk 2:22–3:38
-Luk 4:1–6:11
-Luk 6:12–7:50
-Luk 8:1–9:17
-Luk 9:18–10:42
-Luk 11:1–12:34
-Luk 12:35–14:24
-Luk 14:25–17:10
-Luk 17:11–19:10
-Luk 19:11–20:47
-Luk 21:1–22:53
-Luk 22:54–24:12
-Luk 24:13–53; John 1:1–42
-John 1:43–4:26
-John 4:27–5:47
-John 6:1–7:13
-John 7:14–8:47
-John 8:48–10:42
-John 11:1–12:11
-John 12:12–14:14
-John 14:15–17:5
-John 17:6–19:27
-John 19:28–21:25; Acts 1:1–11
-Acts 1:12–3:26
-Acts 4–5
-Acts 6:1–8:25
-Acts 8:26–10:23
-Acts 10:23–12:19
-Acts 12:19–14:28
-Acts 15–16
-Acts 17:1–19:22
-Acts 19:23–21:36
-Acts 21:37–24:27
-Acts 25:1–27:12
-Acts 27:13–28:31; Rom 1:1–17
-Rom 1:18–4:25
-Rom 5–7
-Rom 8–10
-Rom 11:1–15:13
-Rom 15:14–16:27; 1 Co 1:1–9
-1 Co 1:10–5:13
-1 Co 6:1–9:18
-1 Co 9:19–11:34
-1 Co 12–14
-1 Co 15–16
-2 Co 1:1–5:10
-2 Co 5:11–9:15
-2 Co 10:1–13:10
-2 Co 13:11–Gal 4:7
-Gal 4:8–6:18; Eph 1:1–14
-Eph 1:15–5:20
-Eph 5:21–6:24; Phil 1
-Phil 2–4; Col 1:1–14
-Col 1:15–4:18
-1 Th 1–5
-2 Th 1–3; 1 Ti 1–2
-1 Ti 3:1–2 Ti 1:5
-2 Ti 1:6–4:22; Tit 1:1–9
-Tit 1:10–3:15; Phlm 1; Heb 1–2
-Heb 3:1–7:10
-Heb 7:11–10:39
-Heb 11–12
-Heb 13; Jam 1:1–3:12
-Jam 3:13–5:20; 1 Pe 1:1–2:10
-1 Pe 2:11–5:14; 2 Pe 1
-2 Pe 2–3; 1 Jn 1:1–3:10
-1 Jn 3:11–5:21; 2 Jn 1; 3 Jn 1
-Jude 1; Rev 1:1–3:6
-Rev 3:7–9:21
-Rev 10–13
-Rev 14:1–18:20
-Rev 18:21–22:21
+OT and NT Straight
+Gen 1-3
+Gen 4-7
+Gen 8-11
+Gen 12-15
+Gen 16-18
+Gen 19-21
+Gen 22-24
+Gen 25-26
+Gen 27-29
+Gen 30-31
+Gen 32-33
+Gen 34-36
+Gen 37-39
+Gen 40-41
+Gen 42-44
+Gen 45-46
+Gen 47-49
+Gen 50; Ex 1-3
+Ex 4-6
+Ex 7-8
+Ex 9-11
+Ex 12-13
+Ex 14-16
+Ex 17-20
+Ex 21-22
+Ex 23-25
+Ex 26-28
+Ex 29
+Ex 30-32
+Ex 33-35
+Ex 36-38
+Ex 39-40
+Lev 1-4
+Lev 5-6
+Lev 7-9
+Lev 10-12
+Lev 13
+Lev 14-15
+Lev 16-17
+Lev 18-20
+Lev 21-23
+Lev 24-25
+Lev 26-27
+Num 1-2
+Num 3
+Num 4-6
+Num 7
+Num 8-10
+Num 11-13
+Num 14-15
+Num 16-17
+Num 18-20
+Num 21-22
+Num 23-25
+Num 26-28
+Num 29-30
+Num 31-32
+Num 33-35
+Num 36; Deut 1
+Deut 2-3
+Deut 4-6
+Deut 7-9
+Deut 10-11
+Deut 12-14
+Deut 15-17
+Deut 18-20
+Deut 21-23
+Deut 24-26
+Deut 27-28
+Deut 29-30
+Deut 31-32
+Deut 33-34; Josh 1-2
+Josh 3-5
+Josh 6-7
+Josh 8-10
+Josh 11-12
+Josh 13-16
+Josh 17-19
+Josh 20-22
+Josh 23-24
+Jdg 1-3
+Jdg 4-5
+Jdg 6-7
+Jdg 8-9
+Jdg 10-12
+Jdg 13-15
+Jdg 16-18
+Jdg 19
+Jdg 20-21; Rut 1
+Rut 2-4
+1 Sa 1-3
+1 Sa 4-7
+1 Sa 8-9
+1 Sa 10-13
+1 Sa 14
+1 Sa 15-16
+1 Sa 17-19
+1 Sa 20-21
+1 Sa 22-24
+1 Sa 25-26
+1 Sa 27-30
+1 Sa 31; 2 Sa 1-2
+2 Sa 3-5
+2 Sa 6-8
+2 Sa 9-11
+2 Sa 12-13
+2 Sa 14-15
+2 Sa 16-18
+2 Sa 19
+2 Sa 20-22
+2 Sa 23-24
+1 Kgs 1-2
+1 Kgs 3-4
+1 Kgs 5-7
+1 Kgs 8
+1 Kgs 9-10
+1 Kgs 11-12
+1 Kgs 13-14
+1 Kgs 15-16
+1 Kgs 17-18
+1 Kgs 19-20
+1 Kgs 21-22
+2 Kgs 1-3
+2 Kgs 4
+2 Kgs 5-7
+2 Kgs 8-9
+2 Kgs 10-11
+2 Kgs 12-14
+2 Kgs 15-16
+2 Kgs 17-18
+2 Kgs 19-20
+2 Kgs 21-23
+2 Kgs 24-25
+1 Chr 1-3
+1 Chr 4-6
+1 Chr 7-8
+1 Chr 9-11
+1 Chr 12-15
+1 Chr 16-18
+1 Chr 19-22
+1 Chr 23-25
+1 Chr 26-28
+1 Chr 29; 2 Chr 1-2
+2 Chr 3-5
+2 Chr 6-8
+2 Chr 9-12
+2 Chr 13-16
+2 Chr 17-19
+2 Chr 20-22
+2 Chr 23-25
+2 Chr 26-28
+2 Chr 29-30
+2 Chr 31-32
+2 Chr 33-35
+2 Chr 36; Ezr 1-2
+Ezr 3-5
+Ezr 6-7
+Ezr 8-10
+Neh 1-3
+Neh 4-6
+Neh 7-9
+Neh 10-11
+Neh 12-13
+Est 1-4
+Est 5-8
+Est 9-10; Job 1-2
+Job 3-8
+Job 9-13
+Job 14-18
+Job 19-23
+Job 24-29
+Job 30-33
+Job 34-38
+Job 39-42; Ps 1
+Ps 2-10
+Ps 11-18
+Ps 19-26
+Ps 27-34
+Ps 35-39
+Ps 40-47
+Ps 48-55
+Ps 56-63
+Ps 64-69
+Ps 70-76
+Ps 77-80
+Ps 81-88
+Ps 89-96
+Ps 97-104
+Ps 105-107
+Ps 108-117
+Ps 118-119
+Ps 120-133
+Ps 134-142
+Ps 143-150; Pro 1
+Pro 2-6
+Pro 7-11
+Pro 12-15
+Pro 16-19
+Pro 20-24
+Pro 25-28
+Pro 29-31; Ecc 1
+Ecc 2-6
+Ecc 7-10
+Ecc 11-12; Sos 1-4
+Sos 5-8; Isa 1
+Isa 2-5
+Isa 6-9
+Isa 10-13
+Isa 14-18
+Isa 19-23
+Isa 24-27
+Isa 28-30
+Isa 31-34
+Isa 35-37
+Isa 38-41
+Isa 42-44
+Isa 45-48
+Isa 49-51
+Isa 52-56
+Isa 57-60
+Isa 61-64
+Isa 65-66; Jer 1
+Jer 2-4
+Jer 5-6
+Jer 7-9
+Jer 10-12
+Jer 13-15
+Jer 16-18
+Jer 19-22
+Jer 23-24
+Jer 25-27
+Jer 28-29
+Jer 30-31
+Jer 32-33
+Jer 34-36
+Jer 37-39
+Jer 40-42
+Jer 43-45
+Jer 46-48
+Jer 49-50
+Jer 51
+Jer 52; Lam 1
+Lam 2-4
+Lam 5; Eze 1-3
+Eze 4-6
+Eze 7-10
+Eze 11-13
+Eze 14-16
+Eze 17-18
+Eze 19-20
+Eze 21-22
+Eze 23-24
+Eze 25-27
+Eze 28-30
+Eze 31-32
+Eze 33-35
+Eze 36-37
+Eze 38-39
+Eze 40-42
+Eze 43-44
+Eze 45-46
+Eze 47-48; Dan 1
+Dan 2-3
+Dan 4-5
+Dan 6-7
+Dan 8-9
+Dan 10-11
+Dan 12; Hos 1-4
+Hos 5-10
+Hos 11-14; Joe 1
+Joe 2-3; Amo 1-2
+Amo 3-7
+Amo 8-9; Oba; Jon 1
+Jon 2-4; Mic 1-3
+Mic 4-7; Nah 1
+Nah 2-3; Hab 1-3
+Zep 1-3; Hag 1
+Hag 2; Zec 1-4
+Zec 5-9
+Zec 10-14
+Mal 1-4
+Mat 1-4
+Mat 5-7
+Mat 8-9
+Mat 10-12
+Mat 13-14
+Mat 15-17
+Mat 18-20
+Mat 21-22
+Mat 23-24
+Mat 25-26
+Mat 27-28
+Mk 1-3
+Mk 4-5
+Mk 6-8
+Mk 9-10
+Mk 11-12
+Mk 13-14
+Mk 15-16
+Luk 1-2
+Luk 3-4
+Luk 5-6
+Luk 7-8
+Luk 9
+Luk 10-11
+Luk 12-13
+Luk 14-16
+Luk 17-19
+Luk 20-21
+Luk 22-23
+Luk 24; John 1
+John 2-4
+John 5-6
+John 7
+John 8-9
+John 10-11
+John 12-14
+John 15-17
+John 18-19
+John 20-21; Acts 1
+Acts 2-4
+Acts 5-7
+Acts 8-9
+Acts 10-11
+Acts 12-13
+Acts 14-16
+Acts 17-19
+Acts 20-21
+Acts 22-23
+Acts 24-26
+Acts 27-28; Rom 1
+Rom 2-4
+Rom 5-8
+Rom 9-11
+Rom 12-15
+Rom 16; 1 Co 1-3
+1 Co 4-7
+1 Co 8-11
+1 Co 12-14
+1 Co 15-16; 2 Co 1
+2 Co 2-6
+2 Co 7-10
+2 Co 11-13; Gal 1-2
+Gal 3-5
+Gal 6; Eph 1-4
+Eph 5-6; Phil 1
+Phil 2-4; Col 1
+Col 2-4; 1 Th 1-2
+1 Th 3-5; 2 Th 1-3
+1 Ti 1-6
+2 Ti 1-4; Tit 1
+Tit 2-3; Phlm; Heb 1-3
+Heb 4-8
+Heb 9-10
+Heb 11-13; Jam 1
+Jam 2-5
+1 Pe 1-5
+2 Pe 1-3; 1 Jn 1
+1 Jn 2-5
+2 Jn; 3 Jn; Jude; Rev 1-2
+Rev 3-6
+Rev 7-10
+Rev 11-15
+Rev 16-18
+Rev 19-22

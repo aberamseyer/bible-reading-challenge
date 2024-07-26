@@ -48,25 +48,76 @@ class Schedule {
     $end_date = new \Datetime($this->data['end_date']);
   
     return "
-      <h3>Editing calendar for '".html($this->data['name'])."'</h3>
-      <p><b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b></p>
-      <h6>Instructions</h6>
-      <ul>
-        <li><small>Double-click white-space to add/edit/remove a day's reading</li>
-        <li>Hover mouse on the left edge of the screen for a reference of how many chapters are in each book</li>
-        <li>Use format: <code>Matthew 28; John 1-2</code></li>
-        <li>
-          To use autofill:
-          <ol>
-            <li>Fill in two consecutive days</li>
-            <li>Highlight the second day</li>
-            <li>Click 'Fill after selected'</li>
-          </ol>
-          Chapters per day will be calculated by the difference between the two days across passages segments.<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 2-4</code>. Click the second day to select it, and choose 'Fill after selected' to populate the calendar.
-        </li>
-        <li>Only <b>future</b> days can be edited</small></li>
-      </ul>";
+      <h3>Editing calendar for '".html($this->data('name'))."'</h3>
+      <p>
+        <b>".$start_date->format('F j, Y')."</b> through <b>".$end_date->format('F j, Y')."</b><br>
+        <small>To edit these dates, go to the <a href='/my-schedule/personal?edit=".$this->ID."'>schedule editing</a> page.<br>
+        Only <b>future</b> days can be edited</small>
+      </p>
+      <details>
+        <summary><b>Instructions</b></summary>
+        <small>
+          Hover mouse on the left edge of the screen for a book reference and some autofill tools<br>
+          You have many options to make filling these days easier:
+          <h6>Manually</h6>
+          <ul>
+            <li>Type in the boxes to enter verse references. Use the <kbd>Tab</kbd>key with <kbd>Copy</kbd> and <kbd>Paste</kbd> to make this fast</li>
+            <li>Available verse formats:
+              <ul>
+                <li>Full chapters: <code>Matthew 28</code></li>
+                <li>Multiple Chapters: <code>John 1-2</code></li>
+                <li>Partial Chapters: <code>Matthew 1:1-29</code></li>
+                <li>Verses across chapters: <code>John 7:53-8:9</code></li>
+                <li>Exactly one verse: <code>Zech 6:13</code></li>
+              </ul>
+              Verse abbreviations can be used, and any of these options can be combined with a <code>;</code> (e.g., <code>Eph 2:21-22; Jude 1; Galatians 3-4</code>)
+            </li>
+          </ul>
+          <h6>Autofill</h6>
+          To use autofill, begin by selecting a day by clicking it's number.
+          <ul>
+            <li>Clear button
+              <ul>
+                <li>Select a date</li>
+                <li>Choose \"Clear after selected\"</li>
+                <li>All the dates will be cleared following the selected date</li>
+              </ul>
+            </li>
+            <li>Day-of-week checkboxes apply to all fill modes. Any un-selected days will not be included when filling dates.</li>
+            <li>Fill by chapter:
+              <ol>
+                <li>Fill in two consecutive days</li>
+                <li>Select the second date</li>
+                <li>Choose \"Fill chapters to end\"</li>
+                <li>Chapters per day will be calculated by the difference between the two days across passages segments.<br>
+                    E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 2-4</code>. Click the second day to select it, and choose 'Fill' to populate the calendar.</li>
+              </ol>
+            </li>
+            <li>Fill with a 1-year plan:
+              <ul>
+                <li>Select a date</li>
+                <li>Choose \"Fill from 1-yr plan\"</li>
+                <li>Choose the type of pre-planned schedule you want</li>
+                <li>Click \"Fill\"<br>
+                  Notes:
+                  <ul>
+                    <li>Increments are based on a 365-day plan.</li>
+                    <li>If the FIRST date on the calendar is selected, the system will try to evenly pack all the scheduled readings into as many calendar days as you have on the schedule.</li>
+                    <li>If any other date is selected, daily portions will be filled starting from that day. They are not guaranteed to finish the schedule if not enough days are left on your calendar.</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <h6>Moving Dates</h6>
+          When a date is selected, two sets of arrows appear:
+          <ul>
+            <li>Clicking the single arrow left or right will \"push\" all dates in that direction, stopping at an empty calendar date</li>
+            <li>Clicking the double arrow left or right will merge that date's reading with the one immediately to its left or right</li>
+          </ul>
+        </small>
+      </details>
+      <small>When you're happy with the state of the calendar, <mark>DONT FORGET to click \"Save readings\"</mark> at the bottom!</small>";
     
   }
 
@@ -76,7 +127,18 @@ class Schedule {
     ob_start();
   
     // sort books/chapters into some arrays for easier printing
-    $book_chapters = $this->db->select("SELECT name, chapters FROM books");
+    $book_chapters = [];
+    foreach($this->db->select("
+      SELECT b.name, JSON_GROUP_ARRAY(c.verses ORDER BY c.number) chapters
+      FROM books b
+      JOIN chapters c ON c.book_id = b.id
+      GROUP BY b.name
+      ORDER BY b.id") as $b) {
+        $book_chapters[] = [
+          'name' => $b['name'],
+          'chapters' => json_decode($b['chapters'], true)
+        ];
+      }
     
     // fixed editor
     echo "
@@ -84,16 +146,35 @@ class Schedule {
       <div>Chapters in each book</div>
       <div class='chapters'>";
       for($i = 0; $i < 39; $i++)
-        echo "<small>".$book_chapters[$i]['name'].": ".$book_chapters[$i]['chapters']."</small>";
+        echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
     echo "
     </div><br>
     <div class='chapters'>";
         for($i = 39; $i < 66; $i++)
-          echo "<small>".$book_chapters[$i]['name'].": ".$book_chapters[$i]['chapters']."</small>";
+          echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
     echo "
     </div><br>
       <div>
-        <button type='button' id='fill' disabled>Fill after selected</button>&nbsp;
+        <label for='fill-mode'>Fill Mode</label>
+        <select id='fill-mode'>
+          <option value='automatic' selected>Fill from 1-yr plan</option>
+          <option value='chapters'>Fill chapters to end</option>
+        </select>
+        <select id='schedule-sel'>
+        ";
+    foreach(scandir(SCHEDULE_DIR) as $file) {
+      $absolute_path = SCHEDULE_DIR.$file;
+      if (is_file($absolute_path) && pathinfo($absolute_path, PATHINFO_EXTENSION) === 'txt') {
+        $fp = fopen($absolute_path, 'r');
+        if ($fp) {
+          echo "<option value='".html($file)."'>".html(fgets($fp))."</option>";
+        }
+        fclose($fp);
+      }
+    }
+    echo "
+        </select>
+        <button type='button' id='fill' disabled>Fill</button>&nbsp;
         <div style='display: flex; justify-content: space-between; align-items: center; padding: 0 7px;'>
           <label><input type='checkbox' name='days[]' value='7' checked> S</label>
           <label><input type='checkbox' name='days[]' value='1' checked> M</label>
@@ -112,6 +193,12 @@ class Schedule {
       <script>
         const CALENDAR_ID = ".$this->data['id']."
         const BOOK_CHAPTERS = ".json_encode($book_chapters)."
+        const BOOKS_RE = ".BOOKS_RE."
+        const BOOKS_ABBR_LOOKUP = ".json_encode(
+          array_combine(
+            array_map('strtolower', array_keys(BOOK_NAMES_AND_ABBREV)), 
+            array_column(BOOK_NAMES_AND_ABBREV, 'name'))
+          )."
       </script>".
       cached_file('js', '/js/edit-calendar.js');
   
@@ -119,15 +206,18 @@ class Schedule {
     return ob_get_clean();
   }
 
-  public function fill_dates($fill_dates, $differences, $start_books, $start_chapters, $active_days)
+  public function fill_dates($fill_dates, $differences, $start_books, $start_chapters, $fill_mode, $fill_with, $active_days)
   {
     // generate a schedule to fill in on the client side
     try {
       $start_date = date_create_from_format('Y-m-d H:i:s', $fill_dates." 00:00:00");
-    } catch (Exception) { }
-    // this is all input validation
-    if ($start_date && $start_date->modify('+1 day') && $start_date->format('Y-m-d') >= $this->data['start_date']) {
-      // we +1 day bc the client sends us the day the user selected (one day before we start generating)
+    } catch (\Exception) { }
+    // this is all input
+    if ($start_date && $start_date->format('Y-m-d') >= $this->data['start_date']) {
+      if ($fill_mode === 'chapters') {
+        // we +1 day bc the client sends us the day the user selected (one day before we start generating)
+        $start_date->modify('+1 day');
+      }
       $end_date = new \Datetime($this->data['end_date']);
       $period = new \DatePeriod(
         $start_date,
@@ -144,68 +234,151 @@ class Schedule {
         }
       }
 
-      $book_arr = is_array($start_books)
-        ? $start_books
-        : [ $start_books ];
-      $chp_arr = is_array($start_chapters)
-        ? $start_chapters
-        : [ $start_chapters ];
-      $d_arr = is_array($differences)
-        ? $differences
-        : [ $differences ];
-        
-      $result = []; $i = 0;
-      foreach(array_combine($book_arr, $chp_arr) as $b => $c) {
-        $rate = clamp((int)$d_arr[ $i++ ], 1, 10); // between 1 and 10 chapters per day
-        // the id to start AFTER
-        $starting_id = $this->db->col("
-          SELECT c.id
-          FROM chapters c
-          JOIN books b ON b.id = c.book_id
-          WHERE b.name = '".$this->db->esc($b)."'
-            AND c.number = ".(int)$c);
-        // all the chapters we need, limited by the amount * the rate we are generating
-        $chapters = array_reverse($this->db->select("
-          SELECT b.name book, c.number
-          FROM chapters c
-          JOIN books b ON b.id = c.book_id
-          WHERE c.id > ".intval($starting_id)."
-          LIMIT ".count($days)*$rate)); // reverse the array so we can use array_pop in the loop for sorting instead of array_shift, which is slower
-
-        if ($chapters) { // just to make sure no parameters were funky. lazy input validation.
-          $sorted = [];
-          // we group each book's chapters into a sub-array
-          foreach($days as $day) {
-            for($j = 0; $j < $rate; $j++) {
-              $chp_row = array_pop($chapters);
-              $sorted[$day][ $chp_row['book'] ][] = $chp_row['number'];
-            }
-          }
+      $result = [];
+      if ($fill_mode === 'chapters') {
+        $book_arr = is_array($start_books)
+          ? $start_books
+          : [ $start_books ];
+        $chp_arr = is_array($start_chapters)
+          ? $start_chapters
+          : [ $start_chapters ];
+        $d_arr = is_array($differences)
+          ? $differences
+          : [ $differences ];
+          
+        $i = 0;
+        foreach(array_combine($book_arr, $chp_arr) as $b => $c) {
+          $rate = clamp((int)$d_arr[ $i++ ], 1, 10); // between 1 and 10 chapters per day
+          // the id to start AFTER
+          $starting_id = $this->db->col("
+            SELECT c.id
+            FROM chapters c
+            JOIN books b ON b.id = c.book_id
+            WHERE b.name = '".$this->db->esc($b)."'
+              AND c.number = ".(int)$c);
+          // all the chapters we need, limited by the amount * the rate we are generating
+          $chapters = array_reverse($this->db->select("
+            SELECT b.name book, c.number
+            FROM chapters c
+            JOIN books b ON b.id = c.book_id
+            WHERE c.id > ".intval($starting_id)."
+            LIMIT ".count($days)*$rate)); // reverse the array so we can use array_pop in the loop for sorting instead of array_shift, which is slower
+  
           $iter_result = [];
-          // we build references by pulling the last and first elements out of each sub-array
-          foreach($sorted as $date => $book_arr) {
-            $references = [];
-            foreach($book_arr as $book => $chp_arr) {
-              if ($end = array_pop($chp_arr)) { // sanity check
-                if ($chp_arr) {
-                  $begin = array_shift($chp_arr);
-                  $references[] = $book." ".$begin."-".$end;
-                }
-                else {
-                  $references[] = $book." ".$end;
+          if ($chapters) { // just to make sure no parameters were funky. lazy input validation.
+            $sorted = [];
+            // we group each book's chapters into a sub-array
+            foreach($days as $day) {
+              for($j = 0; $j < $rate; $j++) {
+                $chp_row = array_pop($chapters);
+                if ($chp_row) { // this will be empty if we run out of chapters at the end of the bible
+                  $sorted[$day][ $chp_row['book'] ][] = $chp_row['number'];
                 }
               }
             }
-            $iter_result[$date] = implode('; ', $references);
+            // we build references by pulling the last and first elements out of each sub-array
+            foreach($sorted as $date => $book_arr) {
+              $references = [];
+              foreach($book_arr as $book => $chp_arr) {
+                if ($end = array_pop($chp_arr)) { // sanity check
+                  if ($chp_arr) {
+                    $begin = array_shift($chp_arr);
+                    $references[] = $book." ".$begin."-".$end;
+                  }
+                  else {
+                    $references[] = $book." ".$end;
+                  }
+                }
+              }
+              $iter_result[$date] = implode('; ', $references);
+            }
+          }
+          foreach($iter_result as $date => $passage) {
+            if (!is_array($result[ $date ])) {
+              $result[ $date ] = [];
+            }
+            $result[ $date ][] = $passage;
           }
         }
-        foreach($iter_result as $date => $passage) {
-          if (!is_array($result[ $date ])) {
-            $result[ $date ] = [];
+
+      }
+      else { // $fill_mode === 'automatic'
+        $fp = false;
+        foreach(scandir(SCHEDULE_DIR) as $file) {
+          $absolute_path = SCHEDULE_DIR.$file;
+          if (is_file($absolute_path) && pathinfo($absolute_path, PATHINFO_EXTENSION) === 'txt') {
+            if ($fill_with == $file) {
+              $fp = fopen($absolute_path, 'r');
+              break;
+            }
           }
-          $result[ $date ][] = $passage;
+        } 
+
+        if ($fp) {
+          // first, calculate the number of lines in the file "just in case"
+          $fp2 = fopen($absolute_path, 'r');
+          $lines = -1; // -1 to discount the title line
+          while ($l = fgets($fp2)) {
+            if (trim($l))
+              $lines += 1;
+          }
+          fclose($fp2);
+          $total_days_to_fill = count($days);
+          $lines_per_day = floor($lines / $total_days_to_fill);
+          $remainder = 0;
+          if ($lines % $total_days_to_fill) {
+            $remainder = $lines % $total_days_to_fill;
+            $lines_per_day += 1;
+          }
+
+          // now we build the array
+          fgets($fp); // dump title line
+          $days = array_reverse($days);
+          $curr_book = false;
+          $has_book_regex = '/((?:\d )?\w+) \d+/i';
+          if ($this->data('start_date') === $fill_dates) {
+            while(!feof($fp) && $date = array_pop($days)) {
+              // if we're filling from the first avaialble date in the schedule,
+              // we assume the user wants the whole schedule packed into as many days as their schedule allows
+              $value_arr = [];
+              for($i = 0; $i < $lines_per_day && $line = fgets($fp); $i++) {
+                if (preg_match($has_book_regex, $line, $matches)) {
+                  $curr_book = $matches[1];
+                }
+                if (!preg_match($has_book_regex, $line)) {
+                  $line = $curr_book.' '.$line;
+                }  
+                foreach(explode(';', trim($line)) as $piece) {
+                  $value_arr[] = trim($piece);
+                }
+              }
+              if ($remainder) {
+                $remainder -= 1;
+                if (!$remainder) {
+                  $lines_per_day -= 1;
+                }
+              }
+              
+              
+              $result[ $date ] = $value_arr;
+            }
+          }
+          else {
+            // regular filling
+            while(($line = fgets($fp)) && ($date = array_pop($days))) {
+              if (preg_match($has_book_regex, $line, $matches)) {
+                $curr_book = $matches[1];
+              }
+              if (!preg_match($has_book_regex, $line)) {
+                $line = $curr_book.' '.$line;
+              }  
+              $result[ $date ] = explode('; ', trim($line));
+            }
+          }
+          fclose($fp);
         }
       }
+      
       return $result;
     }
     else {
@@ -228,17 +401,20 @@ class Schedule {
 
   public function edit($days)
   {
+    $today = date('Y-m-d');
     foreach($days as $date => $day) {
+      if ($date <= $today) {
+        // today and prior are not editable
+        continue;
+      }
+
       if ($day['id'] && $day['passage']) {
         // update
-        $chp_ids = array_column(
-          array_column(
-            parse_passage($day['passage']),
-          'chapter'),
-        'id');
+        $passages = parse_passages($day['passage']);
+
         $this->db->update("schedule_dates", [
           'passage' => $day['passage'],
-          'passage_chapter_ids' => json_encode($chp_ids)
+          'passage_chapter_readings' => json_encode(parsed_passages_to_passage_readings($passages))
         ], "schedule_id = ".$this->ID." AND id = ".(int)$day['id']);
       }
       else if ($day['id'] && !$day['passage']) {
@@ -255,19 +431,14 @@ class Schedule {
       }
       else if (!$day['id'] && $day['passage']) {
         // insert
-        $chp_ids = array_column(
-          array_column(
-            parse_passage($day['passage']),
-          'chapter'),
-        'id');
+        $passages = parse_passages($day['passage']);
 
-        $this->db->insert("schedule_dates", [
-          'schedule_id' => $this->ID,
-          'date' => $date,
-          'passage' => $day['passage'],
-          'passage_chapter_ids' => json_encode($chp_ids),
-          'complete_key' => bin2hex(random_bytes(16))
-        ]);
+        create_schedule_date(
+          $this->ID,
+          $date,
+          $day['passage'],
+          parsed_passages_to_passage_readings($passages)
+        );
       }
     }
   }
@@ -317,8 +488,14 @@ class Schedule {
   public function set_active()
   {
     if (!$this->private) {
-      $this->db->query("UPDATE schedules SET active = 0 WHERE site_id = ".$this->data['site_id']);
-      $this->db->query("UPDATE schedules SET active = 1 WHERE site_id = ".$this->data['site_id']." AND id = ".$this->ID);
+      // site-wide schedules
+      $this->db->query("UPDATE schedules SET active = 0 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']);
+      $this->db->query("UPDATE schedules SET active = 1 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
+    }
+    else {
+      // site-wide schedules
+      $this->db->query("UPDATE schedules SET active = 0 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']);
+      $this->db->query("UPDATE schedules SET active = 1 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
     }
   }
 
@@ -371,6 +548,19 @@ class Schedule {
     return $schedules;
   }
 
+  public function total_words_in_schedule()
+  {
+    static $total_words;
+    if ($total_words == null) {
+      $total_words = (int)$this->db->col("
+        SELECT SUM(word_count)
+        FROM schedule_date_verses sdv
+        WHERE sdv.schedule_id = ".$this->ID);
+    }
+
+    return $total_words;
+  }
+
 	public function html_calendar($editable = false)
   {
 		$start_date = new \Datetime($this->data('start_date'));
@@ -400,6 +590,32 @@ class Schedule {
 		return ob_get_clean();
 	}
 
+  public function emoji_data($for_user_id=null, $start_timestamp=null, $end_timestamp=null)
+  {
+    $query = "
+    SELECT ROUND(SUM(sdv.word_count) * 1.0 / ".$this->total_words_in_schedule()." * 100, 2) percent_complete, u.emoji, u.id, u.name
+    FROM schedule_date_verses sdv
+    JOIN read_dates rd ON sdv.schedule_date_id = rd.schedule_date_id
+    JOIN users u ON u.id = rd.user_id
+    WHERE sdv.schedule_id = ".$this->ID." AND %s
+    GROUP BY u.id
+    ORDER BY
+      %s
+    LIMIT 20";
+    
+    return $this->db->select(
+      $for_user_id
+        ? sprintf($query,
+            "1",
+            "CASE WHEN u.id = $for_user_id THEN 9999999999 -- sort me first, then the top readers
+            ELSE COUNT(*)
+            END DESC")
+        : sprintf($query, 
+            "$start_timestamp <= rd.timestamp AND rd.timestamp < $end_timestamp",
+            "COUNT(*) DESC, RANDOM()")
+    );
+  }
+
 	/**
 	 * returns one element from the array returned by get_schedule_days($schedule_id)
 	 */
@@ -422,7 +638,10 @@ class Schedule {
 	 *			'reference' => 'Matthew 1; Mark 2',
 	 *  		'passages' => [
 	 *				'book' => book_row,
-	 * 				'chapter' => chapter_row
+	 * 				'chapter' => chapter_row,
+   *        'word_count' => number
+   *        'range' => [ begin, end ]
+   *        'verses' => [ ...$verse_rows ]
 	 *			],
 	 *			...
 	 * 		],
@@ -442,7 +661,7 @@ class Schedule {
           'id' => $sd['id'],
           'date' => $sd['date'],
           'reference' => $sd['passage'],
-          'passages' => parse_passage($sd['passage']),
+          'passages' => Site::get_site($this->data('site_id'))->parse_passage_from_json($sd['passage_chapter_readings']),
           'complete_key' => $sd['complete_key']
         ];
       }
@@ -550,37 +769,16 @@ class Schedule {
     if ($_REQUEST['get_dates']) {
       print_json($this->get_dates($for_user_id));
     }
-    else if ($_REQUEST['fill_dates'] && $_REQUEST['d'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
+    else if ($_REQUEST['fill_dates'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['d'] && $_REQUEST['fill_mode'] && $_REQUEST['fill_with'] && $_REQUEST['days']) {
       print_json(
-        $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['days'])
+        $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['fill_mode'], $_REQUEST['fill_with'], $_REQUEST['days'])
       );
-    }
-    else if ($_POST['start_date'] && $_POST['end_date']) {
-      $start = new \Datetime($_POST['start_date']);
-      $end = new \Datetime($_POST['end_date']);
-      if (!$start || !$end) {
-        $_SESSION['error'] = "Invalid dates";
-      }
-      else {
-        $difference = $start->diff($end);
-        if ($start >= $end) {
-          $_SESSION['error'] = 'Start date must come before end date';
-        }
-        else if ($difference->y > 4) {
-          $_SESSION['error'] = 'Schedule must be shorter than 4 years';
-        }
-        else {
-          $this->update($start, $end, $this->data('name'));
-          $_SESSION['success'] = "Updated your schedule's dates.";
-          redirect();
-        }
-      }
     }
     else if ($_POST['edit']) {
       $this->edit($_POST['days']);
 
       $_SESSION['success'] = 'Schedule saved';
-      redirect();
+      redirect('?calendar_id='.$this->ID);
     }
   }
 
@@ -611,39 +809,37 @@ class Schedule {
       redirect();
     }
     else {
-      $start_date = strtotime($this->data('start_date'));
-      if ($new_date = strtotime($_POST['start_date']))
-        $start_date = $new_date;
-      $end_date = strtotime($this->data('end_date'));
-      if ($new_date = strtotime($_POST['end_date']))
-        $end_date = $new_date;
-
-      $start_date_obj = new \Datetime('@'.$start_date);
-      $end_date_obj = new \Datetime('@'.$end_date);
-      $interval = $start_date_obj->diff($end_date_obj);
-      if ($interval->y > 3) {
-        $_SESSION['error'] = "Schedule must be shorter 4 years";
-      }
-      else if ($start_date_obj >= $end_date_obj) {
-        $_SESSION['error'] = "Start date must be before end date.";
-      }
-      else if (!$_POST['name']) {
-        $_SESSION['error'] = "Schedule must have a name.";
-      }
-      else if (
-        ($this->data('start_date') != $start_date_obj->format('Y-m-d') || $this->data('end_date') != $end_date_obj->format('Y-m-d'))
-         && $this->db->col("
-              SELECT COUNT(*)
-              FROM read_dates rd
-              JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-              WHERE sd.schedule_id = ".$this->ID)) {
-        $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
+      $start = new \Datetime($_POST['start_date']);
+      $end = new \Datetime($_POST['end_date']);
+      if (!$start || !$end) {
+        $_SESSION['error'] = "Invalid dates";
       }
       else {
-        $this->update($start_date_obj, $end_date_obj, $_POST['name']);
+        $difference = $start->diff($end);
+        if ($start >= $end) {
+          $_SESSION['error'] = 'Start date must come before end date';
+        }
+        else if ($difference->y > 3) {
+          $_SESSION['error'] = 'Schedule must be shorter than 4 years';
+        }
+        else if (!$_POST['name']) {
+          $_SESSION['error'] = "Schedule must have a name.";
+        }
+        else if (
+          ($this->data('start_date') != $start->format('Y-m-d') || $this->data('end_date') != $end->format('Y-m-d'))
+          && $this->db->col("
+                SELECT COUNT(*)
+                FROM read_dates rd
+                JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+                WHERE sd.schedule_id = ".$this->ID)) {
+          $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
+        }
+        else {
+          $this->update($start, $end, $_POST['name']);
 
-        $_SESSION['success'] = "Saved schedule";
-      }   
+          $_SESSION['success'] = "Saved schedule";
+        }
+      } 
     }
     redirect();
   }
@@ -654,8 +850,8 @@ class Schedule {
       <details ".(count($this->get_dates($for_user_id)) ? "" : "open").">
         <summary>Introduction</summary>
         <p>
-          From here, you can create and edit your very own Bible reading schedule. This is useful if you already read the Bible on your own schedule
-          and want to track everything on the website. Everything read here will be recorded and count toward your personal streak and statistics, but it will
+          From here, you can create and edit your very own Bible reading schedules. This is useful if you already read the Bible on your own
+          and desire to track everything on this website. Everything read here will be recorded and count toward your personal streak and statistics, but it will
           not count toward the all-club schedule, goals, or rewards (if any).
         </p>
         <ol>

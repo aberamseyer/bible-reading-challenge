@@ -1,14 +1,16 @@
 <?php
 
-class RedisSessionHandler implements SessionHandlerInterface
+namespace BibleReadingChallenge;
+
+class RedisSessionHandler implements \SessionHandlerInterface
 {
-    private Predis\Client $client;
+    private Redis $redis;
     private const DATE_FORMAT = 'Y-m-d H:i:s';
     private const KEY_NAMESPACE = 'sessions/';
 
-    public function __construct($client)
+    public function __construct($redis)
     {
-      $this->client = $client;
+      $this->redis = $redis;
     }
     
     public function open($savePath, $sessionName): bool
@@ -24,26 +26,26 @@ class RedisSessionHandler implements SessionHandlerInterface
 
     public function read($id): string|false
     {
-      $hgetall = $this->client->hgetall(RedisSessionHandler::KEY_NAMESPACE.$id);
+      $hgetall = $this->redis->client()->hgetall(RedisSessionHandler::KEY_NAMESPACE.$id);
       return $hgetall ? $hgetall['data'] : '';
     }
 
     public function write($id, $data): bool
     {
       if ($data) { // don't bother saving the session if no one is logged in
-        $this->client->hmset(RedisSessionHandler::KEY_NAMESPACE.$id, [
+        $this->redis->client()->hmset(RedisSessionHandler::KEY_NAMESPACE.$id, [
           "data" => $data,
           "id" => $id,
           "last_updated" => date(RedisSessionHandler::DATE_FORMAT)
         ]);
-        $this->client->expire(RedisSessionHandler::KEY_NAMESPACE.$id, SESSION_LENGTH);
+        $this->redis->client()->expire(RedisSessionHandler::KEY_NAMESPACE.$id, SESSION_LENGTH);
       }
       return true;
     }
 
     public function destroy($id): bool
     {
-      $this->client->del(RedisSessionHandler::KEY_NAMESPACE.$id);
+      $this->redis->client()->del(RedisSessionHandler::KEY_NAMESPACE.$id);
       return true;
     }
 

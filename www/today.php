@@ -1,6 +1,6 @@
 <?php
 
-require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
+require __DIR__."/inc/init.php";
 
 // this key is used by the websocket client to authenticate as the current user
 $db->update('users', [
@@ -38,7 +38,7 @@ if (strtotime($_GET['today'])) {
 $schedules = [ &$schedule ];
 if ($site->data('allow_personal_schedules')) {
   $personal_schedule = new BibleReadingChallenge\Schedule(true);
-  $schedules []= &$personal_schedule;
+  $schedules[] = &$personal_schedule;
 }
 
 foreach($schedules as $each_schedule) {
@@ -73,11 +73,9 @@ foreach($schedules as $each_schedule) {
       $words_per_second = round($reading_timer_wpm / 60.0, 4);
       $elapsed = time() - $saved_start_time;
       $words_on_page = (int)$db->col("
-        SELECT SUM(word_count)
-        FROM schedule_dates sd
-        JOIN JSON_EACH(passage_chapter_ids)
-        JOIN chapters c on c.id = value
-        WHERE sd.id = ".$scheduled_reading['id']);
+      SELECT SUM(sdv.word_count)
+      FROM schedule_date_verses sdv
+      WHERE sdv.schedule_date_id = ".(int)$scheduled_reading['id']);
       if ($elapsed * $words_per_second < $words_on_page) {
         $valid = false;
         $_SESSION['error'] = "You read ".number_format($words_on_page)." words in ".round($elapsed)." second".xs($elapsed)."! Thats pretty fast.";
@@ -99,7 +97,7 @@ foreach($schedules as $each_schedule) {
 }
 
 $page_title = "Read";
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require __DIR__."/inc/head.php";
 
 // header with translation selector and email pref
 echo "<div id='date-header'>
@@ -135,7 +133,7 @@ if ($site->data('allow_personal_schedules')) {
 }
 foreach($schedules as $i => $each_schedule) {
   $personal = (bool)$each_schedule->data('user_id');
-  if ($site->data('allow_personal_schedules')) {
+  if ($site->data('allow_personal_schedules')) { // TODO
     echo "
       <input type='radio' name='tabs' id='tab-$i' ".($i == 0 ? 'checked' : '').">
       <label for='tab-$i'>".($i == 0 ? 'Corporate' : 'Personal')." Schedule</label>
@@ -243,7 +241,7 @@ foreach($schedules as $i => $each_schedule) {
     foreach($each_schedule->get_schedule_days() as $reading) {
       $dt = new Datetime($reading['date']);
       if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
-        $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading >></a>";
+        $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
         break;
       }
     }
@@ -261,4 +259,4 @@ if ($site->data('allow_personal_schedules')) {
 }
 
 
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require __DIR__."/inc/foot.php";

@@ -1,14 +1,15 @@
 <?php
   
 $insecure = true;
-require $_SERVER["DOCUMENT_ROOT"]."inc/init.php";
+require __DIR__."/inc/init.php";
 
 $page_title = "Privacy Policy";
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require __DIR__."/inc/head.php";
 
 ?>
-
-<p><img style='width: 150px' src='<?= $site->resolve_img_src('logo') ?>' onclick='window.location = `/`'></p>
+<?= site_logo() ?>
+<hr>
+<h1>Privacy Policy</h1>
 
 <p>Effective Date: 2023-07-13</p>
 <p>Thank you for visiting the University of Illinois Christians on Campus Bible Reading Challenge website. This Privacy Policy outlines how we collect, use, disclose, and protect your personal information when you interact with our website. We value your privacy and are committed to safeguarding your personal data.</p>
@@ -60,12 +61,13 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
 <p>We reserve the right to update or change our Privacy Policy at any time. Any changes will be effective upon posting the revised policy on this page. We encourage you to review this Privacy Policy periodically for any updates.</p>
 
 <h2>9. Contact Us</h2>
-<p>If you have any questions or concerns regarding this Privacy Policy or our data practices, please contact us at <a href='mailto:uofichristiansoncampus@gmail.com'>uofichristiansoncampus@gmail.com</a>.</p>
+<p>If you have any questions or concerns regarding this Privacy Policy or our data practices, please contact us at <a href='mailto:questions@uoficoc.com'>questions@uoficoc.com</a>.</p>
 <p>By using our website, you agree to the terms outlined in this Privacy Policy.</p>
-<p>Last updated: 2023-07-13</p>
+
+<hr>
 
 <?php
   
-  require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+  require __DIR__."/inc/foot.php";
 
 ?>

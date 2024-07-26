@@ -1,6 +1,6 @@
 <?php
 
-  require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+  require __DIR__."/../inc/init.php";
 
   if (!$staff) {
     redirect('/');
@@ -14,26 +14,12 @@
   }
   else if ($editing_schedule && $_REQUEST['calendar_id']) {
     // calendar date editing page
-    if ($_REQUEST['get_dates']) {
-      print_json($editing_schedule->get_dates(0));
-    }
 
-    if ($_POST['edit']) {
-      $editing_schedule->edit($_POST['days']);
-
-      $_SESSION['success'] = 'Schedule saved';
-      redirect("?calendar_id=".$editing_schedule->ID);
-    }
-
-    if ($_REQUEST['fill_dates'] && $_REQUEST['d'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['days']) {
-      print_json(
-        $editing_schedule->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['days'])
-      );
-    }
+    $editing_schedule->handle_edit_sched_days_post();
 
     $page_title = "Edit Calendar";
     $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-    require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+    require DOCUMENT_ROOT."inc/head.php";
     echo admin_navigation();
 
     echo "<p>".back_button("Back")."</p>";
@@ -49,7 +35,7 @@
   else {
     $page_title = "Manage Schedules";
     $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-    require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+    require DOCUMENT_ROOT."inc/head.php";
 
     echo admin_navigation();
 
@@ -84,4 +70,4 @@
     }
   }
 
-  require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+  require DOCUMENT_ROOT."inc/foot.php";

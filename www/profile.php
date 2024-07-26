@@ -1,6 +1,6 @@
 <?php
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/inc/init.php";
 
 // edit own profile
 if (isset($_POST['name'])) {
@@ -31,7 +31,7 @@ if (isset($_POST['name'])) {
 
 $page_title = "Profile";
 $show_title = true;
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require __DIR__."/inc/head.php";
 echo "<p><a href='/auth/logout'>↩ Logout</a></p>";
 
 echo "
@@ -47,52 +47,42 @@ else {
 }
 echo "</div>";
 
-$words_read = words_read($me, $schedule->ID);
-
-$total_words_in_schedule = total_words_in_schedule($schedule->ID);
+$total_words_in_schedule = $schedule->total_words_in_schedule();
 
 if ($total_words_in_schedule) {
   echo "
     <div class='two-columns'>
       <div>
-        <h5>Current Challenge Stats</h5>
+        <h5>My Stats</h5>
         <ul>
-          <li>".round($words_read / $total_words_in_schedule * 100, 2)."% Complete</li>
-          <li>Current / Longest streak: $me[streak] day".xs($me['streak'])." / $me[max_streak] day".xs($me['max_streak'])."</li>
-          <li>Chapters I've read: ".number_format($db->col(
-            ($chp_qry = 
-              "SELECT SUM(JSON_ARRAY_LENGTH(passage_chapter_ids))
-              FROM schedule_dates sd
-              JOIN read_dates rd ON rd.schedule_date_id = sd.id"
-            )."
-            WHERE rd. user_id = $my_id"))."</li>
-          <li>Words I've read: ".number_format($words_read)."</li>
+          <li>Current Challenge progress: <b>".round($site->words_read($me, $schedule->ID) / $total_words_in_schedule * 100, 2)."%</b> Complete</li>
+          <li>Current / Longest streak: <b>$me[streak] day".xs($me['streak'])."</b> / <b>$me[max_streak] day".xs($me['max_streak'])."</b></li>
+          <li>Chapters I've read: <b>".number_format($db->col(
+            sprintf($chp_qry =
+              "SELECT SUM(chapters_read)
+              FROM (
+                SELECT sdv.chapter_id, COUNT(*) / c.verses AS chapters_read
+                FROM read_dates rd
+                JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
+                JOIN chapters c ON c.id = sdv.chapter_id
+                WHERE %s
+                GROUP BY chapter_id
+                HAVING COUNT(*) >= c.verses
+              )", "rd.user_id = $my_id")))."</b></li>
+          <li>Words I've read: <b>".number_format($site->words_read($me))."</b></li>
         </ul>
       </div>
       <div>
-        <h5>Cross Challenge Stats</h5>
+        <h5>Club Stats</h5>
         <ul>
-          <li>All-club chapters read: ".number_format($db->col($chp_qry))."</li>
-          <li>All-club words read: ".number_format(words_read())."</li>
+          <li>All-club chapters read: <b>".number_format($db->col(sprintf($chp_qry, "1")))."</b></li>
+          <li>All-club words read: <b>".number_format($site->words_read())."</b></li>
         </ul>
       </div>
     </div>";
 
   // mountain
-  $emojis = $db->select("
-    SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
-    FROM schedule_dates sd
-    JOIN JSON_EACH(passage_chapter_ids)
-    JOIN chapters c on c.id = value
-    JOIN read_dates rd ON sd.id = rd.schedule_date_id
-    JOIN users u ON u.id = rd.user_id
-    WHERE sd.schedule_id = ".$schedule->ID."
-    GROUP BY u.id
-    ORDER BY 
-      CASE WHEN u.id = $me[id] THEN 9999999999 -- sort me first, then the top readers
-      ELSE COUNT(*)
-      END DESC
-    LIMIT 20");
+  $emojis = $schedule->emoji_data($me['id']);
   echo "
     <h5 class='text-center'>Top 20 Readers (and you)</h5>";
 
@@ -102,11 +92,11 @@ if ($total_words_in_schedule) {
   <div class='two-columns'>
     <div>
       <h6 class='text-center'>Progress</h6>
-      ".$site->progress_canvas($me['id'], $schedule->ID)."
+      ".$site->progress_canvas($me['id'])."
     </div>
     <div>
       <h6 class='text-center'>Days read each week</h6>
-      ".$site->weekly_progress_canvas($me['id'], $schedule)."
+      ".$site->weekly_progress_canvas($me['id'])."
     </div>
   </div>
   </p>";
@@ -116,7 +106,7 @@ echo "<form method='post'>
   <fieldset>
     <legend>Edit Account</legend>";
 echo "<p>Email: <b>".html($me['email'])."</b><br>";
-echo "Created: <b>".date('F j, Y', $me['date_created'])."</b><br></p>";
+echo "Joined: <b>".date('F j, Y', $me['date_created'])."</b><br></p>";
 echo "
   <label>My name: <input type='text' name='name' minlength='1' value='".html($me['name'])."'></label>
   <label>My emoji: 
@@ -135,4 +125,4 @@ $add_to_foot .=
   chartjs_js().
   cached_file('js', '/js/profile.js');
 
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require __DIR__."/inc/foot.php";

@@ -16,7 +16,7 @@ class SiteRegistry
     // Prevent cloning
   }
   
-  private function __wakeup()
+  public function __wakeup()
   {
     // Prevent unserialization
     throw new \Exception("Cannot unserialize a singleton.");
@@ -24,7 +24,7 @@ class SiteRegistry
 
   public static function get_site($id = 0, $soft=false): Site
   {
-    if (!isset(self::$sites[$id])) {
+    if (!isset(self::$sites[ $id ])) {
       $inst = new Site($id, $soft);
       if ($id === 0) {
         self::$sites[ 0 ] = $inst; // if no $id is passed, we need the to put our site in the 'default' slot of 0
@@ -50,12 +50,15 @@ class Site extends SiteRegistry {
 
   private \Email\MailSender $ms;
 
+  private Schedule|null $active_schedule;
+
   /**
    * @var $id a specific site to get
    * @var $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
    */
   protected function __construct($id, $soft=false)
   {
+    $this->active_schedule = null;
     $this->db = Database::get_instance();
     // either a passed $id gets a specific site, or we default to the site that matches the server HOST value
     if ($id) {
@@ -100,7 +103,9 @@ class Site extends SiteRegistry {
         $this->env('SENDGRID_API_KEY'), 
         $this->env('SENDGRID_DAILY_EMAIL_TEMPLATE'), 
         $this->env('SENDGRID_REGISTER_EMAIL_TEMPLATE'), 
-        $this->env('SENDGRID_FORGOT_PASSWORD_TEMPLATE')
+        $this->env('SENDGRID_FORGOT_PASSWORD_TEMPLATE'),
+        $this->data('email_from_address'),
+        $this->data('email_from_name')
       );
     }
   }
@@ -137,7 +142,10 @@ class Site extends SiteRegistry {
 
 	public function get_active_schedule()
   {
-    return new Schedule();
+    if (!$this->active_schedule) {
+      $this->active_schedule = new Schedule();
+    }
+    return $this->active_schedule;
 	}
 
   public function all_users($stale = false) {
@@ -201,6 +209,38 @@ class Site extends SiteRegistry {
   }
 
 
+	/**
+	 * returns a structured array from the details within the passage_chapter_readings column of the schedule_dates table
+	 * @param $json 	string|array	valid JSON, directly from the database, or a decoded json array
+	 */
+	function parse_passage_from_json(string|array $json_or_arr)
+  {
+		$arr = is_array($json_or_arr)
+			? $json_or_arr
+			: json_decode($json_or_arr, true);
+		
+		$passages = [];
+		foreach($arr as $chp_reading) {
+			$chapter = $this->db->row("SELECT * FROM chapters WHERE id = $chp_reading[id]");
+			$book = $this->db->row("SELECT * FROM books WHERE id = $chapter[book_id]");
+			$verses = $this->db->select("
+				SELECT id, number, word_count, ".implode(',', $this->get_translations_for_site())."
+				FROM verses 
+				WHERE chapter_id = $chapter[id] 
+					AND number IN(".implode(',', range($chp_reading['s'], $chp_reading['e'])).")
+				ORDER BY number");
+			$passages[] = [
+				'book' => $book,
+				'chapter' => $chapter,
+				'word_count' => array_sum(array_column($verses, 'word_count')),
+				'range' => [ $verses[0]['number'], $verses[ count($verses)-1 ]['number'] ],
+				'verses' => $verses
+			];
+		}
+		return $passages;
+	}
+
+
 	/*
 	 * @param scheduled_reading array the return value of get_reading()
 	 * @param trans string one of the translations
@@ -223,8 +263,12 @@ class Site extends SiteRegistry {
 				$style = "style='text-align: center; font-size: 1.4rem;'";
 			}
 			foreach($scheduled_reading['passages'] as $passage) {
-				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number']."</h4>";
-				$verses = $this->db->select("SELECT number, $trans FROM verses WHERE chapter_id = ".$passage['chapter']['id']);
+        $verse_range = ":".$passage['range'][0]."-".$passage['range'][1];
+        if ($passage['chapter']['verses'] == $passage['range'][1]-$passage['range'][0]+1) {
+          // if the range is the whole chapter, hide the range
+          $verse_range = "";
+        }
+				echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number'].$verse_range."</h4>";
 
 				$ref_style = "class='ref'";
 				$verse_style = "class='verse-text'";
@@ -232,7 +276,7 @@ class Site extends SiteRegistry {
 					$ref_style = "style='font-weight: bold; user-select: none;'";
 					$verse_style = "style='margin-left: 1rem;'";
 				}
-				foreach($verses as $verse_row) {
+				foreach($passage['verses'] as $verse_row) {
 					echo "
 						<div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
 				}
@@ -243,7 +287,7 @@ class Site extends SiteRegistry {
 				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
 			}
-			$copyright_text = json_decode(file_get_contents(__DIR__."/../../../extras/copyright.json"), true);
+			$copyright_text = json_decode(file_get_contents(DOCUMENT_ROOT."../../extras/copyright.json"), true);
 			$copyright_style = "";
 			if ($email) {
 				$copyright_style = "font-size: 75%;";
@@ -274,10 +318,27 @@ class Site extends SiteRegistry {
 		return ob_get_clean();
 	}
 
-
-  public function deviation_for_user($user_id, $schedule)
+  public function on_target_for_user(int $user_id)
   {
-    $weekly_counts = $this->weekly_counts($user_id, $schedule)['counts'];
+    return $this->db->col("
+      SELECT 
+        ROUND(
+          COUNT(*) FILTER(
+            WHERE rd.user_id = $user_id AND DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') = sd.date
+          ) / CAST(
+                COUNT(*) FILTER (WHERE rd.user_id = 1)
+                AS FLOAT
+              ) * 100
+          , 2
+        ) || '%'
+      FROM schedule_dates sd
+      LEFT JOIN read_dates rd ON rd.schedule_date_id = sd.id
+      WHERE sd.schedule_id = ".$this->active_schedule->ID);
+  }
+
+  public function deviation_for_user($user_id)
+  {
+    $weekly_counts = $this->weekly_counts($user_id)['counts'];
     // standard deviation
     $n = count($weekly_counts);
     if ($n === 0) {
@@ -293,9 +354,9 @@ class Site extends SiteRegistry {
     return round(sqrt($variance), 3);
   }
 
-  public function weekly_progress_canvas($user_id, $schedule, $size=400)
+  public function weekly_progress_canvas($user_id, $size=400)
   {
-    $counts = $this->weekly_counts($user_id, $schedule);
+    $counts = $this->weekly_counts($user_id);
     $week_starts = array_map(function($value) {
       // because date_create_from_format can't handle the week number, we do this manually
       list($year, $week) = explode('-', $value);
@@ -305,10 +366,10 @@ class Site extends SiteRegistry {
     return "<canvas data-graph='$data' class='weekly-counts-canvas' width='$size'></canvas>";
   }
 
-  public function weekly_counts($user_id, $schedule)
+  public function weekly_counts($user_id)
   {
-    $start = new \DateTime($schedule->data('start_date'));
-    $end = new \DateTime($schedule->data('end_date'));
+    $start = new \DateTime($this->active_schedule->data('start_date'));
+    $end = new \DateTime($this->active_schedule->data('end_date'));
   
     $interval = $start->diff($end);
     $days_between = abs(intval($interval->format('%a')));
@@ -349,15 +410,15 @@ class Site extends SiteRegistry {
       ];
   }
 
-  public function progress_canvas($user_id, $schedule_id, $size=400)
+  public function progress_canvas($user_id, $size=400)
   {
-    $progress = $this->progress($user_id, $schedule_id);
+    $progress = $this->progress($user_id);
     return "<canvas data-graph='".json_encode($progress)."' class='progress-canvas' width='$size'></canvas>";
   }
 
-  public function progress($user_id, $schedule_id)
-  {   
-    $total_words_in_schedule = total_words_in_schedule($schedule_id);
+  public function progress($user_id)
+  {
+    $total_words_in_schedule = $this->active_schedule->total_words_in_schedule();
 
     $threshholds = [];
     for($i = 1; $i <= 100; $i++) {
@@ -366,12 +427,11 @@ class Site extends SiteRegistry {
 
     $progress = [];
     $read_dates = $this->db->select("
-      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, c.word_count
+      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, SUM(sdv.word_count) word_count
       FROM read_dates rd
-      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-      JOIN JSON_EACH(sd.passage_chapter_ids)
-      JOIN chapters c ON c.id = value
-      WHERE sd.schedule_id = $schedule_id and rd.user_id = $user_id
+      JOIN schedule_date_verses sdv ON sdv.schedule_date_id = rd.schedule_date_id
+      WHERE sdv.schedule_id = ".$this->active_schedule->ID." and rd.user_id = $user_id
+      GROUP BY sdv.chapter_id
       ORDER BY timestamp");
     
     $sum = 0;
@@ -418,7 +478,7 @@ class Site extends SiteRegistry {
     ];
   }
 
-  function get_translations_for_site()
+  public function get_translations_for_site()
   {
     static $translations;
     if (!$translations) {
@@ -427,8 +487,29 @@ class Site extends SiteRegistry {
     return $translations;
   }
 
-  function check_translation($trans)
+  public function check_translation($trans)
   {
     return in_array($trans, $this->get_translations_for_site(), true);
+  }
+
+  public function words_read($user = 0, $schedule_id = 0) {
+    $word_qry = "
+        SELECT SUM(word_count)
+        FROM schedule_date_verses sdv
+        JOIN read_dates rd ON sdv.schedule_date_id = rd.schedule_date_id
+        JOIN schedules s ON s.id = sdv.schedule_id
+        WHERE s.site_id = ".$this->ID." AND %s
+    ";
+    if (!$user) {
+      $words_read = $this->db->col(sprintf($word_qry, '1'));
+    }
+    else {
+      $schedule_where = $schedule_id
+        ? " AND sdv.schedule_id = ".$schedule_id
+        : "";
+      $words_read = $this->db->col(sprintf($word_qry, " rd.user_id = ".$user['id'].$schedule_where));
+    }
+
+    return $words_read;
   }
 }

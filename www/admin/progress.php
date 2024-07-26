@@ -1,6 +1,6 @@
 <?php
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$staff) {
   redirect('/');
@@ -9,39 +9,31 @@ if (!$staff) {
 
 $page_title = "Progress";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 
 echo admin_navigation();
 
 echo "<h5 class='text-center'>Group Monthly Progress</h5>";
+$end_of_month = date('Y-m-t'); // 't' is the how many days in the month
 $start = new Datetime($schedule->data('start_date'));
 $end_date = new Datetime($schedule->data('end_date'));
 $next = clone($start); $next->modify('+1 month');
 $prev = clone($start);
 
-$total_words_in_schedule = (int)total_words_in_schedule($schedule->ID);
+$total_words_in_schedule = $schedule->total_words_in_schedule();
 if ($total_words_in_schedule) { // graphs are meaningless if there is nothing in the schedule
   $graphs = [];
   $sum = 0;
   do {
-    $data = $db->select("
-      SELECT ROUND(SUM(word_count) * 1.0 / $total_words_in_schedule * 100, 2) percent_complete, u.emoji, u.id
-      FROM schedule_dates sd
-      JOIN JSON_EACH(passage_chapter_ids)
-      JOIN chapters c on c.id = value
-      JOIN read_dates rd ON sd.id = rd.schedule_date_id
-      JOIN users u ON u.id = rd.user_id
-      WHERE sd.schedule_id = ".$schedule->ID." AND ".$start->format('U')." <= rd.timestamp AND rd.timestamp < ".$next->format('U')."
-      GROUP BY u.id
-      ORDER BY COUNT(*) DESC, RANDOM()
-      LIMIT 20");
+    $data = $schedule->emoji_data(null, $start->format('U'), $next->format('U'));
       $graphs[] = [ 
         'dates' => [ 'start' => clone($prev), 'end' => clone($next) ], 
         'data' => $data
       ];
     $next->modify('+1 month');
     $prev->modify('+1 month');
-  } while ($next->format('U') <= strtotime('+1 month', $end_date->format('U')));
+  } while ($next->format('Y-m-t') <= $end_date->format('Y-m-t') && //  one for each month in the schedule
+    $end_of_month > $end_date->format('Y-m-t')); // only graphs up through this month
 
   foreach($graphs as $i => $graph) {
     echo "<div class='historical-mountain ".($i !== count($graphs)-1 ? 'hidden' : '')."'>";
@@ -102,7 +94,7 @@ foreach($all_users as $user) {
     $db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$schedule->ID." AND date <= '".date('Y-m-d')."'") - 
     $db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$schedule->ID." AND rd.user_id = $user[id]");
     $percent_complete = $total_words_in_schedule
-      ? words_read($user, $schedule->ID) / $total_words_in_schedule * 100
+      ? $site->words_read($user, $schedule->ID) / $total_words_in_schedule * 100
       : 0;
   echo "<tr class='".($user['last_read'] ? '' : 'hidden')."'>
   <td ".last_read_attr($user['last_read'])." data-name><a href='/admin/users?user_id=$user[id]'><small>$user[name]</small></a></td>
@@ -110,7 +102,7 @@ foreach($all_users as $user) {
   <td data-streak='".($user['streak'] + $user['max_streak'])."'>$user[streak] / $user[max_streak]</td>
   <td data-percent='".($percent_complete)."'>".round($percent_complete, 2)."%</td>
   <td data-progress='$percent_complete' style='max-height: 100px;'>";
-    echo $site->progress_canvas($user['id'], $schedule->ID, 170);
+    echo $site->progress_canvas($user['id'], 170);
   echo "</td></tr>";
 }
 echo "</tbody>
@@ -128,4 +120,4 @@ $add_to_foot .=
   chartjs_js().
   cached_file('js', '/js/lib/tableSort.js').
   cached_file('js', '/js/progress.js');
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

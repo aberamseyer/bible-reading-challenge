@@ -6,7 +6,6 @@
 // crontab entry: 45 * * * * php /home/bible-reading-challenge/cron/daily-verse-email.php
 
 require __DIR__."/../www/inc/env.php";
-require __DIR__."/../www/inc/functions.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 
@@ -14,7 +13,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $site = BibleReadingChallenge\Site::get_site($site_id);
   $today = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
-  if ($today->format('G') !== 7) {
+  if ($today->format('G') != 7) {
     continue;
   }
   
@@ -47,13 +46,10 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     }
   
     // total up the words in this day's reading
-    $word_length = array_reduce(
+    $total_word_count = array_reduce(
       $scheduled_reading['passages'], 
-      fn($acc, $cur) => intval($db->col("
-        SELECT word_count
-        FROM chapters
-        WHERE id = ".$cur['chapter']['id'])) + $acc);
-    $minutes_to_read = ceil($word_length / ($site->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
+      fn($acc, $cur) => $acc + $cur['word_count']);
+    $minutes_to_read = ceil($total_word_count / ($site->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
   
     // BUILD EMAIL
     /* the banner image at the top of the email is part of the email template in Sendgrid */

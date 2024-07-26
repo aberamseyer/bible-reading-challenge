@@ -1,127 +1,68 @@
 (() => {
-  // match[1] will be the book name, match[2] will be the first chapter, match[3] (if it exists) will be the last chapter
-  const BOOK_REGEX = new RegExp(`^(${BOOK_CHAPTERS.map(x => `(?:${x.name})`).join('|')}) (\\d+)(?:-(\\d+))?$`)
 
   const calendarDays = document.querySelectorAll('.reading-day:not(.inactive)');
   const fillBtn = document.getElementById('fill')
-  // fill each subsequent day with the next chapter in the bible
-  fillBtn.onclick = () => {
-    const days = Array.from(
-      document.querySelectorAll('[name="days[]"]:checked')
-    ).map(x => `days[]=${x.value}`).join('&')
-
-    const allDays = Array.from(document.querySelectorAll('.reading-day'));
-    let activeDay, prevDay
-    for (let i=0; i < allDays.length; i++) {
-      let el = allDays[i]
-      if (el.classList.contains('active')) {
-        activeDay = el
-        prevDay = i === 0 ? el : allDays[ i-1 ]
-        break
-      }
-    }
-    if (!activeDay) {
-      return
-    }
-
-    let currentPassage = activeDay.querySelector('input[data-passage]').value
-    if (!currentPassage) {
-      currentPassage = `Matthew 1`
-    }
-    let prevPassage = prevDay.querySelector('input[data-passage]').value
-    if (!prevPassage) {
-      prevPassage = currentPassage
-    }
-
-    let differences = []
-
-    for(let i=0; i < currentPassage.split(';').length; i++) {
-      const matchesCurr = currentPassage.split(';')[i].trim().match(BOOK_REGEX)
-      const bookCurr = matchesCurr[1]
-      const chpCurr = parseInt(matchesCurr[3] || matchesCurr[2])
-
-      const matchesPrev = prevPassage.split(';')[i].trim().match(BOOK_REGEX)
-      const bookPrev = matchesPrev[1]
-      const chpPrev = parseInt(matchesPrev[3] || matchesPrev[2])
-      differences.push('d[]=' + 
-        (bookCurr !== bookPrev
-          ? chpCurr + (parseInt(BOOK_CHAPTERS.find(b => b.name === bookPrev).chapters) - chpCurr)
-          : chpCurr - chpPrev)
-      )
-    }
-    
-    const queryStrArr = currentPassage.split(';').map(portion => {
-      const matches = portion.trim().match(BOOK_REGEX)
-      const book = matches[1]
-      const chp = matches[3] || matches[2]
-      return `start_book[]=${book}&start_chp[]=${chp}`
-    })
-
-    const fillAfter = activeDay.getAttribute('data-date')
-    fetch(`?calendar_id=${CALENDAR_ID}&fill_dates=${fillAfter}&${differences.join('&')}&${queryStrArr.join('&')}&${days}`)
-    .then(rsp => rsp.json())
-    .then(data => {
-      calendarDays.forEach(cd => {
-        const date = cd.dataset.date
-        if (data.hasOwnProperty(date)) {
-          cd.querySelector('input[data-passage]').value = data[date].join('; ')
-          cd.querySelector('small').textContent = data[date].join('; ')
-        }
-      })
-    })
-  }
-  // clear all days following the currently activated one
   const clearBtn = document.getElementById('clear')
-  clearBtn.onclick = () => {
-    let clearing = false
-    calendarDays.forEach(cd => {
-      if (clearing) {
-        cd.querySelector('input[data-passage]').value = ''
-        cd.querySelector('small').textContent = ''
-      }
-      if (cd.classList.contains('active')) {
-        clearing = true
-      }
-    })
-  }
+  const scheduleSel = document.getElementById('schedule-sel')
+  const fillModeSel = document.getElementById('fill-mode')
+  const PASSAGE_SELECTOR = 'input[data-passage]'
+  const LABEL_SELECTOR = '.label'
 
-  // validates a passage that the user enters
-  function validPassagePiece(piece) {
-    piece = piece.trim()
-    const matches = piece.match(BOOK_REGEX)
-    if (matches) {
-      for(let j = 0; j < BOOK_CHAPTERS.length; j++) {
-        const book = BOOK_CHAPTERS[j]
-        if (book.name == matches[1]) {
-          if (+matches[3]) {
-            return +matches[2] > 0 && +matches[3] > +matches[2] && +matches[3] <= book.chapters
-          }
-          else {
-            return +matches[2] > 0 && +matches[2] <= book.chapters
-          }
-        }
-      }
-    }
-    else {
-      return false
-    }
+  // helper functions
+  function resizeInput(el) {
+    el.size = Math.max(el.value.length - 2, 1)
   }
-  // event listeners for editing a day
+  function flashClass(el, classToAdd) {
+    el.classList.add('flashing')
+    const classes = ['active', 'danger', 'warning']
+    let currClass = ''
+    for(let activeClass of classes) {
+      if (el.classList.contains(activeClass))
+        currClass = activeClass
+    }
+    currClass && el.classList.remove(currClass)
+    el.classList.add(classToAdd)
+    setTimeout(() => {
+      el.classList.remove(classToAdd)
+      currClass && el.classList.add(currClass)
+      setTimeout(() => el.classList.remove('flashing'), 150)
+    }, 150)
+  }
   function validatePassage(passage) {
-    if (passage == '') return true
-
-    let valid = true;
-    passage = passage.trim()
-    let pieces = passage.split(';')
-    for (let i = 0; i < pieces.length; i++) {
-      valid = valid && validPassagePiece(pieces[i])
-    }
-    return pieces ? valid : false
+    if (passage == '')
+      return true
+    else
+      return passage
+        .split(';')
+        .reduce((acc, curr) => acc && BOOKS_RE.test(curr.trim()), true)
   }
+  function labelElChanged(labelEl) {
+    const newVal = labelEl.value.trim()
+    const passageEl = labelEl.closest('.reading-day').querySelector(PASSAGE_SELECTOR)
+    if (newVal !== passageEl.value) {
+      if (validatePassage(newVal)) {
+        flashClass(labelEl, 'active')
+        passageEl.value = labelEl.value
+      }
+      else {
+        flashClass(labelEl, 'danger')
+        labelEl.value = passageEl.value
+      }
+      resizeInput(labelEl)
+    }
+  }
+
+  // editor initialization
   calendarDays.forEach(tableCell => {
+    const labelEl = tableCell.querySelector(LABEL_SELECTOR)
+
+    // event listeners for editing dates
+    labelEl.addEventListener('input', e => resizeInput(e.target))
+    labelEl.addEventListener('blur', () => labelElChanged(labelEl))
+
     // present and future dates can be activated (for filling and clearing)
     if (!tableCell.classList.contains('past')) {
-      tableCell.querySelector('.date').onclick = () => {
+      tableCell.querySelector('.date').addEventListener('click', () => {
         const isActive = tableCell.classList.contains('active')
         calendarDays.forEach(x => x.classList.remove('active'))
         if (isActive) {
@@ -133,29 +74,173 @@
           fillBtn.disabled = false
           clearBtn.disabled = false
         }
-      }
+      })
     }
-    // future dates are editable
-    tableCell.ondblclick = () => {
-      if (tableCell.classList.contains('future')) {
-        const small = tableCell.querySelector('small')
-        small.remove()
-        const input = document.createElement('textarea')
-        input.value = small.textContent
-        input.classList.add('edit-input')
-        input.onblur = () => {
-          const newVal = input.value
-          if (validatePassage(newVal)) {
-            small.textContent = newVal
-            tableCell.querySelector('input[data-passage]').value = newVal
-          }
-          input.remove()
-          tableCell.appendChild(small)
+    
+  })
+  function toggleSelects() {
+    scheduleSel.classList.toggle('hidden', fillModeSel.value === 'chapters')
+  }
+  fillModeSel.addEventListener('change', () => toggleSelects())
+  toggleSelects()
+
+  clearBtn.addEventListener('click', () => {
+    let clearing = false
+    calendarDays.forEach(cd => { 
+      if (clearing) {
+        const labelEl = cd.querySelector(LABEL_SELECTOR)
+        labelEl.value = ''
+        labelElChanged(labelEl)
+      }
+      if (cd.classList.contains('active')) {
+        clearing = true
+      }
+    })
+  })
+
+  fillBtn.addEventListener('click', () => {
+    // build list of selected 'day of week' checkboxes
+    const days = Array.from(
+      document.querySelectorAll('[name="days[]"]:checked')
+    ).map(x => `days[]=${x.value}`).join('&')
+
+    // set the currently active day and the previous day
+    const activeDay = document.querySelector('.reading-day.active')
+    const allDays = Array.from(document.querySelectorAll('.reading-day'))
+    const i = allDays.findIndex(el => el === activeDay)
+    const prevDay = i <= 0
+      ? activeDay
+      : allDays[i-1]
+
+    // what passage we are starting from
+    let currentPassage = activeDay.querySelector(PASSAGE_SELECTOR).value
+    if (!currentPassage) {
+      currentPassage = `Matthew 1`
+    }
+    let prevPassage = prevDay.querySelector(PASSAGE_SELECTOR).value
+    if (!prevPassage) {
+      prevPassage = currentPassage
+    }
+
+    let differences = []
+
+    /*
+     * Build an array of differences between corresponding passage segments:
+     * activeDay passage: Genesis 4-6; Matthew 2
+     * prevDay passage:   Genesis 1-3; Matthew 1
+     * result: [3, 1] (3 chapters in the Genesis line and 1 chapter in the Matthew line)
+     */
+    const activeSplit = currentPassage.split(';')
+    const prevSplit = prevPassage.split(';')
+    for(let i=0; i < activeSplit.length && i < prevSplit.length; i++) {
+      const matchesCurr = activeSplit[i].trim().match(BOOKS_RE)
+      const bookCurr = matchesCurr[1]
+      const chpCurr = parseInt(matchesCurr[5] || matchesCurr[3] || matchesCurr[2])
+
+      const matchesPrev = prevSplit[i].trim().match(BOOKS_RE)
+      const bookPrev = matchesPrev[1]
+      const chpPrev = parseInt(matchesPrev[5] || matchesPrev[3] || matchesPrev[2])
+
+      differences.push('d[]=' + 
+        (bookCurr !== bookPrev
+          ? chpCurr + (BOOK_CHAPTERS.find(b => 
+                          BOOKS_ABBR_LOOKUP[b.name.toLowerCase()] === BOOKS_ABBR_LOOKUP[bookPrev.toLowerCase()]
+                      ).chapters.length - chpCurr)
+          : chpCurr - chpPrev || 1)
+      )
+    }
+    
+    const queryStrArr = currentPassage.split(';')
+      .map(portion => {
+        const matches = portion.trim().match(BOOKS_RE)
+        const book = matches[1]
+        const chp = matches[5] || matches[3] || matches[2]
+        return `start_book[]=${BOOKS_ABBR_LOOKUP[book.toLowerCase()]}&start_chp[]=${chp}`
+      })
+      .slice(0, differences.length) // slicing to ensure queryStrArr and differences are the same length
+
+    const fillAfter = activeDay.getAttribute('data-date')  
+    fetch(`?calendar_id=${CALENDAR_ID}&fill_dates=${fillAfter}&${queryStrArr.join('&')}&fill_mode=${fillModeSel.value}&${differences.join('&')}&fill_with=${scheduleSel.value}&${days}`)
+    .then(rsp => rsp.json())
+    .then(data => {
+      calendarDays.forEach(cd => {
+        const date = cd.dataset.date
+        if (data.hasOwnProperty(date)) {
+          const labelEl = cd.querySelector(LABEL_SELECTOR);
+          labelEl.value = data[date].join('; ')
+          labelElChanged(labelEl)
         }
-        tableCell.appendChild(input)
-        input.focus()
+      })
+    })    
+  })
+
+  // merge and shift buttons on an active day
+  document.querySelectorAll('.arrow-container div').forEach(arrowBtn => {
+    arrowBtn.addEventListener('click', () => {
+      let left = false
+      if (arrowBtn.closest('.arrow-container').nextElementSibling) {
+        left = true
       }
-    }
+      const parent = arrowBtn.closest('.reading-day')
+      if (arrowBtn.nextElementSibling) {
+        // shift everything over
+        const daysInOrder = left
+          ? Array.from(calendarDays).toReversed()
+          : Array.from(calendarDays)
+        let 
+          shifting = false,
+          prevPassage = parent.querySelector(PASSAGE_SELECTOR).value
+        for(let i = 0; i < daysInOrder.length; i++) {
+          const day = daysInOrder[i]
+          if (shifting) {
+            if (prevPassage === '') {
+              // WAIT
+              // if the day we are shifting to is empty, we actually want a merge and then a stop.
+              // just think about it. it logically makes sense
+              break
+            }
+            const labelEl = day.querySelector(LABEL_SELECTOR)
+            const temp = labelEl.value
+            labelEl.value = prevPassage
+            prevPassage = temp
+            labelElChanged(labelEl)
+          }
+          if (day === parent) {
+            const labelEl = day.querySelector(LABEL_SELECTOR)
+            labelEl.value = ''
+            labelElChanged(labelEl)
+            shifting = true
+          }
+        }
+
+      }
+      else {
+        // merge to the (left)
+        const 
+          mergingPassageEl = parent.querySelector(PASSAGE_SELECTOR),
+          mergingLabelEl = parent.querySelector(LABEL_SELECTOR),
+          startIndex = left ? 1 : 0,
+          stopIndex = calendarDays.length-(left ? 0 : 1);
+        for (let i = startIndex; i < stopIndex; i++) {
+          if (calendarDays[i] === parent) {
+            const
+              passageEl = calendarDays[i + (left ? -1 : 1)].querySelector(PASSAGE_SELECTOR),
+              labelEl =   calendarDays[i + (left ? -1 : 1)].querySelector(LABEL_SELECTOR)
+              
+            labelEl.value = (passageEl.value + ';' + mergingPassageEl.value)
+              .split(';')
+              .map(x => x.trim())
+              .filter(x => x)
+              .join('; ')
+            labelElChanged(labelEl)
+            
+            mergingLabelEl.value = ''
+            labelElChanged(mergingLabelEl)
+            break
+          }
+        }
+      }
+    })
   })
 
   // fill calendar on page load
@@ -165,9 +250,11 @@
       const date = tableCell.dataset.date
       const matchingDay = data.find(sd => sd.date === date)
       if (matchingDay) {
-        tableCell.querySelector('input[data-passage]').value = matchingDay.passage
+        tableCell.querySelector(PASSAGE_SELECTOR).value = matchingDay.passage
         tableCell.querySelector('input[data-id]').value = matchingDay.id
-        tableCell.querySelector('small').textContent = matchingDay.passage
+        const inputLabelEl = tableCell.querySelector(LABEL_SELECTOR)
+        inputLabelEl.value = matchingDay.passage
+        resizeInput(inputLabelEl)
         if (matchingDay.read) {
           tableCell.classList.add('active')
         }

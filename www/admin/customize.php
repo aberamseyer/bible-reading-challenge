@@ -1,6 +1,6 @@
 <?php
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$staff) {
   redirect('/');
@@ -161,14 +161,16 @@ if ($_POST['color_primary'] && $_POST['color_secondary']) {
 }
 
 // Site Configuration handler
-if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_POST['contact_email'] || 
-    $_POST['contact_phone'] || $_POST['default_emoji'] || $_POST['reading_timer_wpm'] || $_POST['start_of_week'] || 
-    $_POST['time_zone_id'] || $_POST['trans_pref']) {
+if ($_POST['site_name'] || $_POST['short_name'] || $_POST['email_from_address'] || $_POST['email_from_name'] || 
+    $_POST['contact_name'] || $_POST['contact_email'] || $_POST['contact_phone'] || $_POST['default_emoji'] || 
+    $_POST['reading_timer_wpm'] || $_POST['start_of_week'] || $_POST['time_zone_id'] || $_POST['trans_pref']) {
   $site_name = $_POST['site_name'];
   $short_name = $_POST['short_name'];
   $contact_name = $_POST['contact_name'];
   $contact_email = filter_input(INPUT_POST, 'contact_email', FILTER_VALIDATE_EMAIL);
   $contact_phone = preg_replace('/[^\d]/', '', $_POST['contact_phone']);
+  $email_from_address = filter_input(INPUT_POST, 'email_from_address', FILTER_VALIDATE_EMAIL);
+  $email_from_name = $_POST['email_from_name'];
   $default_emoji = $_POST['default_emoji'];
   $reading_timer_wpm = (int)$_POST['reading_timer_wpm'];
   $start_of_week = (int)$_POST['start_of_week'];
@@ -196,6 +198,12 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
   else if (strlen($contact_phone) !== 10) {
     $_SESSION['error'] = 'Please specify a 10-digit phone number';
   }
+  else if (!$email_from_address) {
+    $_SESSION['error'] = 'Please specify a from address for emails.';
+  }
+  else if (!$email_from_name) {
+    $_SESSION['error'] = 'Please specify a sender name for emails.';
+  }
   else if (grapheme_strlen($default_emoji) !== 1) {
     $_SESSION['error'] = 'Enter exactly 1 character for the default emoji';
   }
@@ -218,6 +226,8 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['contact_name'] || $_P
       'contact_name' => $contact_name,
       'contact_email' => $contact_email,
       'contact_phone' => $contact_phone,
+      'email_from_address' => $email_from_address,
+      'email_from_name' => $email_from_name,
       'default_emoji' => $default_emoji,
       'reading_timer_wpm' => $reading_timer_wpm,
       'start_of_week' => $start_of_week,
@@ -251,7 +261,7 @@ if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain
 
 $page_title = "Customize Site";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
   
 echo admin_navigation();
 
@@ -300,6 +310,12 @@ echo "
     </label>
     <label>
     Contact Phone # ".help('Phone # of the one who talks to Abe')." <input type='text' name='contact_phone' value='".html(format_phone($site->data('contact_phone')))."' placeholder='No country code'>
+    </label>
+    <label>
+    System Email Address ".help('The email address that emails will be sent from. You will likely have to verify this using MX DNS recoreds')." <input type='email' name='email_from_address' value='".html($site->data('email_from_address'))."'>
+    </label>
+    <label>
+    System Email Name ".help('The name of the sender that emails will be sent from')." <input type='text' name='email_from_name' value='".html($site->data('email_from_name'))."'>
     </label>
     <label>
     Default Emoji ".help('What emoji new users will have by default')." <input type='text' name='default_emoji' minlength='1' maxlength='6' value='".html($site->data('default_emoji'))."' style='width: 70px'>
@@ -510,4 +526,4 @@ echo "
     </label>
   </fieldset>
 </form>";
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

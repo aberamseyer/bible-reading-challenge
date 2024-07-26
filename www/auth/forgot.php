@@ -2,7 +2,7 @@
 
 $insecure = true;
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if ($me) {
   redirect("/");
@@ -69,7 +69,7 @@ else if ($_REQUEST['reset']) {
       }
       else {
         $page_title = "Reset Password";
-        require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+        require DOCUMENT_ROOT."inc/head.php";
         ?>
           <div id='auth-wrap'>
             <div>
@@ -94,7 +94,7 @@ else if ($_REQUEST['reset']) {
             </div>
           </div>
         <?php
-        require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+        require __DIR__."/..inc/foot.php";
         die;
       }
     }
@@ -103,7 +103,7 @@ else if ($_REQUEST['reset']) {
 }
 
 $page_title = "Forgot Password";
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
@@ -122,4 +122,4 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
     </div>
   </div>
 <?php
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

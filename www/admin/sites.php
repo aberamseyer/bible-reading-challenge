@@ -1,7 +1,7 @@
 <?php
 
 
-require $_SERVER['DOCUMENT_ROOT']."inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if (!$staff && $me['id'] != 1) {
   redirect('/');
@@ -16,6 +16,8 @@ if ($_POST) {
       'contact_name' => $_POST['contact_name'],
       'contact_email' => $_POST['contact_email'],
       'contact_phone' => $_POST['contact_phone'],
+      'email_from_address' => $_POST['email_from_address'],
+      'email_from_name' => $_POST['email_from_name'],
       'domain_www' => $_POST['domain_www'],
       'domain_www_test' => $_POST['domain_www_test'],
       'default_emoji' => '😁',
@@ -32,7 +34,7 @@ if ($_POST) {
       'end_date' => date('Y-m-d', strtotime('December 31')),
       'active' => 1
     ]);
-    create_schedule_date($new_sched_id, $start_date, 'Genesis 1', [1]);
+    create_schedule_date($new_sched_id, $start_date, 'Genesis 1', parsed_passages_to_passage_readings(parse_passages('Genesis 1')));
     $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
     
     // create user and assign as staff
@@ -71,7 +73,7 @@ $active_edit_site = $_SESSION['edit_site_id'];
 
 $page_title = "Sites";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 
 echo admin_navigation();
 
@@ -95,6 +97,12 @@ if ($_GET['create']) {
       </label>
       <label>
         Contact phone: <input type='text' name='contact_phone' required>
+      </label>
+      <label>
+        System email address: <input type='email' name='email_from_address' required>
+      </label>
+      <label>
+        System email name: <input type='name' name='email_from_name' required>
       </label>
       <label>
         WWW Domain: <input type='text' name='domain_www' required>
@@ -169,4 +177,4 @@ else {
     cached_file('js', '/js/sites.js');
 }
 
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

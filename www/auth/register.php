@@ -2,7 +2,7 @@
 
 $insecure = true;
 
-require $_SERVER['DOCUMENT_ROOT']."/inc/init.php";
+require __DIR__."/../inc/init.php";
 
 if ($me) {
   redirect("/");
@@ -47,13 +47,14 @@ else if ($_POST['email']) {
 }
 
 $page_title = "Register";
-require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
       <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
+      <h4>Register</h4>
       <form action='' method='post'>
         <p>
           <input name='name' type='text' placeholder="Name" value="<?= $_POST['name'] ?>" minlength='1' required>
@@ -87,8 +88,9 @@ require $_SERVER["DOCUMENT_ROOT"]."inc/head.php";
         data-size="large"
         data-logo_alignment="left">
       </div>
+      <div class='text-center'><small><a href='/privacy'>Privacy Policy</a></small></div>
       <?php $add_to_foot .= '<script src="https://accounts.google.com/gsi/client" async></script>'; ?>
     </div>
   </div>
 <?php
-require $_SERVER["DOCUMENT_ROOT"]."inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

@@ -5,7 +5,6 @@
 // 
 
 require __DIR__."/../www/inc/env.php";
-require __DIR__."/../www/inc/functions.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 

@@ -1,27 +1,4 @@
-CREATE TABLE `books`(
-  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT
-  ,
-  `name` varchar(32) NOT NULL
-  ,
-  `chapters` integer NOT NULL
-  ,
-  `testament` integer NOT NULL
-  ,
-  `abbreviations` longtext NOT NULL
-);
 CREATE TABLE sqlite_sequence(name,seq);
-CREATE TABLE verses(
-  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-  chapter_id integer NOT NULL,
-  number integer NOT NULL,
-  rcv text NOT NULL,
-  kjv text NOT NULL,
-  niv text NOT NULL,
-  esv text NOT NULL,
-  nlt text NOT NULL,
-  orig text NOT NULL,
-  asv TEXT
-);
 CREATE TABLE read_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
@@ -78,6 +55,71 @@ CREATE TABLE schedules(
   end_date TEXT,
   active INTEGER DEFAULT(0)
 );
+CREATE INDEX idx_chapters_book_id ON chapters(book_id);
+CREATE VIEW read_dates_dated AS SELECT rd.id, rd.user_id, u.name, rd.timestamp, DATETIME(rd.timestamp, 'unixepoch') date, sd.passage
+FROM read_dates rd
+JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
+JOIN users u ON rd.user_id = u.id
+ORDER BY rd.id DESC
+/* read_dates_dated(id,user_id,name,timestamp,date,passage) */;
+CREATE TABLE verses(
+  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  chapter_id integer NOT NULL,
+  number integer NOT NULL,
+  rcv text NOT NULL,
+  kjv text NOT NULL,
+  niv text NOT NULL,
+  esv text NOT NULL,
+  nlt text NOT NULL,
+  orig text NOT NULL,
+  asv TEXT,
+  word_count INTEGER
+);
+CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
+CREATE INDEX idx_verses_esv ON verses(esv);
+CREATE INDEX idx_verses_kjv ON verses(kjv);
+CREATE INDEX idx_verses_niv ON verses(niv);
+CREATE INDEX idx_verses_nlt ON verses(nlt);
+CREATE INDEX idx_verses_text ON verses(rcv);
+CREATE TABLE schedule_dates(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  schedule_id INTEGER,
+  date TEXT,
+  passage INTEGER,
+  passage_chapter_ids TEXT,
+  passage_chapter_readings TEXT,
+  complete_key TEXT
+);
+CREATE INDEX idx_schedule_id ON schedule_dates(schedule_id);
+CREATE INDEX idx_site_id ON users(site_id);
+CREATE INDEX idx_user_id ON read_dates(user_id);
+CREATE INDEX idx_schedule_date_id ON read_dates(schedule_date_id);
+CREATE INDEX idx_schedules_site_id ON schedules(site_id);
+CREATE INDEX idx_schedules_user_id ON schedules(user_id);
+CREATE INDEX idx_images_site_id ON images(site_id);
+CREATE TABLE books(
+  id integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name varchar(32) NOT NULL,
+  chapters integer NOT NULL,
+  testament integer NOT NULL,
+  abbreviations longtext NOT NULL,
+  word_count INTEGER
+);
+CREATE INDEX idx_books_name ON books(name);
+CREATE VIEW schedule_date_verses AS
+SELECT sd.id schedule_date_id, sd.schedule_id, sd.date, sd.passage, b.name || ' ' || c.number || ':' || v.number reference, b.id book_id, b.name book_name, c.id chapter_id, c.number chapter_number, c.verses, v.word_count, v.number verse_number, v.id verse_id, JSON_EXTRACT(je.value, '$.s') verse_start, JSON_EXTRACT(je.value, '$.e') verse_end, rcv, kjv, niv, esv, orig, asv 
+  FROM schedule_dates sd
+       JOIN
+       JSON_EACH(passage_chapter_readings) je
+       JOIN
+       chapters c ON c.id = je.value->>'$.id'
+       JOIN
+       verses v ON v.chapter_id = c.id
+       JOIN
+       books b ON b.id = c.book_id
+ WHERE v.number BETWEEN je.value->>'$.s' AND je.value->>'$.e'
+/* schedule_date_verses(schedule_date_id,schedule_id,date,passage,reference,book_id,book_name,chapter_id,chapter_number,verses,word_count,verse_number,verse_id,verse_start,verse_end,rcv,kjv,niv,esv,orig,asv) */;
+CREATE INDEX idx_users_websocket_nonce ON users(websocket_nonce);
 CREATE TABLE sites(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   enabled INTEGER DEFAULT(1),
@@ -90,47 +132,16 @@ CREATE TABLE sites(
   contact_name TEXT,
   contact_email TEXT,
   contact_phone TEXT,
+  email_from_address TEXT,
+  email_from_name TEXT,
   favico_image_id INTEGER,
   logo_image_id INTEGER,
   login_image_id INTEGER,
   progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'),
-color_primary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_secondary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_fade TEXT DEFAULT('rgb(0, 0, 0)'),
-default_emoji TEXT,
-reading_timer_wpm INTEGER DEFAULT(0),
-start_of_week INTEGER DEFAULT(1),
-time_zone_id TEXT DEFAULT('America/Chicago'),
-env TEXT,
-allow_personal_schedules INTEGER DEFAULT(0),
-translations TEXT DEFAULT ["rcv",
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(1), time_zone_id TEXT DEFAULT('America/Chicago'), env TEXT, allow_personal_schedules INTEGER DEFAULT(0), translations TEXT DEFAULT ["rcv",
   "kjv",
   "esv",
   "asv",
   "niv",
   "nlt"]
 );
-CREATE TABLE schedule_dates(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  schedule_id INTEGER,
-  date TEXT,
-  passage INTEGER,
-  passage_chapter_ids TEXT,
-  passage_chapter_verse_segments TEXT,
-  complete_key TEXT
-);
-CREATE INDEX "idx_books_name" ON "books"(`name`);
-CREATE INDEX idx_verses_chapter_id ON verses(chapter_id);
-CREATE INDEX idx_verses_esv ON verses(esv);
-CREATE INDEX idx_verses_kjv ON verses(kjv);
-CREATE INDEX idx_verses_niv ON verses(niv);
-CREATE INDEX idx_verses_nlt ON verses(nlt);
-CREATE INDEX idx_verses_text ON verses(rcv);
-CREATE INDEX idx_chapters_book_id ON chapters(book_id);
-CREATE VIEW read_dates_dated AS SELECT rd.id, rd.user_id, u.name, rd.timestamp, DATETIME(rd.timestamp, 'unixepoch') date, sd.passage
-FROM read_dates rd
-JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
-JOIN users u ON rd.user_id = u.id
-ORDER BY rd.id DESC
-/* read_dates_dated(id,user_id,name,timestamp,date,passage) */;

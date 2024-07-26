@@ -145,6 +145,12 @@ pre > code {
   white-space: pre;
   font-size: 1em;
 }
+mark {
+  background: var(--color-blossom);
+  color: var(--color-bg);
+  padding: 3px 4px;
+  border-radius: 3px;
+}
 
 /* Tables */
 table {
@@ -224,6 +230,15 @@ label, legend, fieldset {
   padding: 0 7px;
 }
 
+.flashing {
+  transition: all .1s;
+}
+.warning {
+  background: var(--color-warning);
+}
+.danger {
+  background: var(--color-danger);
+}
 .active { 
   background: var(--color-success) !important;
 }
