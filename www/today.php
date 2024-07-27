@@ -3,9 +3,8 @@
 require __DIR__."/inc/init.php";
 
 // this key is used by the websocket client to authenticate as the current user
-$db->update('users', [
-  'websocket_nonce' => $me['websocket_nonce'] = bin2hex(random_bytes(24))
-], 'id = '.$me['id']);
+$websocket_nonce = bin2hex(random_bytes(24));
+$redis->set_websocket_nonce($me['id'], $websocket_nonce);
 
 // set translation, update it if the select box changed
 
@@ -199,7 +198,7 @@ foreach($schedules as $i => $each_schedule) {
       </style>
       <script>
         const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
-        const WEBSOCKET_NONCE = '".$me['websocket_nonce']."'
+        const WEBSOCKET_NONCE = '$websocket_nonce'
       </script>".
       cached_file('js', '/js/client.js');
     }

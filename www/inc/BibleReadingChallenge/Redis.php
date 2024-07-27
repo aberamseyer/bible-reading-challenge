@@ -8,9 +8,13 @@ class Redis {
 	private \Predis\Client $client;
 	
 	const SITE_NAMESPACE = 'bible-reading-challenge:';
+	const SESSION_KEYSPACE = 'sessions/';	// session storage, keyed with session ids
+	const CONFIG_KEYSPACE = 'config/';		// 	the site config
+
+	// keyed by $user_id's
+	CONST STATS_NAMESPACE = 'user-stats/';
   const LAST_SEEN_KEYSPACE = 'last-seen/';
-	const SESSION_KEYSPACE = 'sessions/';
-	const CONFIG_KEYSPACE = 'config/';
+	const WEBSOCKET_NONCE_KEYSPACE = 'websocket-nonce/';
 
 	private $offline = false;
 
@@ -76,9 +80,29 @@ class Redis {
 		return $version;
 	}
 
+	/**
+	 * used by php to cache a user's appearance
+	 */
 	public function update_last_seen($id, $time): \Predis\Response\Status
 	{
-		return $this->client->set('last-seen/'.$id, $time);
+		return $this->client->set(Redis::LAST_SEEN_KEYSPACE.$id, $time);
+	}
+
+	/**
+	 * used by a daily cron to update each user's last_seen time
+	 */
+	public function get_last_seen($id): string|null
+	{
+		return $this->client->get(Redis::LAST_SEEN_KEYSPACE.$id);
+	}
+
+	public function set_websocket_nonce($id, $nonce)
+	{
+		$key = Redis::WEBSOCKET_NONCE_KEYSPACE.$nonce;
+		$this->client->set($key, $id);
+		$this->client->expire($key, 10);
+
+		return true;
 	}
 
 	public function user_iterator(): null|\Predis\Collection\Iterator\Keyspace {
