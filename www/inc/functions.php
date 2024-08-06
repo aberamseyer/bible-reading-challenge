@@ -664,7 +664,8 @@ function badges_html($badges) {
 }
 
 function last_read_attr($last_read) {
-	return "data-last-read='".($last_read ? date('Y-m-d', $last_read) : "2200-01-01")."'";
+	$date = $last_read ? date('Y-m-d', $last_read) : "2200-01-01";
+	return "data-last-read='$date' title='$date'";
 }
 
 function hex_to_rgb($hex) {

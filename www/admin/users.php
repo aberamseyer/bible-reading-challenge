@@ -102,7 +102,7 @@ require DOCUMENT_ROOT."inc/head.php";
   
 $user_id = (int)$_GET['user_id'];
 if ($user_id &&
-  ($stats = $site->user_stats($user_id, $redis)) &&
+  ($stats = $site->user_stats($user_id)) &&
   ($user = $db->row("SELECT * FROM users WHERE id = $user_id AND site_id = ".$site->ID))
 ) {
   // specific user's stats
@@ -324,9 +324,14 @@ else {
   else {
     echo "<p><small>No one has read every day this period.</small></p>";
   }
-      
-  $nine_mo = strtotime('-9 months');
+
   $all_users = $site->all_users($_GET['stale']);
+  foreach($all_users as &$user) {
+    $stats = $site->user_stats($user['id']);
+    $user['last_read'] = $stats['last_read_ts'];
+  }
+  unset($user);
+
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";

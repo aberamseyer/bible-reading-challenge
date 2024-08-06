@@ -542,9 +542,11 @@ class Site extends SiteRegistry {
   public function user_stats($user_id)
   {
     $redis = Redis::get_instance();
-    $timer = new PerfTimer();
     $stats = $redis->get_user_stats($user_id);
     if (!$stats) {
+      $timer = new PerfTimer();
+      $active_schedule = $this->get_active_schedule();
+      
       $user = $this->db->row("SELECT * FROM users WHERE id = $user_id");
       $timer->mark('user');
       $badges = badges_for_user($user_id);
@@ -581,31 +583,31 @@ class Site extends SiteRegistry {
       $on_target_perc = $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target_percent');
       $days_behind = 
-        $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$this->get_active_schedule()->ID." AND date <= '".date('Y-m-d')."'") - 
-        $this->db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$this->get_active_schedule()->ID." AND rd.user_id = $user_id");
+        $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$active_schedule->ID." AND date <= '".date('Y-m-d')."'") - 
+        $this->db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$active_schedule->ID." AND rd.user_id = $user_id");
       $timer->mark('days_behind');
 
       $stats = [
-        'last_seen' => $last_seen,
-        'last_read_ts' => $last_read_ts,
-        'chapters_ive_read' => $chapters_ive_read,
-        'words_ive_read' => $words_ive_read,
-        'deviation' => $deviation,
-        'on_target' => $on_target,
         'all_club_chapters_read' => $all_club_chapters_read,
         'all_club_words_read' => $all_club_words_read,
         'badges' => json_encode($badges),
         'challenge_percent' => 0,
-        'progress_graph_data' => json_encode($progress_graph_data),
+        'chapters_ive_read' => $chapters_ive_read,
+        'days_behind' => $days_behind,
+        'deviation' => $deviation,
+        'last_seen' => $last_seen,
+        'last_read_ts' => $last_read_ts,
+        'on_target' => $on_target,
         'on_target_percent' => $on_target_perc,
-        'days_behind' => $days_behind
+        'progress_graph_data' => json_encode($progress_graph_data),
+        'words_ive_read' => $words_ive_read,
       ];
 
-      $total_words_in_schedule = $this->get_active_schedule()->total_words_in_schedule();
+      $total_words_in_schedule = $active_schedule->total_words_in_schedule();
       if ($total_words_in_schedule) {
         // challenge percent can only happen when a schedule has words
-        $stats['challenge_percent'] = $this->words_read($user, $this->get_active_schedule()->ID) / $total_words_in_schedule * 100;
-        $timer->mark('progress');
+        $stats['challenge_percent'] = $this->words_read($user, $active_schedule->ID) / $total_words_in_schedule * 100;
+        $timer->mark('challenge_percent');
       }
 
       $redis->set_user_stats($user_id, $stats);

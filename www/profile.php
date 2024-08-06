@@ -47,14 +47,14 @@ else {
 }
 echo "</div>";
 
-$stats = $site->user_stats($me['id'], $redis);
+$stats = $site->user_stats($me['id']);
 echo "
   <div class='two-columns'>
     <div>
       <h5>My Stats</h5>
       <ul>
-        <li>Current Challenge progress: <b>".($stats['progress'] ? round($stats['progress'], 2) : '-')."%</b></li>
-        <li>Current / Longest streak: <b>$me[streak] day".xs($stats['streak'])."</b> / <b>$stats[max_streak] day".xs($stats['max_streak'])."</b></li>
+        <li>Current Challenge progress: <b>".($stats['challenge_percent'] ? round($stats['challenge_percent'], 2) : '-')."%</b></li>
+        <li>Current / Longest streak: <b>$me[streak] day".xs($me['streak'])."</b> / <b>$me[max_streak] day".xs($me['max_streak'])."</b></li>
         <li>Chapters I've read: <b>".number_format($stats['chapters_ive_read'])."</b></li>
         <li>Words I've read: <b>".number_format($stats['words_ive_read'])."</b></li>
       </ul>
