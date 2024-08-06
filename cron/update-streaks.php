@@ -20,7 +20,7 @@ foreach($db->cols("SELECT id FROM sites") as $site_id) {
   $schedule = $site->get_active_schedule();
 
   $yesterday = new Datetime('@'.strtotime('yesterday'), $site->TZ);
-  $scheduled_reading = $schedule->get_reading($yesterday);
+  $scheduled_reading = $schedule->get_schedule_date($yesterday);
 
   if ($scheduled_reading) {
     foreach($db->select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {

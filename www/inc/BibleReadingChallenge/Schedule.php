@@ -7,22 +7,24 @@ class Schedule {
   private readonly array $data;
   private readonly bool $private;
   private readonly Database $db;
-  private readonly array $schedule_days;
   private array $just_completed_arr;
-  private array $day_completed_arr;
 
-  public function __construct($id_or_private=false)
+  /**
+   * @param site_id       int         required. the site for the schedule
+   * @param id_or_private bool|int    optional. if an int is passed, it should be the id for a schedule
+   *                                  if TRUE is passed, the third parameter must be passed, and it implies the user's active schedule
+   * @param user_id       bool|int    the id of the user for the schedule to get
+   */
+  public function __construct(int $site_id, $id_or_private=false, $user_id=false)
   {
-    global $me, $site;
-
     $this->db = Database::get_instance();
     if (is_bool($id_or_private)) {
       $data = $id_or_private
-        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".((int)$me['id'])." AND active = 1 AND site_id = ".$site->ID)
-        : $this->db->row("SELECT * FROM schedules WHERE user_id IS NULL AND active = 1 AND site_id = ".$site->ID);
+        ? $this->db->row("SELECT * FROM schedules WHERE user_id = ".((int)$user_id)." AND active = 1 AND site_id = ".$site_id)
+        : $this->db->row("SELECT * FROM schedules WHERE user_id IS NULL AND active = 1 AND site_id = ".$site_id);
     }
     else { // id was passed as an int/string, not a boolean
-      $data = $this->db->row("SELECT * FROM schedules WHERE id = ".((int)$id_or_private)." AND site_id = ".$site->ID);
+      $data = $this->db->row("SELECT * FROM schedules WHERE id = ".((int)$id_or_private)." AND site_id = ".$site_id);
     }
     if ($data) {
       $this->data = $data;
@@ -34,7 +36,6 @@ class Schedule {
       $this->ID = 0;
     }
     $this->just_completed_arr = [];
-    $this->day_completed_arr = [];
   }
 
   public function data($key)
@@ -324,7 +325,7 @@ class Schedule {
           }
           fclose($fp2);
           $total_days_to_fill = count($days);
-          $lines_per_day = floor($lines / $total_days_to_fill);
+          $lines_per_day = floor($total_days_to_fill ? $lines / $total_days_to_fill : 0);
           $remainder = 0;
           if ($lines % $total_days_to_fill) {
             $remainder = $lines % $total_days_to_fill;
@@ -411,10 +412,13 @@ class Schedule {
       if ($day['id'] && $day['passage']) {
         // update
         $passages = parse_passages($day['passage']);
+        $passage_readings = parsed_passages_to_passage_readings($passages);
+        
 
         $this->db->update("schedule_dates", [
           'passage' => $day['passage'],
-          'passage_chapter_readings' => json_encode(parsed_passages_to_passage_readings($passages))
+          'passage_chapter_readings' => json_encode($passage_readings),
+          'word_count' => passage_readings_word_count($passage_readings)
         ], "schedule_id = ".$this->ID." AND id = ".(int)$day['id']);
       }
       else if ($day['id'] && !$day['passage']) {
@@ -432,12 +436,15 @@ class Schedule {
       else if (!$day['id'] && $day['passage']) {
         // insert
         $passages = parse_passages($day['passage']);
+        $passage_readings = parsed_passages_to_passage_readings($passages);
+        $word_count = passage_readings_word_count($passage_readings);
 
         create_schedule_date(
           $this->ID,
           $date,
           $day['passage'],
-          parsed_passages_to_passage_readings($passages)
+          parsed_passages_to_passage_readings($passages),
+          $word_count
         );
       }
     }
@@ -491,11 +498,13 @@ class Schedule {
       // site-wide schedules
       $this->db->query("UPDATE schedules SET active = 0 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']);
       $this->db->query("UPDATE schedules SET active = 1 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
+      Site::get_site($this->data('site_id'))->invalidate_stats();
     }
     else {
-      // site-wide schedules
+      // private schedules
       $this->db->query("UPDATE schedules SET active = 0 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']);
       $this->db->query("UPDATE schedules SET active = 1 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
+      Site::get_site($this->data('site_id'))->invalidate_stats($this->data('user_id'));
     }
   }
 
@@ -525,7 +534,7 @@ class Schedule {
       SELECT id FROM schedules
       WHERE user_id IS NULL AND site_id = ".intval($site_id)."
       ORDER BY active DESC, start_date DESC") as $id) {
-        $schedules[] = new Schedule((int)$id);
+        $schedules[] = new Schedule((int)$site_id, (int)$id);
     }
     return $schedules;
   }
@@ -543,7 +552,7 @@ class Schedule {
         site_id = ".intval($site_id)."
       ORDER BY active DESC, start_date DESC
       ") as $id) {
-      $schedules[] = new Schedule((int)$id);
+      $schedules[] = new Schedule((int)$site_id, (int)$id);
     }
     return $schedules;
   }
@@ -554,8 +563,8 @@ class Schedule {
     if ($total_words == null) {
       $total_words = (int)$this->db->col("
         SELECT SUM(word_count)
-        FROM schedule_date_verses sdv
-        WHERE sdv.schedule_id = ".$this->ID);
+        FROM schedule_dates sd
+        WHERE sd.schedule_id = ".$this->ID);
     }
 
     return $total_words;
@@ -592,43 +601,44 @@ class Schedule {
 
   public function emoji_data($for_user_id=null, $start_timestamp=null, $end_timestamp=null)
   {
+    $days_in_schedule = $this->total_words_in_schedule();
+    if (!$days_in_schedule) {
+      return [];
+    }
     $query = "
-    SELECT ROUND(SUM(sdv.word_count) * 1.0 / ".$this->total_words_in_schedule()." * 100, 2) percent_complete, u.emoji, u.id, u.name
-    FROM schedule_date_verses sdv
-    JOIN read_dates rd ON sdv.schedule_date_id = rd.schedule_date_id
-    JOIN users u ON u.id = rd.user_id
-    WHERE sdv.schedule_id = ".$this->ID." AND %s
-    GROUP BY u.id
-    ORDER BY
-      %s
-    LIMIT 20";
+      SELECT ROUND(SUM(sd.word_count) * 1.0 / $days_in_schedule * 100, 2) percent_complete, u.emoji, u.id, u.name
+      FROM schedule_dates sd
+      JOIN read_dates rd ON sd.id = rd.schedule_date_id
+      JOIN users u ON u.id = rd.user_id
+      WHERE sd.schedule_id = ".$this->ID." AND %s
+      GROUP BY u.id
+      ORDER BY
+        %s
+      LIMIT 20";
     
     return $this->db->select(
       $for_user_id
         ? sprintf($query,
             "1",
             "CASE WHEN u.id = $for_user_id THEN 9999999999 -- sort me first, then the top readers
-            ELSE COUNT(*)
+            ELSE percent_complete
             END DESC")
         : sprintf($query, 
-            "$start_timestamp <= rd.timestamp AND rd.timestamp < $end_timestamp",
-            "COUNT(*) DESC, RANDOM()")
+            "rd.timestamp BETWEEN $start_timestamp AND $end_timestamp",
+            "percent_complete DESC")
     );
   }
 
-	/**
-	 * returns one element from the array returned by get_schedule_days($schedule_id)
-	 */
-	public function get_reading($datetime)
+  public function get_next_reading(\DateTime $after_date)
   {
-		$days = $this->get_schedule_days();
-		$today = $datetime->format('Y-m-d');
-		foreach($days as $day) {
-			if ($day['date'] == $today)
-				return $day;
-		}
-		return false;
-	}
+    $next_date = $this->db->col("
+      SELECT date
+      FROM schedule_dates
+      WHERE date > '".$after_date->format('Y-m-d')."'");
+    return $next_date ?
+      $this->get_schedule_date(new \DateTime($next_date))
+      : false;
+  }
 
 	/**
 	 * [
@@ -648,35 +658,38 @@ class Schedule {
 	 * 		...
 	 * ]
 	 */
-	public function get_schedule_days()
+	public function get_schedule_date(\DateTime $specific_date)
   {
-    if (!isset($this->schedule_days)) {
-      $schedule_dates = $this->db->select("
-        SELECT * FROM schedule_dates 
-        WHERE schedule_id = ".$this->ID."
-        ORDER BY date ASC");
-      $days = [];
-      foreach ($schedule_dates as $sd) {			
-        $days[] = [
-          'id' => $sd['id'],
-          'date' => $sd['date'],
-          'reference' => $sd['passage'],
-          'passages' => Site::get_site($this->data('site_id'))->parse_passage_from_json($sd['passage_chapter_readings']),
-          'complete_key' => $sd['complete_key']
-        ];
-      }
-      $this->schedule_days = $days;
+    $sd = $this->db->row("
+      SELECT *
+      FROM schedule_dates 
+      WHERE schedule_id = ".$this->ID."
+        AND date = '".$specific_date->format('Y-m-d')."'
+      ORDER BY date ASC");
+    $day = false;
+    if ($sd) {
+      $day = [
+        'id' => $sd['id'],
+        'date' => $sd['date'],
+        'reference' => $sd['passage'],
+        'passages' => Site::get_site($this->data('site_id'))->parse_passage_from_json($sd['passage_chapter_readings']),
+        'complete_key' => $sd['complete_key']
+      ];
     }
-
-		return $this->schedule_days;
+    return $day;
 	}
 
-	public function completed($user_id)
+  public function days_in_schedule()
   {
-    $days_in_schedule = $this->db->col("
+    return $this->db->col("
       SELECT COUNT(*)
       FROM schedule_dates
       WHERE schedule_id = ".$this->ID);
+  }
+
+	public function completed($user_id)
+  {
+    $days_in_schedule = $this->days_in_schedule();
 
     return $days_in_schedule > 0 && $days_in_schedule == $this->db->col("
       SELECT COUNT(*)
@@ -697,14 +710,11 @@ class Schedule {
 
   public function day_completed($user_id, $scheduled_reading_id)
   {
-    if (!isset($this->day_completed_arr[ $user_id ])) {
-      $this->day_completed_arr[ $user_id ] = $this->db->num_rows("
-        SELECT id
-        FROM read_dates
-        WHERE schedule_date_id = $scheduled_reading_id
-          AND user_id = $user_id");
-    }
-    return $this->day_completed_arr[ $user_id ];
+    return $this->db->num_rows("
+      SELECT id
+      FROM read_dates
+      WHERE schedule_date_id = $scheduled_reading_id
+        AND user_id = $user_id");
   }
 
   public static function create_schedule_form()
@@ -778,6 +788,10 @@ class Schedule {
       $this->edit($_POST['days']);
 
       $_SESSION['success'] = 'Schedule saved';
+
+      // all users affected by this schedule need to have their stats invalidated
+      Site::get_site($this->data('site_id'))->invalidate_stats($for_user_id);
+
       redirect('?calendar_id='.$this->ID);
     }
   }

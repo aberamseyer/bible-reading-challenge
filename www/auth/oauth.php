@@ -16,6 +16,7 @@ else {
     $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
+      // oauth makes the email already verified, so no email sent or verify key cached
       $ret = $site->create_user($payload['email'], $payload['name']);
       $_SESSION['success'] = "Welcome to the challenge!";
     }
@@ -29,7 +30,7 @@ else {
       }
       $_SESSION['success'] = "Welcome back!";
     }
-
+    
     log_user_in($id);
   }
 }

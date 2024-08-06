@@ -1,0 +1,14 @@
+[Unit]
+Description=PHP Task Queue Manager
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/php /home/bible-reading-challenge/task-queue/manager.php
+Restart=always
+User=www-data
+Group=www-data
+Environment=PATH=/usr/bin:/usr/local/bin
+WorkingDirectory=/home/bible-reading-challenge/task-queue
+
+[Install]
+WantedBy=multi-user.target

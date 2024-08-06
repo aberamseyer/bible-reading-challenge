@@ -12,6 +12,6 @@ test.sql
 **/img/upload-*
 
 # sqlite and redis data
-brc.db
+brc.db*
 dump.rdb
 sessions.db

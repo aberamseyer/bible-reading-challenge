@@ -4,7 +4,7 @@
 // Adds random completion keys to all the rows in schedule_dates
 // 
 
-require __DIR__."/.../www/inc/env.php";
+require __DIR__."/../www/inc/env.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 

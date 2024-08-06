@@ -5,10 +5,12 @@
     redirect('/my-schedule/corporate');
   }
 
-  $editing_schedule = new BibleReadingChallenge\Schedule($_POST['schedule_id'] ?: $_REQUEST['calendar_id'] ?: $_GET['edit']);
+  $editing_schedule = new BibleReadingChallenge\Schedule(
+    $site->ID,
+    $_POST['schedule_id'] ?: $_REQUEST['calendar_id'] ?: $_GET['edit']);
   if ($editing_schedule->data('user_id') != $me['id']) {
     // no cheating
-    $editing_schedule = new BibleReadingChallenge\Schedule(true);
+    $editing_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $me['id']);
   }
 
   if ($editing_schedule && $_POST['schedule_id']) {

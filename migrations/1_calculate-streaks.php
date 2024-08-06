@@ -37,7 +37,7 @@ foreach($db->cols("SELECT * FROM sites") as $site_id) {
   foreach($period as $day) {
     $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')), $site->TZ);
     
-    $scheduled_reading = $schedule->get_reading($yesterday);
+    $scheduled_reading = $schedule->get_schedule_date($yesterday);
   
     if ($scheduled_reading) {
       foreach($db->select("SELECT * FROM users WHERE site_id = ".$site->ID) as $user) {

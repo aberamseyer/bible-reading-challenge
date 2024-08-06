@@ -10,8 +10,8 @@ const compareRows = (a, b, currentSortColumn) => {
   else if (column === "behind") {
     return parseInt(tdA.getAttribute('data-behind')) < parseInt(tdB.getAttribute('data-behind')) ? 1 : -1
   }
-  else if (column === "streak") {
-    return parseInt(tdA.getAttribute('data-streak')) > parseInt(tdB.getAttribute('data-streak')) ? 1 : -1
+  else if (column === "target") {
+    return parseFloat(tdA.getAttribute('data-target')) > parseFloat(tdB.getAttribute('data-target')) ? 1 : -1
   }
   else if (column === 'progress') {
     return parseFloat(tdA.getAttribute('data-progress')) > parseFloat(tdB.getAttribute('data-progress')) ? 1 : -1

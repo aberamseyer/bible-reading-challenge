@@ -1,10 +1,11 @@
 <?php
 
-error_reporting(E_ALL^E_NOTICE^E_WARNING^E_DEPRECATED);
+define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
+
+error_reporting(PROD ? 0 : E_ALL^E_NOTICE^E_WARNING);
 
 require_once __DIR__."/functions.php";
 
-define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 define('CLI', php_sapi_name() === 'cli');
 define('DOCUMENT_ROOT', __DIR__."/../");
 define('DB_FILE', DOCUMENT_ROOT."/../brc.db");

@@ -12,9 +12,13 @@ class Redis {
 	const CONFIG_KEYSPACE = 'config/';		// 	the site config
 
 	// keyed by $user_id's
-	CONST STATS_NAMESPACE = 'user-stats/';
+	CONST STATS_KEYSPACE = 'user-stats/';
   const LAST_SEEN_KEYSPACE = 'last-seen/';
 	const WEBSOCKET_NONCE_KEYSPACE = 'websocket-nonce/';
+	CONST VERIFY_EMAIL_KEYSPACE = 'email-verify/';
+	const FORGOT_PASSWORD_KEYSPACE = 'forgot-password/';
+	const STATS_QUEUE = 'stats-queue';
+	const STATS_PROCESSING_SET = 'stats-queue-processing';
 
 	private $offline = false;
 
@@ -25,7 +29,7 @@ class Redis {
 				'host' => '127.0.0.1',
 				'port' => '6379',
 				'timeout' => 1,
-				'read_write_timeout' => 1,
+				'read_write_timeout' => 0,
 				'persistent' => true
 			], [ 'prefix' => Redis::SITE_NAMESPACE ]);
 			$this->client->connect();
@@ -81,6 +85,22 @@ class Redis {
 	}
 
 	/**
+	 * call this after calculating the stats of a user when stats are not found
+	 */
+	public function cache_stats($id, $stats)
+	{
+		return $this->client->hmset(Redis::STATS_KEYSPACE.$id, $stats);
+	}
+
+	/**
+	 * call this when stat-changing things are done (i.e, a user read something)
+	 */
+	public function flush_stats($id)
+	{
+		return $this->client->del(Redis::STATS_KEYSPACE.$id);
+	}
+
+	/**
 	 * used by php to cache a user's appearance
 	 */
 	public function update_last_seen($id, $time): \Predis\Response\Status
@@ -105,12 +125,95 @@ class Redis {
 		return true;
 	}
 
-	public function user_iterator(): null|\Predis\Collection\Iterator\Keyspace {
-		return $this->client()
+	public function user_iterator(): null|\Predis\Collection\Iterator\Keyspace
+	{
+	return $this->client()
 			? new \Predis\Collection\Iterator\Keyspace(
 					$this->client,
 					Redis::SITE_NAMESPACE.Redis::LAST_SEEN_KEYSPACE.'*')
 			: null;
-		
+	}
+
+	public function stats_iterator(): null|\Predis\Collection\Iterator\Keyspace
+	{
+		return $this->client()
+			? new \Predis\Collection\Iterator\Keyspace(
+					$this->client,
+					Redis::SITE_NAMESPACE.Redis::STATS_KEYSPACE.'*')
+			: null;
+	}
+
+	public function set_verify_email_key($user_id, $key)
+	{
+		return $this->client->set(Redis::VERIFY_EMAIL_KEYSPACE.$user_id, $key);
+	}
+
+	public function get_verify_email_key($user_id)
+	{
+		return $this->client->get(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
+	}
+
+	public function delete_verify_email_key($user_id)
+	{
+		return $this->client->del(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
+	}
+
+	public function set_forgot_password_token($user_id, $key)
+	{
+		return $this->client->set(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id, $key);
+	}
+
+	public function get_forgot_password_token($user_id)
+	{
+		return $this->client->get(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id) ?: false;
+	}
+
+	public function delete_forgot_password_token($user_id)
+	{
+		return $this->client->del(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id);
+	}
+
+
+  public function set_user_stats($user_id, $stats)
+  {
+    return $this->client->hmset(Redis::STATS_KEYSPACE.$user_id, $stats);
+  }
+
+	public function get_user_stats($user_id)
+	{
+		return $this->client->hgetall(Redis::STATS_KEYSPACE.$user_id) ?: [];
+	}
+
+	public function delete_stats($site_id, $user_id)
+	{
+		$retval = $this->client->del(Redis::STATS_KEYSPACE.$user_id);
+		$this->enqueue_stats($site_id, $user_id);
+		return $retval;
+	}
+
+	public function enqueue_stats($site_id, $user_id)
+	{
+		return $this->client->lpush(Redis::STATS_QUEUE, $site_id."|".$user_id);
+	}
+
+	/**
+	 * a stats job is defined as a user id and site id in a string: "site_id|user_id"
+	 */
+	public function dequeue_stats()
+	{
+		list($set_key, $stats_job) = $this->client->brpop(Redis::STATS_QUEUE, 0);
+		if ($this->client->sismember(Redis::STATS_PROCESSING_SET, $stats_job)) {
+			// stats got double-queued and is already being processed, so don't duplicate the work
+			throw new \Exception("double-queued job: $stats_job");
+		}
+		else {
+			$this->client->sadd(Redis::STATS_PROCESSING_SET, $stats_job);
+			return $stats_job;
+		}
+	}
+
+	public function stats_job_finished($job)
+	{
+		return $this->client->srem(Redis::STATS_PROCESSING_SET, $job);
 	}
 }

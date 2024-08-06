@@ -9,6 +9,7 @@
 	require_once __DIR__."/BibleReadingChallenge/Database.php";
 	require_once __DIR__."/BibleReadingChallenge/Redis.php";
 	require_once __DIR__."/BibleReadingChallenge/Schedule.php";
+	require_once __DIR__."/BibleReadingChallenge/PerfTimer.php";
 
 	function html ($str, $lang_flag = ENT_HTML5) {
 		return htmlspecialchars($str, ENT_QUOTES|$lang_flag);
@@ -337,16 +338,6 @@
 				$count
 			);
 			if ($count) {
-				// debug(
-				// 	$replacer_strings[$i],
-				// 	$replacement_strings[$i], 
-				// 	$reference, 
-				// 	1, 
-				// 	$count,
-				// 	$reference_formatted,
-				// 	preg_match(BOOKS_RE, $reference_formatted, $matches),
-				// 	$matches
-				// );
 				break;
 			}
 		}
@@ -487,6 +478,22 @@
 		return $passages;
 	}
 
+	/** 
+	 * calculate the number of words in a passage reading based on the chapter id, start verse, and end verse
+	 */
+	function passage_readings_word_count($passage_readings) {
+		$word_count = 0;
+		$db = \BibleReadingChallenge\Database::get_instance();
+		foreach($passage_readings as $pr) {
+			$word_count += (int)$db->col("
+				SELECT SUM(v.word_count)
+					FROM verses v
+					JOIN chapters c ON c.id = v.chapter_id
+					WHERE c.id = $pr[id] AND v.number BETWEEN $pr[s] AND $pr[e]");
+		}
+		return $word_count;
+	}
+
 	/**
 	 * @param $parsed_passages	array		the return value of parse_passages()
 	 * @return array expected value to go into the db schedule_dates.passage_chapter_readings
@@ -522,39 +529,38 @@ function help($tip) {
 
 function four_week_trend_canvas($user_id) {
 	$data = json_encode(four_week_trend_data($user_id));
-	return "<canvas title='$data' data-graph='$data' width='200' style='margin: auto;'></canvas>";
+	return "<canvas data-graph='$data' width='200' style='margin: auto;'></canvas>";
 }
 
 function four_week_trend_data($user_id) {
 	$site = BibleReadingChallenge\Site::get_site();
-	$db = BibleReadingChallenge\Database::get_instance();
 	// reach back 5 weeks so that we don't count the current week in the graph
-	$weeks = 4;
-	$values = $db->select("
-		SELECT COALESCE(count, 0) count, day_start
+	$WEEKS = 4;
+	$values = BibleReadingChallenge\Database::get_instance()->select("
+		SELECT sd.day_start, COALESCE(count, 0) count
 		FROM (
-			-- generates last $weeks weeks to join what we read to
+			-- generates last $WEEKS weeks to join what we read to
 			WITH RECURSIVE week_sequence AS (
 				SELECT
-					date('now', '".$site->TZ_OFFSET." hours') AS cdate
+					DATE('now', '".$site->TZ_OFFSET." hours', '-7 days', 'weekday 0') AS cdate
 				UNION ALL
-				SELECT date(cdate, '-7 days')
+				SELECT DATE(cdate, '-7 days')
 				FROM week_sequence
-				LIMIT ".($weeks+1)."
+				LIMIT $WEEKS
 			)
-			SELECT strftime('%Y-%W', cdate) AS week, strftime('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
+			SELECT STRFTIME('%Y-%W', cdate) AS week, STRFTIME('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
 		) sd
 		LEFT JOIN (
 			-- gives the number of days we have read each week
-			SELECT strftime('%Y-%W', sd.date) AS week, COUNT(rd.user_id) count
+			SELECT STRFTIME('%Y-%W', DATE(sd.date, '-7 days', 'weekday 0')) AS week, COUNT(rd.user_id) count
 			FROM read_dates rd
 			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
 			WHERE user_id = $user_id
 			GROUP BY week
 		) rd ON rd.week = sd.week
-		WHERE sd.week >= strftime('%Y-%W', DATE('now', '-".(($weeks+1)*7)." days', '".$site->TZ_OFFSET." hours'))
+		WHERE sd.week >= STRFTIME('%Y-%W', DATE('now', '".$site->TZ_OFFSET." hours', '-7 days', 'weekday 0', '-".($WEEKS*7)." days'))
 		ORDER BY sd.week ASC
-		LIMIT $weeks");
+		LIMIT $WEEKS");
 		return array_column($values, 'count', 'day_start');
 }
 
@@ -717,14 +723,15 @@ function chartjs_js() {
 		cached_file('js', '/js/lib/chart.inc.js');
 }
 
-function create_schedule_date($schedule_id, $date, $passage, $passage_readings) {
+function create_schedule_date($schedule_id, $date, $passage, $passage_readings, $word_count) {
 	$db = BibleReadingChallenge\Database::get_instance();
 	$db->insert("schedule_dates", [
 		'schedule_id' => $schedule_id,
 		'date' => $date,
 		'passage' => $passage,
 		'passage_chapter_readings' => json_encode($passage_readings),
-		'complete_key' => bin2hex(random_bytes(16))
+		'complete_key' => bin2hex(random_bytes(16)),
+		'word_count' => $word_count
 	]);
 }
 

@@ -113,7 +113,8 @@ function initFourWeekTrendChart(element, labels, values) {
         data: values,
         fill: false,
         tension: 0.5,
-        borderColor: gradient
+        borderColor: gradient,
+        pointStyle: false
       }]
     },
     options: {

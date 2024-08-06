@@ -100,43 +100,39 @@ $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require DOCUMENT_ROOT."inc/head.php";
   echo admin_navigation();
   
-if ($_GET['user_id'] &&
-  $user = $db->row("
-    SELECT * FROM users
-    WHERE site_id = ".$site->ID." AND id = ".intval($_GET['user_id'])."
-    ORDER BY name DESC")
+$user_id = (int)$_GET['user_id'];
+if ($user_id &&
+  ($stats = $site->user_stats($user_id, $redis)) &&
+  ($user = $db->row("SELECT * FROM users WHERE id = $user_id AND site_id = ".$site->ID))
 ) {
   // specific user's stats
-  $deviation = $site->deviation_for_user($user['id']);
-  $on_target = $site->on_target_for_user((int)$user['id']);
-  
+
   echo "<p>".back_button("Back")."</p>";
   echo "<h5>Edit ".html($user['name'])."</h5>";
   echo "<p>Email: <b>".html($user['email'])."</b><br>";
   echo "Joined: <b>".date('F j, Y \a\t g:ia', $user['date_created'])."</b><br>";
-  echo "Last seen: <b>".($user['last_seen'] ? date('F j, Y \a\t g:ia', $user['last_seen']) : "N/A")."</b><br>";
-  $last_read_ts = $db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
-  echo "Last read: <b>".($last_read_ts ? date('F j, Y \a\t g:ia', $last_read_ts) : "N/A")."</b><br>";
+  echo "Last seen: <b>".($stats['last_seen'] ? date('F j, Y \a\t g:ia', $stats['last_seen']) : "N/A")."</b><br>";
+  echo "Last read: <b>".($stats['last_read_ts'] ? date('F j, Y \a\t g:ia', $stats['last_read_ts']) : "N/A")."</b><br>";
   echo "Current Streak / Longest Streak: <b>".$user['streak']."</b> day".xs($user['streak'])." / <b>".$user['max_streak']."</b> day".xs($user['max_streak'])."<br>";
-  echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$deviation."</b><br>";
-  echo "Percentage On-target days ".help('The percentage of days that were recorded on the day that they were scheduled').": <b>".$on_target."</b>";
-  echo badges_html(badges_for_user($user['id']))."</p>";
+  echo "Consistency (lower is better) ".help('Standard deviation of average days read per week').": <b>".$stats['deviation']."</b><br>";
+  echo "Percentage On-target days ".help('The percentage of days that were recorded on the day that they were scheduled').": <b>".round($stats['on_target'], 2)." %</b>";
+  echo badges_html($stats['badges'])."</p>";
   echo "<p>
   <div class='two-columns'>
     <div>
       <h6 class='text-center'>Progress</h6>
-     ".$site->progress_canvas($user['id'])."
+     ".$site->progress_canvas($stats['progress_graph_data'])."
     </div>
     <div>
-      <h6 class='text-center'>Days read each week</h6>
-      ".$site->weekly_progress_canvas($user['id'])."
+      <h6 class='text-center'>Days read each week ".help("This number includes days read in personal schedules")."</h6>
+      ".$site->weekly_progress_canvas($user_id)."
     </div>
   </div>
   <br>
   <form method='post'>
     <fieldset>
       <legend>Edit Account</legend>
-      <input type='hidden' name='user_id' value='$user[id]'>
+      <input type='hidden' name='user_id' value='$user_id'>
       <label>Name <input type='text' name='name' minlength='1' value='".html($user['name'])."'></label>
       <div>
         <label><input type='checkbox' name='email_verses' value='1' ".($user['email_verses'] ? 'checked' : '').">&nbsp;&nbsp;Email Verses</label>
@@ -285,7 +281,8 @@ else {
       $i++;
   }
   echo "</optgroup>"; // this is a bug if the schedule ends at the start of the year
-  echo "</select>";
+  echo "</select>
+    </form>";
 
   $this_week = [
     [ $last_beginning,                                        substr($WEEK_ARR[ (int)$last_beginning->format('N') ], 0, 1) ],
@@ -352,10 +349,10 @@ else {
             Emails
           </th>
           <th data-sort='trend'>
-            4-week trend ".help("This is based on Mon-Sun reading, not counting this week, irrespective of what reading schedule or week is selected")."
+            4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule (personal or corporate) or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This chart always begins with \"last $starting_day_of_week\"")."
+            Read this period ".help("This relates to the corporate schedule, beginning with \"last $starting_day_of_week\"")."
           </th>
         </tr>
         </thead>

@@ -16,15 +16,12 @@ if ($_POST['email']) {
   }
   else {
     $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($_POST['email'])."' AND email_verified = 1");
-    if ($user_row['forgot_password_expires'] && time() <= date('U', $user_row['forgot_password_expires'])) {
+    if ($redis->get_forgot_password_token($user_row['id'])) {
       $_SESSION['error'] = "Email already sent.";
     }
     else if ($user_row) {
       $reset_token = uniqid("", true).uniqid("", true);
-      $db->update("users", [
-        'forgot_password_token' => $reset_token,
-        'forgot_password_expires' => time() + 60 * 60 * 2 // expires in two hours
-      ], "id = ".$user_row['id']);
+      $redis->set_forgot_password_token($user_row['id'], $reset_token);
       $site->send_forgot_password_email($user_row['email'], SCHEME."://".$site->DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
       $_SESSION['success'] = "Email sent!";
     }
@@ -38,34 +35,38 @@ if ($_POST['email']) {
 else if ($_REQUEST['reset']) {
   // check password reset link
   $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND uuid = '".$db->esc($_REQUEST['reset'])."' AND email_verified = 1");
-  if (!$user_row || $user_row['forgot_password_token'] != $_REQUEST['key']) {
+  if (!$user_row) {
     $_SESSION['error'] = "Invalid reset link.";
   }
   else {
-    // show form for new password
-    if ($_POST['password']) {
-      if ($_POST['password'] != $_POST['password_confirm']) {
-        $_SESSION['error'] = "Passwords did not match.";
-      }
-      else if (strlen($_POST['password']) < 8) {
-        $_SESSION['error'] = "Password too short.";
-      }
-      else if (time() > date('U', $user_row['forgot_password_expires'])) {
-        $_SESSION['error'] = "Password reset link expired.";
-      }
-      else {
-        $db->update("users", [
-          'password' => password_hash($_POST['password'], PASSWORD_BCRYPT),
-          'forgot_password_token' => '',
-          'forgot_password_expires' => ''
-        ], "id = ".$user_row['id']);
-        $_SESSION['success'] = "Welcome back";
-        log_user_in($user_row['id']);
-      }
+    $token = $redis->get_forgot_password_token($user_row['id']);
+    if ($token !== $_REQUEST['key']) {
+      $_SESSION['error'] = "Invalid reset link.";
     }
     else {
-      if (time() > date('U', $user_row['forgot_password_expires'])) {
-        $_SESSION['error'] = "Password reset link expired.";
+      // show form for new password
+      if ($_POST['password']) {
+        if ($_POST['password'] != $_POST['password_confirm']) {
+          $_SESSION['error'] = "Passwords did not match.";
+        }
+        else if (strlen($_POST['password']) < 8) {
+          $_SESSION['error'] = "Password too short.";
+        }
+        else {
+          $db->update("users", [
+            'password' => password_hash($_POST['password'], PASSWORD_BCRYPT)
+          ], "id = ".$user_row['id']);
+          $redis->delete_forgot_password_token($user_row['id']);
+
+          $_SESSION['success'] = "Welcome back";
+          log_user_in($user_row['id']);
+        }
+
+        if ($_SESSION['error']) {
+          // on error, redirect to same page to show form again:
+          redirect('?'.http_build_query(['reset' => $_POST['reset'], 'key' => $_POST['key']]));
+        }
+
       }
       else {
         $page_title = "Reset Password";
@@ -94,7 +95,7 @@ else if ($_REQUEST['reset']) {
             </div>
           </div>
         <?php
-        require __DIR__."/..inc/foot.php";
+        require DOCUMENT_ROOT."inc/foot.php";
         die;
       }
     }
@@ -112,7 +113,7 @@ require DOCUMENT_ROOT."inc/head.php";
     <div>
       <h4>Forgot Password</h4>
       <p></p>
-      <p>Or <a href='login'>log in</a> here.</p>
+      <p>Or <a href='login'>log in here</a>.</p>
       <form action='' method='post'>
         <p>
           <input name='email' type='text' placeholder="Email" required>

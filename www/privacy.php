@@ -4,7 +4,7 @@ $insecure = true;
 require __DIR__."/inc/init.php";
 
 $page_title = "Privacy Policy";
-require __DIR__."/inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 
 ?>
 <?= site_logo() ?>
@@ -68,6 +68,6 @@ require __DIR__."/inc/head.php";
 
 <?php
   
-  require __DIR__."/inc/foot.php";
+  require DOCUMENT_ROOT."inc/foot.php";
 
 ?>

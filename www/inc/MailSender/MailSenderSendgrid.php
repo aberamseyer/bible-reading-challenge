@@ -51,7 +51,7 @@ class MailSenderSendgrid implements MailSender {
 			"template_id" => $template,
 			"personalizations" => [
 				[
-					"to" => [[ "email" => $to ]],
+					"to" => [ [ "email" => $to ] ],
 					"dynamic_template_data" => $dynamic_data
 				]
 			]

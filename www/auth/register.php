@@ -11,14 +11,18 @@ if ($me) {
 // confirm user from email link
 if ($_REQUEST['confirm']) {
   $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND uuid = '".$db->esc($_REQUEST['confirm'])."'");
-  if (!$user_row || $user_row['email_verify_token'] != $_REQUEST['key']) {
+  $token = $redis->get_verify_email_key($user_row['id']);
+  if (!$user_row || $token != $_REQUEST['key']) {
     $_SESSION['error'] = "Invalid confirmation link.";
   }
   else {
     $db->update("users", [
       "email_verified" => 1
     ], "id = ".$user_row['id']);
+    $redis->delete_verify_email_key($user_row['id']);
+    
     $_SESSION['success'] = "Email verified, welcome!";
+    
     log_user_in($user_row['id']);
     redirect("/today");
   }
@@ -40,6 +44,7 @@ else if ($_POST['email']) {
   }
   else {
     $ret = $site->create_user($_POST["email"], $_POST['name'], $_POST["password"]);
+    $redis->set_verify_email_key($ret['insert_id'], $ret['verify_token']);
     $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=".$ret['uuid']."&key=".$ret['verify_token']);
     $_SESSION['email'] = "Registration email sent. Check your inbox!";
     redirect("/auth/login");
@@ -55,6 +60,7 @@ require DOCUMENT_ROOT."inc/head.php";
     </div>
     <div>
       <h4>Register</h4>
+      <p>Or <a href='login'>log in here</a></p>
       <form action='' method='post'>
         <p>
           <input name='name' type='text' placeholder="Name" value="<?= $_POST['name'] ?>" minlength='1' required>
@@ -69,7 +75,6 @@ require DOCUMENT_ROOT."inc/head.php";
         <p>
           <input name='password_confirm' type='password' placeholder="Confirm password" required><br>
         </p>
-        <p>Or <a href='login'>log in</a></p>
         <button type="submit">Submit</button>
       </form>
       <hr>

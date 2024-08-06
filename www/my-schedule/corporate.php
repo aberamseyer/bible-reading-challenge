@@ -2,7 +2,7 @@
   require __DIR__."/../inc/init.php";
 
 
-  $calendar_sched = new BibleReadingChallenge\Schedule();
+  $calendar_sched = new BibleReadingChallenge\Schedule($site->ID);
   if ($_REQUEST['get_dates']) {
     print_json($calendar_sched->get_dates($my_id));
   }

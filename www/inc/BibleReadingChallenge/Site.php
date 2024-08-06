@@ -53,8 +53,8 @@ class Site extends SiteRegistry {
   private Schedule|null $active_schedule;
 
   /**
-   * @var $id a specific site to get
-   * @var $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
+   * @param $id a specific site to get
+   * @param $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
    */
   protected function __construct($id, $soft=false)
   {
@@ -143,7 +143,8 @@ class Site extends SiteRegistry {
 	public function get_active_schedule()
   {
     if (!$this->active_schedule) {
-      $this->active_schedule = new Schedule();
+      $id = (int)$this->db->col("SELECT id FROM schedules WHERE active = 1 AND site_id = ".$this->ID);
+      $this->active_schedule = new Schedule($this->ID, $id);
     }
     return $this->active_schedule;
 	}
@@ -158,11 +159,9 @@ class Site extends SiteRegistry {
       $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
     }
     return $this->db->select("
-      SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, MAX(rd.timestamp) last_read, u.email_verses, streak, max_streak, u.trans_pref
+      SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, u.email_verses, streak, max_streak, u.trans_pref
       FROM users u
-      LEFT JOIN read_dates rd ON rd.user_id = u.id
       WHERE site_id = ".$this->ID." AND ($where)
-      GROUP BY u.id
       ORDER BY LOWER(name) ASC");
   }
 
@@ -242,7 +241,7 @@ class Site extends SiteRegistry {
 
 
 	/*
-	 * @param scheduled_reading array the return value of get_reading()
+	 * @param scheduled_reading array the return value of get_schedule_date()
 	 * @param trans string one of the translations
 	 * @param complete_key string the key to complete the reading from a row in the schedule_dates's table
 	 * @param schedule the schedule from which we are generating a reading
@@ -287,7 +286,7 @@ class Site extends SiteRegistry {
 				$btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
 				$form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
 			}
-			$copyright_text = json_decode(file_get_contents(DOCUMENT_ROOT."../../extras/copyright.json"), true);
+			$copyright_text = json_decode(file_get_contents(DOCUMENT_ROOT."../extras/copyright.json"), true);
 			$copyright_style = "";
 			if ($email) {
 				$copyright_style = "font-size: 75%;";
@@ -305,7 +304,7 @@ class Site extends SiteRegistry {
 			echo "<p>Nothing to read today!</p>";
 	
 			// look for the next time to read in the schedule.
-			$days = $schedule->get_schedule_days();
+			$days = $schedule->get_next_reading($today);
 			foreach($days as $day) {
 				$dt = new \Datetime($day['date']);
 				if ($today < $dt) {
@@ -318,22 +317,27 @@ class Site extends SiteRegistry {
 		return ob_get_clean();
 	}
 
-  public function on_target_for_user(int $user_id)
+  public function on_target_days_for_user(int $user_id)
   {
     return $this->db->col("
       SELECT 
-        ROUND(
-          COUNT(*) FILTER(
-            WHERE rd.user_id = $user_id AND DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') = sd.date
-          ) / CAST(
-                COUNT(*) FILTER (WHERE rd.user_id = 1)
-                AS FLOAT
-              ) * 100
-          , 2
-        ) || '%'
+        COUNT(*)
+      FROM read_dates rd
+      JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+      WHERE rd.user_id = $user_id AND sd.schedule_id = ".$this->get_active_schedule()->ID."
+        AND sd.date = DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')");
+  }
+
+  public function on_target_percent_for_user($user_id)
+  {
+    $schedule_days_until_now = $this->db->col("
+      SELECT COUNT(*)
       FROM schedule_dates sd
-      LEFT JOIN read_dates rd ON rd.schedule_date_id = sd.id
-      WHERE sd.schedule_id = ".$this->active_schedule->ID);
+      WHERE sd.schedule_id = ".$this->get_active_schedule()->ID." AND sd.date <= DATE('now', '".$this->TZ_OFFSET." hours')");
+    return $schedule_days_until_now
+      // this can be 0 if a schedule was created with no reading dates attached to it
+      ? $this->on_target_days_for_user($user_id) / $schedule_days_until_now * 100
+      : 0;
   }
 
   public function deviation_for_user($user_id)
@@ -366,10 +370,19 @@ class Site extends SiteRegistry {
     return "<canvas data-graph='$data' class='weekly-counts-canvas' width='$size'></canvas>";
   }
 
+  /**
+   * the number of days read each week, across personal and corporate schedules
+   * @return  array  
+   * [
+   *    week => array of week numbers (within the year),
+   *    counts => array of corresponding number of days read in the week,
+   *    start_of_week => array of the corresponding starting dates of each of the weeks
+   *  ]
+   */
   public function weekly_counts($user_id)
   {
-    $start = new \DateTime($this->active_schedule->data('start_date'));
-    $end = new \DateTime($this->active_schedule->data('end_date'));
+    $start = new \DateTime($this->get_active_schedule()->data('start_date'));
+    $end = new \DateTime($this->get_active_schedule()->data('end_date'));
   
     $interval = $start->diff($end);
     $days_between = abs(intval($interval->format('%a')));
@@ -388,37 +401,40 @@ class Site extends SiteRegistry {
               SELECT strftime('%Y-%W', cdate) AS week,
               strftime('%Y-%m-%d', cdate, 'weekday 0') AS start_of_week
                 FROM week_sequence
-          )
-          sd
-          LEFT JOIN
-          (
-              SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')) AS week,
-                      COUNT(rd.user_id) count
-                FROM read_dates rd
-                WHERE rd.user_id = $user_id
-                GROUP BY week, rd.user_id
-          )
-          rd ON rd.week = sd.week
+      ) sd
+      LEFT JOIN (
+        SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')) AS week,
+                COUNT(rd.user_id) count
+          FROM read_dates rd
+          WHERE rd.user_id = $user_id
+          GROUP BY week, rd.user_id
+      ) rd ON rd.week = sd.week
       WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', '".$this->TZ_OFFSET." hours') ) 
       ORDER BY sd.week ASC
       LIMIT $week_count");
   
-      return [
-        'week' => array_column($counts, 'week'),
-        'counts' => array_column($counts, 'count'),
-        'start_of_week' => array_column($counts, 'start_of_week')
-      ];
+    return [
+      'week' => array_column($counts, 'week'),
+      'counts' => array_column($counts, 'count'),
+      'start_of_week' => array_column($counts, 'start_of_week')
+    ];
   }
 
-  public function progress_canvas($user_id, $size=400)
+  /**
+   * a graph that shows the percentage of the challenge complete by the day
+   * pass the value of progress($user_id) as the first parameter
+   */
+  public function progress_canvas($progress, $size=400)
   {
-    $progress = $this->progress($user_id);
     return "<canvas data-graph='".json_encode($progress)."' class='progress-canvas' width='$size'></canvas>";
   }
 
+  /**
+   * @return  array indexed 1-100 (not 0) with the dates on which each threshhold was passed for the active schedule
+   */
   public function progress($user_id)
   {
-    $total_words_in_schedule = $this->active_schedule->total_words_in_schedule();
+    $total_words_in_schedule = $this->get_active_schedule()->total_words_in_schedule();
 
     $threshholds = [];
     for($i = 1; $i <= 100; $i++) {
@@ -427,20 +443,19 @@ class Site extends SiteRegistry {
 
     $progress = [];
     $read_dates = $this->db->select("
-      SELECT DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, SUM(sdv.word_count) word_count
+      SELECT DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, SUM(sdv.word_count) word_count
       FROM read_dates rd
       JOIN schedule_date_verses sdv ON sdv.schedule_date_id = rd.schedule_date_id
-      WHERE sdv.schedule_id = ".$this->active_schedule->ID." and rd.user_id = $user_id
+      WHERE sdv.schedule_id = ".$this->get_active_schedule()->ID." AND rd.user_id = $user_id
       GROUP BY sdv.chapter_id
       ORDER BY timestamp");
     
-    $sum = 0;
+    $accum_words_read = 0;
     foreach($read_dates as $rd) {
-      $sum += (int)$rd['word_count'];
+      $accum_words_read += (int)$rd['word_count'];
       foreach ($threshholds as $thresh => $words) {
-        if ($sum >= (int)$words && !$progress[ $thresh ]) {
-          $dt = new \Datetime($rd['date']);
-          $progress [ $thresh ] = $dt->format('Y-m-d');
+        if ($accum_words_read >= (int)$words && !$progress[ $thresh ]) {
+          $progress [ $thresh ] = date('Y-m-d', strtotime($rd['date']));
         }
       }
     }
@@ -459,7 +474,6 @@ class Site extends SiteRegistry {
       'password' => $hash,
       'trans_pref' => 'rcv',
       'date_created' => time(),
-      'email_verify_token' => $verify_token,
       '__email_verified' => $verified,
       'emoji' => $emoji ?: $this->data('default_emoji')
     ]);
@@ -478,6 +492,9 @@ class Site extends SiteRegistry {
     ];
   }
 
+  /**
+   * @return  array   the allowed translations fora  site
+   */
   public function get_translations_for_site()
   {
     static $translations;
@@ -487,17 +504,23 @@ class Site extends SiteRegistry {
     return $translations;
   }
 
+  /**
+   * @return  bool  validates a translation is within those allowed for the site
+   */
   public function check_translation($trans)
   {
     return in_array($trans, $this->get_translations_for_site(), true);
   }
 
+  /**
+   * the number of words read for either a specific user across all schedules, within a specific schedule OR the entire club (Site)
+   */
   public function words_read($user = 0, $schedule_id = 0) {
     $word_qry = "
         SELECT SUM(word_count)
-        FROM schedule_date_verses sdv
-        JOIN read_dates rd ON sdv.schedule_date_id = rd.schedule_date_id
-        JOIN schedules s ON s.id = sdv.schedule_id
+        FROM schedule_dates sd
+        JOIN read_dates rd ON sd.id = rd.schedule_date_id
+        JOIN schedules s ON s.id = sd.schedule_id
         WHERE s.site_id = ".$this->ID." AND %s
     ";
     if (!$user) {
@@ -505,11 +528,111 @@ class Site extends SiteRegistry {
     }
     else {
       $schedule_where = $schedule_id
-        ? " AND sdv.schedule_id = ".$schedule_id
+        ? " AND sd.schedule_id = ".$schedule_id
         : "";
       $words_read = $this->db->col(sprintf($word_qry, " rd.user_id = ".$user['id'].$schedule_where));
     }
 
-    return $words_read;
+    return (int)$words_read;
+  }
+
+  /**
+   * returns an array filled with different statistics for the user, cached
+   */
+  public function user_stats($user_id)
+  {
+    $redis = Redis::get_instance();
+    $timer = new PerfTimer();
+    $stats = $redis->get_user_stats($user_id);
+    if (!$stats) {
+      $user = $this->db->row("SELECT * FROM users WHERE id = $user_id");
+      $timer->mark('user');
+      $badges = badges_for_user($user_id);
+      $timer->mark('badges');
+      $last_seen = $redis->get_last_seen($user_id) ?: $user['last_seen'];
+      $timer->mark('last_seen');
+      $last_read_ts = $this->db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
+      $timer->mark('last_read_ts');
+      $chapters_ive_read = $this->db->col(
+        sprintf($chp_qry =
+          "SELECT SUM(chapters_read)
+          FROM (
+            SELECT sdv.chapter_id, COUNT(*) / c.verses AS chapters_read
+            FROM read_dates rd
+            JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
+            JOIN chapters c ON c.id = sdv.chapter_id
+            WHERE %s
+            GROUP BY chapter_id
+            HAVING COUNT(*) >= c.verses
+        )", "rd.user_id = $user_id"));
+      $timer->mark('chapters_ive_read');
+      $words_ive_read = $this->words_read($user);
+      $timer->mark('words_ive_read');
+      $deviation = $this->deviation_for_user($user_id);
+      $timer->mark('deviation');
+      $on_target = $this->on_target_percent_for_user($user_id);
+      $timer->mark('on_target');
+      $all_club_chapters_read = $this->db->col(sprintf($chp_qry, "1"));
+      $timer->mark('all_club_chapters_read');
+      $all_club_words_read = $this->words_read();
+      $timer->mark('words_read');
+      $progress_graph_data = $this->progress($user_id);
+      $timer->mark('progress_graph_data');
+      $on_target_perc = $this->on_target_percent_for_user($user_id);
+      $timer->mark('on_target_percent');
+      $days_behind = 
+        $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$this->get_active_schedule()->ID." AND date <= '".date('Y-m-d')."'") - 
+        $this->db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$this->get_active_schedule()->ID." AND rd.user_id = $user_id");
+      $timer->mark('days_behind');
+
+      $stats = [
+        'last_seen' => $last_seen,
+        'last_read_ts' => $last_read_ts,
+        'chapters_ive_read' => $chapters_ive_read,
+        'words_ive_read' => $words_ive_read,
+        'deviation' => $deviation,
+        'on_target' => $on_target,
+        'all_club_chapters_read' => $all_club_chapters_read,
+        'all_club_words_read' => $all_club_words_read,
+        'badges' => json_encode($badges),
+        'challenge_percent' => 0,
+        'progress_graph_data' => json_encode($progress_graph_data),
+        'on_target_percent' => $on_target_perc,
+        'days_behind' => $days_behind
+      ];
+
+      $total_words_in_schedule = $this->get_active_schedule()->total_words_in_schedule();
+      if ($total_words_in_schedule) {
+        // challenge percent can only happen when a schedule has words
+        $stats['challenge_percent'] = $this->words_read($user, $this->get_active_schedule()->ID) / $total_words_in_schedule * 100;
+        $timer->mark('progress');
+      }
+
+      $redis->set_user_stats($user_id, $stats);
+      $stats['badges'] = $badges;
+    }
+    else {
+      // badges are stored as a json string, so re-assign the decoded value
+      $stats['badges'] = json_decode($stats['badges'], true);
+      $stats['progress_graph_data'] = json_decode($stats['progress_graph_data'], true);
+    }
+    
+    return $stats;
+  }
+
+  /**
+   * deletes stats for either a single user id (if passed) or the entire site's users
+   */
+  public function invalidate_stats($user_id = 0)
+  {
+    $redis = Redis::get_instance();
+    if ($user_id) {
+      $redis->delete_stats($this->ID, $user_id);
+    }
+    else {
+      foreach($this->all_users() as $user) {
+        $redis->delete_stats($this->ID, $user['id']);
+      }
+    }
   }
 }

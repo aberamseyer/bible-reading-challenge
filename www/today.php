@@ -26,7 +26,7 @@ $trans = $me['trans_pref'];
 
 // figure out what today is (if overridden)
 $today = new Datetime();
-if (strtotime($_GET['today'])) {
+if ($_GET['today'] && strtotime($_GET['today'])) {
   $override_date = new Datetime($_GET['today']);
   $today = allowed_schedule_date($override_date)
     ? $override_date
@@ -36,16 +36,14 @@ if (strtotime($_GET['today'])) {
 // get list of schedules (corporate and personal)
 $schedules = [ &$schedule ];
 if ($site->data('allow_personal_schedules')) {
-  $personal_schedule = new BibleReadingChallenge\Schedule(true);
+  $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $me['id']);
   $schedules[] = &$personal_schedule;
 }
-
 foreach($schedules as $each_schedule) {
-  $scheduled_reading = $each_schedule->get_reading($today);
+  $scheduled_reading = $each_schedule->get_schedule_date($today);
   if (!$scheduled_reading) {
     continue;
   }
-  
   // determine reading timer to use
   $reading_timer_wpm = (int)$site->data('reading_timer_wpm');
   if ($reading_timer_wpm) {
@@ -56,7 +54,6 @@ foreach($schedules as $each_schedule) {
       $saved_reading_id = $_SESSION['reading_date'] = $today->format('Y-m-d');
     }
   }
-  
   // "Done!" clicked
   if ($_REQUEST['done'] && !$each_schedule->day_completed($my_id, $scheduled_reading['id'])) {
     $valid = true;
@@ -88,6 +85,7 @@ foreach($schedules as $each_schedule) {
         'schedule_date_id' => $scheduled_reading['id'],
         'timestamp' => time()
       ]);
+      $site->invalidate_stats($my_id);
       if ($each_schedule->completed($my_id)) {
         $each_schedule->set_just_completed($my_id, true);
       }
@@ -96,7 +94,7 @@ foreach($schedules as $each_schedule) {
 }
 
 $page_title = "Read";
-require __DIR__."/inc/head.php";
+require DOCUMENT_ROOT."inc/head.php";
 
 // header with translation selector and email pref
 echo "<div id='date-header'>
@@ -117,12 +115,12 @@ echo "<div id='date-header'>
 
 if ($me['streak']) {
   $streak = (int)$me['streak'];
-  echo "<div>";
+  echo "
+    <div>";
   echo $streak > 46
     ? '🔥 x'.number_format($streak)
     : str_repeat('🔥', (int)$me['streak']);
-  echo "
-  </div>";
+  echo "</div>";
 }
 
 
@@ -132,13 +130,13 @@ if ($site->data('allow_personal_schedules')) {
 }
 foreach($schedules as $i => $each_schedule) {
   $personal = (bool)$each_schedule->data('user_id');
-  if ($site->data('allow_personal_schedules')) { // TODO
+  if ($site->data('allow_personal_schedules')) {
     echo "
       <input type='radio' name='tabs' id='tab-$i' ".($i == 0 ? 'checked' : '').">
       <label for='tab-$i'>".($i == 0 ? 'Corporate' : 'Personal')." Schedule</label>
       <div class='tab'>";
   }
-  $scheduled_reading = $each_schedule->get_reading($today);
+  $scheduled_reading = $each_schedule->get_schedule_date($today);
   $today_completed = $scheduled_reading && $each_schedule->day_completed($my_id, $scheduled_reading['id']);
 
   if (!$personal && $scheduled_reading) {
@@ -207,7 +205,7 @@ foreach($schedules as $i => $each_schedule) {
   if (!$personal && $each_schedule->completed($my_id)) {
     echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
     $add_to_foot .= 
-      cached_file('js', '/js/lib/js-confetti.js').
+      cached_file('js', '/js/lib/js-confetti.min.js').
       "<script>
         const jsConfetti = new JSConfetti()
         function party() {
@@ -230,15 +228,16 @@ foreach($schedules as $i => $each_schedule) {
       </script>";
   }
   if ($today_completed) {
-    $next_reading = null;
-    foreach($each_schedule->get_schedule_days() as $reading) {
-      $dt = new Datetime($reading['date']);
-      if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
-        $next_reading = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
+    $each_day = clone($today);
+    do {
+      $next_reading = $each_schedule->get_next_reading($each_day);
+      $dt = new Datetime($next_reading['date']);
+      if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
+        $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
         break;
       }
-    }
-    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading</blockquote>";
+    } while(!$next_reading);
+    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
   echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
@@ -249,7 +248,21 @@ foreach($schedules as $i => $each_schedule) {
 }
 if ($site->data('allow_personal_schedules')) {
   echo "</div><!-- .tabs -->";
+  
+  // set active tab on page load
+  $add_to_foot .= "
+    <script type='text/javascript'>
+    document.querySelector('.tabs').addEventListener('change', e => {
+      localStorage.setItem('activeTabId', e.target.id)
+    })
+    const activeTabId = localStorage.getItem('activeTabId')
+    const activeTabEl = document.getElementById(activeTabId)
+    if (activeTabId && activeTabEl) {
+      document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
+      activeTabEl.checked = true
+    }
+    </script>";
 }
 
 
-require __DIR__."/inc/foot.php";
+require DOCUMENT_ROOT."inc/foot.php";

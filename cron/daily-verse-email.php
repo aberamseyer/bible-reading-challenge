@@ -21,7 +21,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $recently = new Datetime($schedule->data('start_date'));
   $recently->modify('-3 months');
   
-  $scheduled_reading = $schedule->get_reading($today);
+  $scheduled_reading = $schedule->get_schedule_date($today);
   
   if (!$scheduled_reading) {
     die("nothing to do today!");
