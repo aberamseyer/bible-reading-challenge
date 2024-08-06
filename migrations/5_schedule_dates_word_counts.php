@@ -1,7 +1,7 @@
 <?php
 
 //
-// Adds random completion keys to all the rows in schedule_dates
+// Adds word counts to schedule_dates rows
 // 
 
 require __DIR__."/../www/inc/env.php";
