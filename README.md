@@ -78,6 +78,8 @@ Install the `system.d` service `task-queue/brc-task-queue.service`. This is impo
 4. Start it: `sudo systemctl start brc-task-queue.service`
 5. Check the status: `sudo systemctl status brc-task-queue.service`
 
+View logs with `journalctl -u brc-task-queue.service -f`
+
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
 
