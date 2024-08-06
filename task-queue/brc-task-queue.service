@@ -1,5 +1,5 @@
 [Unit]
-Description=PHP Task Queue Manager
+Description=Bible Reading Challenge Task Queue Service
 After=network.target
 
 [Service]

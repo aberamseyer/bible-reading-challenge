@@ -71,12 +71,12 @@ also requires configuring OAuth consent screen in Google Cloud Console
 files in the `cron` directory should be installed according to the comments at the top of each file
 
 ## Queue Processing
-Install the `system.d` service `task-queue/task-queue.service`. This is important for updating user statistics whenever something changes:
-1. Copy to `/etc/systemd/system/task-queue.service`
+Install the `system.d` service `task-queue/brc-task-queue.service`. This is important for updating user statistics whenever something changes:
+1. Copy to `/etc/systemd/system/brc-task-queue.service`
 2. Reload the systemd daemon: `sudo systemctl daemon-reload`
-3. Enable it: `sudo systemctl enable task-queue.service.service`
-4. Start it: `sudo systemctl start task-queue.service.service`
-5. Check the status: `sudo systemctl status task-queue.service.service`
+3. Enable it: `sudo systemctl enable brc-task-queue.service`
+4. Start it: `sudo systemctl start brc-task-queue.service`
+5. Check the status: `sudo systemctl status brc-task-queue.service`
 
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
