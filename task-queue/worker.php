@@ -38,7 +38,7 @@ function process_job($job) {
     throw new \Exception("Bad site_id/user_id combination: ".$job);
   }
   else {
-    $site->user_stats($user['id']);
+    $site->user_stats($user['id'], true);
     $redis->stats_job_finished($job);
     echo "Finished $job in ".number_format((hrtime(true) - $start) / 1e6, 2)."ms\n";
   }

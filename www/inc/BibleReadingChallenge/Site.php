@@ -140,9 +140,9 @@ class Site extends SiteRegistry {
     ]);
   }
 
-	public function get_active_schedule()
+	public function get_active_schedule($refresh=false)
   {
-    if (!$this->active_schedule) {
+    if (!$this->active_schedule || $refresh) {
       $id = (int)$this->db->col("SELECT id FROM schedules WHERE active = 1 AND site_id = ".$this->ID);
       $this->active_schedule = new Schedule($this->ID, $id);
     }
@@ -539,13 +539,17 @@ class Site extends SiteRegistry {
   /**
    * returns an array filled with different statistics for the user, cached
    */
-  public function user_stats($user_id)
+  public function user_stats($user_id, $refresh=false)
   {
     $redis = Redis::get_instance();
     $stats = $redis->get_user_stats($user_id);
+    if ($refresh) {
+      $stats = false;
+    }
+
     if (!$stats) {
       $timer = new PerfTimer();
-      $active_schedule = $this->get_active_schedule();
+      $active_schedule = $this->get_active_schedule($refresh);
       
       $user = $this->db->row("SELECT * FROM users WHERE id = $user_id");
       $timer->mark('user');
@@ -606,7 +610,8 @@ class Site extends SiteRegistry {
       $total_words_in_schedule = $active_schedule->total_words_in_schedule();
       if ($total_words_in_schedule) {
         // challenge percent can only happen when a schedule has words
-        $stats['challenge_percent'] = $this->words_read($user, $active_schedule->ID) / $total_words_in_schedule * 100;
+        $words_read =  $this->words_read($user, $active_schedule->ID);
+        $stats['challenge_percent'] = $words_read / $total_words_in_schedule * 100;
         $timer->mark('challenge_percent');
       }
 

@@ -7,6 +7,7 @@ $redis = \BibleReadingChallenge\Redis::get_instance();
 
 // clear stats values
 foreach($redis->stats_iterator() as $key) {
+  echo "Deleting $key\n";
   $key = str_replace(BibleReadingChallenge\Redis::SITE_NAMESPACE, '', $key);
   $redis->client()->del($key);
 }
