@@ -361,17 +361,13 @@ class Site extends SiteRegistry {
   public function weekly_progress_canvas($user_id, $size=400)
   {
     $counts = $this->weekly_counts($user_id);
-    $week_starts = array_map(function($value) {
-      // because date_create_from_format can't handle the week number, we do this manually
-      list($year, $week) = explode('-', $value);
-      return date('Y-m-d', strtotime($year.'-01-01 +'.(intval($week)*7).' days'));
-    }, $counts['week']);
-    $data = json_encode(array_combine($week_starts, $counts['counts']));
+    $data = json_encode(array_combine($counts['day_start'], $counts['counts']));
     return "<canvas data-graph='$data' class='weekly-counts-canvas' width='$size'></canvas>";
   }
 
   /**
-   * the number of days read each week, across personal and corporate schedules
+   * the number of days read each week, across personal and corporate schedules,
+   * from days_in_schedule in the past up to today
    * @return  array  
    * [
    *    week => array of week numbers (within the year),
@@ -386,38 +382,55 @@ class Site extends SiteRegistry {
   
     $interval = $start->diff($end);
     $days_between = abs(intval($interval->format('%a')));
-    $week_count = ceil($days_between / 7);
-  
-    $counts = $this->db->select("
-      SELECT COALESCE(count, 0) count, sd.week, sd.start_of_week
-      FROM (
-          WITH RECURSIVE week_sequence AS (
-                  SELECT date('now', '".$this->TZ_OFFSET." hours') AS cdate
-                  UNION ALL
-                  SELECT date(cdate, '-7 days') 
-                    FROM week_sequence
-                    LIMIT $week_count
-              )
-              SELECT strftime('%Y-%W', cdate) AS week,
-              strftime('%Y-%m-%d', cdate, 'weekday 0') AS start_of_week
-                FROM week_sequence
-      ) sd
-      LEFT JOIN (
-        SELECT strftime('%Y-%W', DATETIME(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')) AS week,
-                COUNT(rd.user_id) count
-          FROM read_dates rd
-          WHERE rd.user_id = $user_id
-          GROUP BY week, rd.user_id
-      ) rd ON rd.week = sd.week
-      WHERE sd.week >= strftime('%Y-%W', DATE('now', '-' || (7*$week_count) || ' days', '".$this->TZ_OFFSET." hours') ) 
-      ORDER BY sd.week ASC
-      LIMIT $week_count");
-  
+    $WEEKS = ceil($days_between / 7);
+    
+    $counts = $this->weekly_reading_data($user_id, $WEEKS);
     return [
       'week' => array_column($counts, 'week'),
       'counts' => array_column($counts, 'count'),
-      'start_of_week' => array_column($counts, 'start_of_week')
+      'day_start' => array_column($counts, 'day_start')
     ];
+  }
+
+  /**
+   * how many days we've read in the last four weeks
+   */
+  function four_week_trend_canvas($user_id) {
+    $counts = $this->weekly_reading_data($user_id, 4);
+    $data = json_encode(array_column($counts, 'count', 'day_start'));
+    return "<canvas data-graph='$data' width='200' style='margin: auto;'></canvas>";
+  }
+
+  function weekly_reading_data($user_id, $WEEKS)
+  {
+    return $this->db->select("
+      SELECT sd.day_start, COALESCE(count, 0) count, sd.week
+      FROM (
+        -- generates last $WEEKS weeks to join what we read to
+        WITH RECURSIVE week_sequence AS (
+          SELECT 
+            DATE('now', '".$this->TZ_OFFSET." hours', '-7 days', 'weekday 0') AS cdate
+          UNION ALL
+          SELECT DATE(cdate, '-7 days') 
+          FROM week_sequence
+          LIMIT $WEEKS
+        )
+        SELECT STRFTIME('%Y-%W', cdate) AS week,
+              STRFTIME('%Y-%m-%d', cdate, 'weekday 0') AS day_start
+        FROM week_sequence
+      ) sd
+      LEFT JOIN (
+        -- gives the number of days we have read each week
+        SELECT STRFTIME('%Y-%W', DATE(sd.date, '".$this->TZ_OFFSET." hours', '-7 days', 'weekday 0')) AS week,
+              COUNT(rd.user_id) count
+        FROM read_dates rd
+        JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+        WHERE rd.user_id = $user_id
+        GROUP BY week
+      ) rd ON rd.week = sd.week
+      WHERE sd.week >= STRFTIME('%Y-%W', DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0', '-".(7*$WEEKS)." days')) 
+      ORDER BY sd.week ASC
+      LIMIT $WEEKS");
   }
 
   /**

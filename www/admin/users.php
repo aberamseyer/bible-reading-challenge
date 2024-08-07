@@ -377,7 +377,7 @@ else {
         <td ".last_read_attr($user['last_read'])."><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
         <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img src="/img/static/circle-check.svg" class="icon">' : '<img src="/img/static/circle-x.svg" class="icon">')."</td>
         <td data-trend>
-          ".four_week_trend_canvas($user['id'])."
+          ".$site->four_week_trend_canvas($user['id'])."
         </td>
         <td data-period class='week'>";
       foreach($this_week as $day) {

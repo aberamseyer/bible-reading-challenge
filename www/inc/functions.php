@@ -527,43 +527,6 @@ function help($tip) {
 	return "<span class='cursor' title='$tip'>?&#x20DD;</span>";
 }
 
-function four_week_trend_canvas($user_id) {
-	$data = json_encode(four_week_trend_data($user_id));
-	return "<canvas data-graph='$data' width='200' style='margin: auto;'></canvas>";
-}
-
-function four_week_trend_data($user_id) {
-	$site = BibleReadingChallenge\Site::get_site();
-	// reach back 5 weeks so that we don't count the current week in the graph
-	$WEEKS = 4;
-	$values = BibleReadingChallenge\Database::get_instance()->select("
-		SELECT sd.day_start, COALESCE(count, 0) count
-		FROM (
-			-- generates last $WEEKS weeks to join what we read to
-			WITH RECURSIVE week_sequence AS (
-				SELECT
-					DATE('now', '".$site->TZ_OFFSET." hours', '-7 days', 'weekday 0') AS cdate
-				UNION ALL
-				SELECT DATE(cdate, '-7 days')
-				FROM week_sequence
-				LIMIT $WEEKS
-			)
-			SELECT STRFTIME('%Y-%W', cdate) AS week, STRFTIME('%Y-%m-%d', cdate) AS day_start FROM week_sequence      
-		) sd
-		LEFT JOIN (
-			-- gives the number of days we have read each week
-			SELECT STRFTIME('%Y-%W', DATE(sd.date, '-7 days', 'weekday 0')) AS week, COUNT(rd.user_id) count
-			FROM read_dates rd
-			JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-			WHERE user_id = $user_id
-			GROUP BY week
-		) rd ON rd.week = sd.week
-		WHERE sd.week >= STRFTIME('%Y-%W', DATE('now', '".$site->TZ_OFFSET." hours', '-7 days', 'weekday 0', '-".($WEEKS*7)." days'))
-		ORDER BY sd.week ASC
-		LIMIT $WEEKS");
-		return array_column($values, 'count', 'day_start');
-}
-
 function toggle_all_users($initial_count) {
 	global $add_to_foot;
 
