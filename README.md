@@ -29,6 +29,8 @@ Initialize it with the data from `migrations/bible-import.sql`
 
 Enable WAL mode: `sqlite3 brc.db "PRAGMA journal_mode=WAL;"`
 
+An example backup script example can be found in `cron/db-backup.sh`
+
 #### Redis
 Redis is used for session management.
 
@@ -71,7 +73,7 @@ also requires configuring OAuth consent screen in Google Cloud Console
 files in the `cron` directory should be installed according to the comments at the top of each file
 
 ## Queue Processing
-Install the `system.d` service `task-queue/brc-task-queue.service`. This is important for updating user statistics whenever something changes:
+Install the `systemd` service `task-queue/brc-task-queue.service`. This is critical for updating user statistics whenever something changes:
 1. Copy to `/etc/systemd/system/brc-task-queue.service`
 2. Reload the systemd daemon: `sudo systemctl daemon-reload`
 3. Enable it: `sudo systemctl enable brc-task-queue.service`
@@ -83,4 +85,6 @@ View logs with `journalctl -u brc-task-queue.service -f`
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
 
-Numbers indicate the order in which scripts were created and the data changed
+Numbers indicate the order in which scripts were created and the date changed.
+
+From the root of the project, run `extras/dump-schema.sh` to save the current database schema to `migrations/schema.sql`
