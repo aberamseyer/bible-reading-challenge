@@ -9,6 +9,9 @@ if (!$staff && $me['id'] != 1) {
 
 if ($_POST) {
   if ($_POST['create']) {
+    // create web push keys
+    $keys = Minishlink\WebPush\VAPID::createVapidKeys();
+
     // create site
     $new_site_id = $db->insert('sites', [
       'site_name' => $_POST['site_name'],
@@ -23,7 +26,9 @@ if ($_POST) {
       'default_emoji' => '😁',
       'start_of_week' => 1,
       'time_zone_id' => 'America/Chicago',
-      'tranlsations' => json_encode(ALL_TRANSLATIONS)
+      'tranlsations' => json_encode(ALL_TRANSLATIONS),
+      'web_push_pubkey' => $keys['publicKey'],
+      'web_push_privkey' => $keys['privateKey']
     ]);
     // create default schedule so everything doesn't break
     $start_date = date('Y-m-d', strtotime('January 1'));

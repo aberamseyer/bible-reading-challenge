@@ -1,6 +1,7 @@
 {
     "require": {
         "google/apiclient": "^2.15",
-        "predis/predis": "^2.2"
+        "predis/predis": "^2.2",
+        "minishlink/web-push": "^9.0"
     }
 }

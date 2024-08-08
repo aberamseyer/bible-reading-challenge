@@ -8,15 +8,26 @@ $redis->set_websocket_nonce($me['id'], $websocket_nonce);
 
 // set translation, update it if the select box changed
 
-if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
+if ($_REQUEST['change_trans'] || array_key_exists('change_subscription_type', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
   if (!$site->check_translation($new_trans)) {
     $new_trans = $site->get_translations_for_site()[0];
   }
   
-  $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
-    ? $_REQUEST['change_email_me']
-    : 0;
+  if (array_key_exists('change_subscription_type', $_REQUEST)) {
+    // email subscriptions are enabled via a flag in the users table.
+    // push notifications are enabled via a row in the push_subscriptions table. insertion into that table is handled in push/subscription.php
+    if ($_REQUEST['change_subscription_type'] === 'both') {
+      $me['email_verses'] = 1;
+    }
+    else if ($_REQUEST['change_subscription_type'] === 'email') {
+      $db->query("DELETE FROM push_subscriptions WHERE user_id = ".$me['id']);
+      $me['email_verses'] = 1;
+    }
+    else if ($_REQUEST['change_subscription_type'] === 'push') {
+      $me['email_verses'] = 0;
+    }
+  }
   $db->update("users", [
     'trans_pref' => $me['trans_pref'] = $new_trans,
     'email_verses' => $me['email_verses']
@@ -59,7 +70,7 @@ foreach($schedules as $each_schedule) {
     $valid = true;
     if ($_REQUEST['complete_key']) {
       // we need a way to bypass the wpm check from an email.
-      // when the email is generated, a '-e' is appended to the complete key (see daily-verse-email.php's call to html_for_scheduled_reading() and Site.php)
+      // when the email is generated, a '-e' is appended to the complete key (see notifications.php's call to html_for_scheduled_reading() and Site.php)
       list($complete_key, $e) = explode('-', $_REQUEST['complete_key']);
       if ($e !== 'e') {
         $valid = $complete_key === $scheduled_reading['complete_key'];
@@ -96,14 +107,18 @@ foreach($schedules as $each_schedule) {
 $page_title = "Read";
 require DOCUMENT_ROOT."inc/head.php";
 
+$push_subscribed = $db->col("SELECT id FROM push_subscriptions WHERE user_id = ".$me['id']);
+
 // header with translation selector and email pref
 echo "<div id='date-header'>
   <h5>".$today->format("l, F j")."</h5>
-  <form style='display: flex; width: 20rem; justify-content: space-between; align-items: flex-end;'>
-    <label>
-      Email me &nbsp;&nbsp;
-      <input type='checkbox' name='change_email_me' value='1' ".($me['email_verses'] ? 'checked' : '')." onchange='this.form.submit()'>
-    </label>
+  <form style='display: flex; width: 30rem; justify-content: space-between; align-items: flex-end;'>
+    <select name='change_subscription_type' value=''>
+      <option value=''".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">-Notifications-</option>
+      <option value='email'".($me['email_verses'] && !$push_subscribed ? "selected" : "").">Emails</option>
+      <option value='push'".(!$me['email_verses'] && $push_subscribed ? "selected" : "").">Push Notifications</option>
+      <option value='both'".($me['email_verses'] && $push_subscribed ? "selected" : "").">Both</option>
+    </select>
     <input type='hidden' name='today' value='".$today->format('Y-m-d')."'>
     <select name='change_trans' onchange='this.form.submit();'>";
     foreach($site->get_translations_for_site() as $trans_opt)
@@ -252,17 +267,25 @@ if ($site->data('allow_personal_schedules')) {
   // set active tab on page load
   $add_to_foot .= "
     <script type='text/javascript'>
-    document.querySelector('.tabs').addEventListener('change', e => {
-      localStorage.setItem('activeTabId', e.target.id)
-    })
-    const activeTabId = localStorage.getItem('activeTabId')
-    const activeTabEl = document.getElementById(activeTabId)
-    if (activeTabId && activeTabEl) {
-      document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
-      activeTabEl.checked = true
-    }
+      document.querySelector('.tabs').addEventListener('change', e => {
+        localStorage.setItem('activeTabId', e.target.id)
+      })
+      const activeTabId = localStorage.getItem('activeTabId')
+      const activeTabEl = document.getElementById(activeTabId)
+      if (activeTabId && activeTabEl) {
+        document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
+        activeTabEl.checked = true
+      }
     </script>";
+
+  // service worker registration for notifications
 }
+$add_to_foot .= "
+  <script type='text/javascript'>
+    const VAPID_PUBKEY = `".trim($site->data('vapid_pubkey'))."`
+    const SERVICE_WORKER_FILE = `/service-worker.js?v=".VERSION."`
+  </script>
+  ".cached_file('js', '/js/today.js');
 
 
 require DOCUMENT_ROOT."inc/foot.php";
