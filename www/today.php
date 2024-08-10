@@ -145,14 +145,15 @@ if ($site->data('allow_personal_schedules')) {
 }
 foreach($schedules as $i => $each_schedule) {
   $personal = (bool)$each_schedule->data('user_id');
+  $scheduled_reading = $each_schedule->get_schedule_date($today);
+  $today_completed = $scheduled_reading && $each_schedule->day_completed($my_id, $scheduled_reading['id']);
+
   if ($site->data('allow_personal_schedules')) {
     echo "
       <input type='radio' name='tabs' id='tab-$i' ".($i == 0 ? 'checked' : '').">
-      <label for='tab-$i'>".($i == 0 ? 'Corporate' : 'Personal')." Schedule</label>
+      <label for='tab-$i'>".($i == 0 ? 'Corporate' : 'Personal')." Schedule ".($scheduled_reading && !$today_completed ? "<span class='dot'></span>" : "")."</label>
       <div class='tab'>";
   }
-  $scheduled_reading = $each_schedule->get_schedule_date($today);
-  $today_completed = $scheduled_reading && $each_schedule->day_completed($my_id, $scheduled_reading['id']);
 
   if (!$personal && $scheduled_reading) {
     // how many have read today

@@ -328,7 +328,7 @@ echo "
           170: Audiobook spoken reading pace <br>
           240: Average adult silent reading pace <br>
           340: Quicker silent reading pace <br>
-          800: Maxmimum reading pace (very fast!)
+          800: Maximum reading pace (very fast!)
         </div>
       </label>
       <input type='number' name='reading_timer_wpm' min='0' max='800' step='10' value='".$site->data('reading_timer_wpm')."'>
@@ -360,7 +360,7 @@ echo "  </select>
       <input type='checkbox' name='allow_personal_schedules' value='1' ".($site->data('allow_personal_schedules') ? 'checked' : '').">
     </label>
     <div class='form-group draggable'>
-    Available Tranlsations ".help('These translations will be available for reading. Drag to re-order them; the first one in will be the default translation.');
+    Available Translations ".help('These translations will be available for reading. Drag to re-order them; the first one in will be the default translation.');
     $difference = array_diff(ALL_TRANSLATIONS, $site->get_translations_for_site());
     foreach([ ...$site->get_translations_for_site(), ...$difference ] as $trans) {
       echo "<label draggable='true'><input type='checkbox' name='trans_pref[]' value='$trans' ".($site->check_translation($trans) ? 'checked' : '')."> $trans</label>";

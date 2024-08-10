@@ -26,7 +26,7 @@ if ($_POST) {
       'default_emoji' => '😁',
       'start_of_week' => 1,
       'time_zone_id' => 'America/Chicago',
-      'tranlsations' => json_encode(ALL_TRANSLATIONS),
+      'translations' => json_encode(ALL_TRANSLATIONS),
       'web_push_pubkey' => $keys['publicKey'],
       'web_push_privkey' => $keys['privateKey']
     ]);

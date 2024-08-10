@@ -310,3 +310,14 @@ th, td {
 .tabs input[type="radio"]:checked + label + .tab {
   display: block;
 }
+
+.dot {
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--color-blossom);
+  width: 6px;
+  height: 6px;
+  position: relative;
+  left: 3px;
+  top: -5px;
+}
