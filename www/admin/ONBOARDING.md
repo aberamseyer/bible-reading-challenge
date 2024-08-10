@@ -1,13 +1,13 @@
 # Pointing the Domain
 Create 2 DNS `A` records with the value `5.161.204.56`
 
-> e.g., `brc.ramseyer.dev` and `brc-socket.ramseyer.dev`
+> e.g., `brc.churchinfairborn.org` and `brc-socket.churchinfairborn.org`
 
 # Nginx, Apache
 Nginx needs 2 new configuration files, Apache doesn't need any:
 ```
-cp /etc/nginx/sites-available/abe-brc /etc/nginx/sites-available/{SHORT_NAME}
-cp /etc/nginx/sites-available/abe-brc-socket /etc/nginx/sites-available/{SHORT_NAME}-socket
+cp /etc/nginx/sites-available/cif-brc /etc/nginx/sites-available/{SHORT_NAME}
+cp /etc/nginx/sites-available/cif-brc-socket /etc/nginx/sites-available/{SHORT_NAME}-socket
 ```
 1. Edit both configuration files, replacing the domain name with the new domain name
 2. Link the files to enable them:
@@ -21,10 +21,23 @@ Verify the files with `nginx -t`, enable them with `systemctl reload nginx`
 # SSL
 If they use cloudflare or have another way to proxy requests, great.
 
-Otherwise:
+Otherwise, following the tutorial [here](https://certbot.eff.org/instructions?ws=nginx&os=debianbuster)
+1. Ensure certbot is installed
+2. `certbot certonly --nginx`
+3. Go through steps to select a certificate for just the new virtual hosts you created for nginx
+4. Add the following lines to vhost files (see [this](https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=modern&openssl=1.1.1k&guideline=5.7) for help):
+```
+# SSL
+ssl_certificate /etc/letsencrypt/live/{DOMAIN_NAME}/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/{DOMAIN_NAME}/privkey.pem;
+ssl_trusted_certificate /etc/letsencrypt/live/{DOMAIN_NAME}/chain.pem;
+include /etc/nginx/snippets/ssl.conf;
+```
+5. Test `certbot renew --dry-run`. A job should be scheduled to renew the certificate automatically, but set yourself a remind to check in on it
 
-1. Copy crt file to `/etc/ssl/personal-certs`
-2. Copy site configuration from `churchinfairborn.org` (`site-available/cif-brc`), replacing the SSL file path
+If these instructions were followed, a single certificate was generated that includes both domains (e.g., `brc` and `brc-socket`), so the nginx config lines will be identical in the vhost file
+
+Again, check `nginx -t` and `systemctl reload nginx`
 
 # Email
 1. Create an account with `https://app.sendgrid.com`
