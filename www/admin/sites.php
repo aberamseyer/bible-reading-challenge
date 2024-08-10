@@ -23,7 +23,7 @@ if ($_POST) {
       'default_emoji' => '😁',
       'start_of_week' => 1,
       'time_zone_id' => 'America/Chicago',
-      'tranlsations' => json_encode(ALL_TRANSLATIONS)
+      'translations' => json_encode(ALL_TRANSLATIONS)
     ]);
     // create default schedule so everything doesn't break
     $start_date = date('Y-m-d', strtotime('January 1'));
