@@ -580,7 +580,8 @@ class Site extends SiteRegistry {
             FROM read_dates rd
             JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
             JOIN chapters c ON c.id = sdv.chapter_id
-            WHERE %s
+            JOIN users u ON u.id = rd.user_id
+            WHERE u.site_id = ".$this->ID." AND %s
             GROUP BY chapter_id
             HAVING COUNT(*) >= c.verses
         )", "rd.user_id = $user_id"));
@@ -620,10 +621,10 @@ class Site extends SiteRegistry {
         'words_ive_read' => $words_ive_read,
       ];
 
-      $total_words_in_schedule = $active_schedule->total_words_in_schedule();
+      $total_words_in_schedule = (int) $active_schedule->total_words_in_schedule();
       if ($total_words_in_schedule) {
         // challenge percent can only happen when a schedule has words
-        $words_read =  $this->words_read($user, $active_schedule->ID);
+        $words_read = (int) $this->words_read($user, $active_schedule->ID);
         $stats['challenge_percent'] = $words_read / $total_words_in_schedule * 100;
         $timer->mark('challenge_percent');
       }
