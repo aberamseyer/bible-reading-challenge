@@ -26,3 +26,6 @@ CREATE TABLE push_subscriptions (
     subscription TEXT,
     last_sent    TEXT
 );
+CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions (
+    user_id
+);

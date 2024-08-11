@@ -114,6 +114,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await checkNotificationPermission()
       const serviceWorkerRegistration = await navigator.serviceWorker.ready
+      try {
+        // just in case something funny happened (like our VAPID keys changed)
+        await push_unsubscribe()
+      } catch (err) {
+        console.err(err)
+      }
       const subscription = await serviceWorkerRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBKEY),

@@ -498,13 +498,13 @@ class Schedule {
       // site-wide schedules
       $this->db->query("UPDATE schedules SET active = 0 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']);
       $this->db->query("UPDATE schedules SET active = 1 WHERE user_id IS NULL AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
-      Site::get_site($this->data('site_id'))->invalidate_stats();
+      SiteRegistry::get_site($this->data('site_id'))->invalidate_stats();
     }
     else {
       // private schedules
       $this->db->query("UPDATE schedules SET active = 0 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']);
       $this->db->query("UPDATE schedules SET active = 1 WHERE user_id =".$this->data('user_id')." AND site_id = ".$this->data['site_id']." AND id = ".$this->ID);
-      Site::get_site($this->data('site_id'))->invalidate_stats($this->data('user_id'));
+      SiteRegistry::get_site($this->data('site_id'))->invalidate_stats($this->data('user_id'));
     }
   }
 
@@ -672,7 +672,7 @@ class Schedule {
         'id' => $sd['id'],
         'date' => $sd['date'],
         'reference' => $sd['passage'],
-        'passages' => Site::get_site($this->data('site_id'))->parse_passage_from_json($sd['passage_chapter_readings']),
+        'passages' => SiteRegistry::get_site($this->data('site_id'))->parse_passage_from_json($sd['passage_chapter_readings']),
         'complete_key' => $sd['complete_key']
       ];
     }
@@ -790,7 +790,7 @@ class Schedule {
       $_SESSION['success'] = 'Schedule saved';
 
       // all users affected by this schedule need to have their stats invalidated
-      Site::get_site($this->data('site_id'))->invalidate_stats($for_user_id);
+      SiteRegistry::get_site($this->data('site_id'))->invalidate_stats($for_user_id);
 
       redirect('?calendar_id='.$this->ID);
     }

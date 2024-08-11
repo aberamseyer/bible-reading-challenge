@@ -6,10 +6,14 @@ require_once "env.php";
 // die;
 
 // health check
-$site = BibleReadingChallenge\Site::get_site();
-$db = BibleReadingChallenge\Database::get_instance();
-$redis = BibleReadingChallenge\Redis::get_instance();
-if (!$site->ID || 
+try {
+  $site = BibleReadingChallenge\SiteRegistry::get_site();
+  $db = BibleReadingChallenge\Database::get_instance();
+  $redis = BibleReadingChallenge\Redis::get_instance();
+} catch (\Throwable $e) {
+  error_log($e);
+}
+if (!$site || !$db || !$redis || !$site->ID || 
   ($db->get_db()->lastErrorCode() !== 0) ||
   $redis->is_offline()
 ) {

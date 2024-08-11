@@ -26,7 +26,7 @@ switch ($method) {
     $db->update('push_subscriptions', [
       'subscription' => json_encode($subscription),
     ], "user_id = ".$me['id']);
-    echo "Success: created subscription.";
+    echo "Success: updated subscription.";
     break;
   case 'DELETE':
     // delete the subscription corresponding to the endpoint

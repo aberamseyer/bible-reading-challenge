@@ -1,19 +1,20 @@
 <?php
 
 //
-// Sends an email to users with the daily reading portion
+// Sends notifications to users with the daily reading portion
 //
 // crontab entry: 45 * * * * php /home/bible-reading-challenge/cron/notifications.php
-
-
 //
+
+
 // Useful push notification notes:
 // chrome://flags/#unsafely-treat-insecure-origin-as-secure
 // chrome://serviceworker-internals/
 // chrome://settings/content/siteDetails?site=http%3A%2F%2Fuoficoc.local%2F&search=notifications
 // https://github.com/Minishlink/web-push-php-example/blob/master/src/send_push_notification.php
 // https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission_static
-//
+
+use Minishlink\WebPush\MessageSentReport;
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 
@@ -21,29 +22,25 @@ require __DIR__."/../www/inc/env.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 
-foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
-  $site = BibleReadingChallenge\Site::get_site($site_id);
+foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 and id = 1") as $site_id) {
+  $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
   $today = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
   if ($today->format('G') != 7) {
-    continue;
+    // continue;
   }
 
   // get scheedule details
-  $schedule = $site->get_active_schedule();
-  $recently = new Datetime($schedule->data('start_date'));
+  $corp_schedule = $site->get_active_schedule();
+  $recently = new Datetime($corp_schedule->data('start_date'));
   $recently->modify('-3 months');
   
-  $scheduled_reading = $schedule->get_schedule_date($today);
-  
-  if (!$scheduled_reading) {
-    die("nothing to do today!");
-  }
+  $corp_scheduled_reading = $corp_schedule->get_schedule_date($today);
   
   // web push init for site
   $auth = [
     'VAPID' => [
-      'subject' => $site->DOMAIN,
+      'subject' => "https://".$site->DOMAIN,
       'publicKey' => $site->data('vapid_pubkey'), 
       'privateKey' => $site->data('vapid_privkey'),
     ],
@@ -61,7 +58,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, ps.subscription, u.email_verses, ps.id sub_id
     FROM users u
     LEFT JOIN push_subscriptions ps ON ps.user_id = u.id
-    WHERE u.site_id = ".$site->ID." AND (
+    WHERE u.site_id = ".$site->ID." and u.id=1 AND (
       u.email_verses = 1 OR ps.id
     )") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
@@ -69,82 +66,107 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     if ($last_seen_date < $recently) {
       continue;
     }
+
+    $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $user['id']);
+    $personal_scheduled_reading = $personal_schedule->get_schedule_date($today);
   
-    // skip anyone who's already read today (ptl early risers!)
-    if ($schedule->day_completed($user['id'], $scheduled_reading['id'])) {
-      continue;
-    }
-    
-    // format the user's name by using everything but the last name
-    $name_arr = explode(' ', $user['name']);
-    $name = array_pop($name_arr);
-    if ($name_arr) {
-      $name = implode(' ', $name_arr);
-    }
-  
-    // total up the words in this day's reading
-    $total_word_count = array_reduce(
-      $scheduled_reading['passages'], 
-      fn($acc, $cur) => $acc + $cur['word_count']);
-    $minutes_to_read = ceil($total_word_count / ($site->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
-  
-    if ($user['email_verses']) {
+    if ($corp_scheduled_reading &&
+        $user['email_verses'] && 
+        !$corp_schedule->day_completed($user['id'], $corp_scheduled_reading['id']) // skip anyone who's already read today (ptl early risers!)
+      ) {
+      
+      $notification_info = $site->notification_info($user['name'], $corp_scheduled_reading);
+        
       // EMAIL
       /* the banner image at the top of the email is part of the email template in Sendgrid */
     
       /* chapter contents */
-      $html = $site->html_for_scheduled_reading($scheduled_reading, $user['trans_pref'], $scheduled_reading['complete_key'], $schedule, $today, true);
+      $html = $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $schedule, $today, true);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_subscription_type=0'>click here to unsubscribe</a>.<small></p>";
       
       $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
       
       usleep(1_000_000 / 5); // 5 per second at most
-      $site->send_daily_verse_email($user['email'], $name, $minutes_to_read." Minute Read", $html, $streak);
+      $site->send_daily_verse_email($user['email'], $notification_info['name'], $notification_info['minutes']." Minute Read", $html, $streak);
     }
 
+    // if, not else if. a user can receive an email and a push notification.
+    // also, a user may receive a push notification for his personal schedule and not the corporate schedule
     if ($user['sub_id']) {
       // PUSH NOTIFICATION
       $subscription = Subscription::create(json_decode($user['subscription'], true));
-      $webPush->queueNotification(
+      $body_lines = [];
+      $time = 0;
+      foreach([ 
+        [
+          's' => &$corp_schedule,
+          'sr' => &$corp_scheduled_reading,
+        ],
+        [
+          's' => &$personal_schedule,
+          'sr' => &$personal_scheduled_reading,
+        ]
+      ] as $i => $arr) {
+        if (!$arr['s'] || !$arr['sr'] || $arr['s']->day_completed($user['id'], $arr['sr']['id'])) {
+          // if nothing is scheduled for today or we already completed the reading, skip
+          continue;
+        }
+
+        $notification_info = $site->notification_info($user['name'], $arr['sr']);
+        if (count($body_lines) === 0) {
+          $body_lines[] = "Good morning $notification_info[name]. Keep up your $user[streak]-day streak.";
+        }
+        $time += $notification_info['minutes'];
+        
+        $body_lines[] = $i === 0
+          ? "We're reading ".$arr['sr']['reference']." today"
+          : "You scheduled ".$arr['sr']['reference']." for yourself to read today.";
+      }
+
+      if ($body_lines) { // $body_lines will be empty if there are no scheduled readings
+        $body_lines[] = "It'll take about $time minutes. Read now?";
+
+        // we're not using queueNotification() and flushPooled() because when I was testing it,
+        // there was no way to retrieve the sub_id out of the MessageSentReport in the flushPooled() callback
+        // the library code said the payload was supposed to be in the object (via getRequestPayload()), but it was an empty string
+        $report = $webPush->sendOneNotification(
           $subscription,
           json_encode([
-            'title' => "something to read today",
+            'title' => $site->data('short_name')." Daily Bible Reading",
             'options' => [
-              'body' => 'body content',
+              'body' => implode("\n", $body_lines),
+              'icon' => "/img/static/logo_".$site->ID."_512x512.png",
               'data' => [
-                'link' => SCHEME."://".$site->DOMAIN."/today?today=".$scheduled_reading['date']
+                'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
               ]
             ]
           ])
-      );
+        );
+
+        $endpoint = $report->getRequest()->getUri()->__toString();
+        if ($report->isSuccess()) {
+          echo "[v] Message sent successfully for subscription {$endpoint}.";
+          $db->update('push_subscriptions', [
+            'last_sent' => date("Y-m-d H:i:s")
+          ], "id = ".$user['sub_id']);
+        }
+        else {
+          echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}";
+          
+          $db->query("DELETE FROM push_subscriptions WHERE id = ".$user['sub_id']);
+          
+          error_log(json_encode([
+            'sub' => $user['sub_id'],
+            'endpoint' => $endpoint,
+            'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
+            'responseOfPushService' => $report->getResponse(),
+            'getReason' => $report->getReason(),
+            'getRequest' => print_r($report->getRequest(), true),
+            'getResponse' => print_r($report->getResponse(), true),
+          ]));
+        }
+      }
     }
   }
-
-  $webPush->flushPooled(function($report) use ($db, $sub) {
-    $endpoint = $report->getRequest()->getUri()->__toString();
-
-    if ($report->isSuccess()) {
-      echo "[v] Message sent successfully for subscription {$endpoint}.";
-      $db->update('push_subscriptions', [
-        'last_sent' => date("Y-m-d H:i:s")
-      ], "id = ".$sub['id']);
-    }
-    else {
-      echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}";
-      
-      $db->query("DELETE FROM push_subscriptions WHERE id = ".$sub['id']);
-      
-      error_log(json_encode([
-        'sub' => $sub,
-        'endpoint' => $endpoint,
-        'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
-        'responseOfPushService' => $report->getResponse(),
-        'getReason' => $report->getReason(),
-        'getRequest' => print_r($report->getRequest(), true),
-        'getResponse' => print_r($report->getResponse(), true),
-      ]));
-    }
-  }, 20, 10);
-
 }

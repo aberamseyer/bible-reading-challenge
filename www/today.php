@@ -114,7 +114,7 @@ echo "<div id='date-header'>
   <h5>".$today->format("l, F j")."</h5>
   <form style='display: flex; width: 30rem; justify-content: space-between; align-items: flex-end;'>
     <select name='change_subscription_type' value=''>
-      <option value=''".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">-Notifications-</option>
+      <option value='none'".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">-Notifications-</option>
       <option value='email'".($me['email_verses'] && !$push_subscribed ? "selected" : "").">Emails</option>
       <option value='push'".(!$me['email_verses'] && $push_subscribed ? "selected" : "").">Push Notifications</option>
       <option value='both'".($me['email_verses'] && $push_subscribed ? "selected" : "").">Both</option>

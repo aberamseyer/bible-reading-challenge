@@ -28,7 +28,7 @@ function process_job($job) {
   $redis = BibleReadingChallenge\Redis::get_instance();
 
   list($site_id, $user_id) = explode("|", $job);
-  $site = BibleReadingChallenge\Site::get_site((int)$site_id);
+  $site = BibleReadingChallenge\SiteRegistry::get_site((int)$site_id);
   $user = $db->row("
     SELECT id, name
     FROM users

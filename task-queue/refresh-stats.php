@@ -13,7 +13,7 @@ foreach($redis->stats_iterator() as $key) {
 }
 
 foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
-  $site = \BibleReadingChallenge\Site::get_site($site_id);
+  $site = \BibleReadingChallenge\SiteRegistry::get_site($site_id);
   foreach($site->all_users() as $user) {
     $redis->enqueue_stats($site->ID, $user['id']);
   }

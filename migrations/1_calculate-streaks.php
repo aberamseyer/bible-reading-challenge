@@ -23,7 +23,7 @@ catch (Exception $e) {
 }
 
 foreach($db->cols("SELECT * FROM sites") as $site_id) {
-  $site = BibleReadingChallenge\Site::get_site($site_id);
+  $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
   $db->query("UPDATE users SET streak=0, max_streak=0 WHERE site_id = ".$site->ID);
   
   $period = new DatePeriod(

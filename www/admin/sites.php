@@ -41,7 +41,7 @@ if ($_POST) {
     ]);
     $passage_readings = parsed_passages_to_passage_readings(parse_passages('Genesis 1'));
     create_schedule_date($new_sched_id, $start_date, 'Genesis 1', $passage_readings, passage_readings_word_count($passage_readings));
-    $new_site = BibleReadingChallenge\Site::get_site($new_site_id, true);
+    $new_site = BibleReadingChallenge\SiteRegistry::get_site($new_site_id, true);
     
     // create user and assign as staff:
     // already verified, so no email sent or verify key cached
@@ -157,8 +157,8 @@ else {
     <tbody>";
   foreach($sites as $each_site) {
     echo "
-      <tr class='".($each_site['id'] == $active_edit_site ? 'active' : '')."'>
-        <td data-name><small>".html($each_site['site_name'])."</small></td>
+      <tr>
+        <td data-name><small>".html($each_site['site_name'])."</small>".($each_site['id'] == $active_edit_site ? "<div class='dot'></div>" : "")."</td>
         <td data-enabled='".($each_site['enabled'] == 1 ? 1 : 0)."'>".($each_site['enabled'] == 1 ? '<img src="/img/static/circle-check.svg" class="icon">' : '<img src="/img/static/circle-x.svg" class="icon">')."</td>
         <td data-domain='$each_site[domain_www]'><small><a href='".SCHEME."://$each_site[domain_www]' target='_blank'>".html($each_site['domain_www'])."</a></small></td>
         <td data-test-domain='$each_site[domain_www_test]'><small><a href='http://$each_site[domain_www_test]' target='_blank'>".html($each_site['domain_www_test'])."</a></small></td>

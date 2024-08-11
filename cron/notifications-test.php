@@ -15,7 +15,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     JOIN users u ON u.id = ps.user_id
     WHERE site_id = $site_id
     LIMIT 1");
-  $site = BibleReadingChallenge\Site::get_site($site_id);
+  $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
 
   $auth = [
     'VAPID' => [

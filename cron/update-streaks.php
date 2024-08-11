@@ -10,7 +10,7 @@ require __DIR__."/../www/inc/env.php";
 $db = BibleReadingChallenge\Database::get_instance();
 
 foreach($db->cols("SELECT id FROM sites") as $site_id) {
-  $site = BibleReadingChallenge\Site::get_site($site_id);
+  $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
   $dt = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to update the sites who's local time is 3:50 AM
   if ($dt->format('G') != 3) {

@@ -3,6 +3,7 @@
   <head>
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta charset="utf-8">
+    <link rel="manifest" href="/manifest" />
     <link rel="icon" type="image/x-icon" href="<?= $site->resolve_img_src('favico') ?>">
     <?= cached_file('css', '/css/normalize.css', 'media="screen"') ?>
     <?= cached_file('css', '/css/sakura-coc.css', 'media="screen"') ?>

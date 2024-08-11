@@ -8,8 +8,9 @@ vendor
 # unsure what this is from
 test.sql
 
-# File uploads
+# File uploads and generated files
 **/img/upload-*
+**/img/static/logo_*
 
 # sqlite and redis data
 brc.db*

@@ -81,7 +81,7 @@
 
 	function print_json($arr) {
 		header("Content-type: application/json");
-		echo json_encode($arr);
+		echo json_encode($arr, JSON_UNESCAPED_SLASHES);
 		die;
 	}
 
@@ -191,7 +191,7 @@
 
 	function navigation() {
 		global $staff;
-		$site = BibleReadingChallenge\Site::get_site();
+		$site = BibleReadingChallenge\SiteRegistry::get_site();
 
 		$nav_elements = [
 			['/my-schedule', 'My schedule'.($site->data('allow_personal_schedules') ? 's' : '')],

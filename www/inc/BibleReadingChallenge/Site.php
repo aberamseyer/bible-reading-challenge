@@ -25,7 +25,7 @@ class SiteRegistry
   public static function get_site($id = 0, $soft=false): Site
   {
     if (!isset(self::$sites[ $id ])) {
-      $inst = new Site($id, $soft);
+      $inst = new Site(new self(), $id, $soft);
       if ($id === 0) {
         self::$sites[ 0 ] = $inst; // if no $id is passed, we need the to put our site in the 'default' slot of 0
       }
@@ -37,7 +37,7 @@ class SiteRegistry
 
 
 
-class Site extends SiteRegistry {
+class Site {
   public readonly string $DOMAIN;
   public readonly string $SOCKET_DOMAIN;
   public readonly \DateTimeZone $TZ;
@@ -56,8 +56,13 @@ class Site extends SiteRegistry {
    * @param $id a specific site to get
    * @param $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
    */
-  protected function __construct($id, $soft=false)
+  public function __construct(object $token, $id, $soft=false)
   {
+    if (!$token instanceof \BibleReadingChallenge\SiteRegistry) {
+      // only allow SiteRegistry to instantiate us
+      throw new \InvalidArgumentException('Invalid token');
+    }
+
     $this->active_schedule = null;
     $this->db = Database::get_instance();
     // either a passed $id gets a specific site, or we default to the site that matches the server HOST value
@@ -239,6 +244,27 @@ class Site extends SiteRegistry {
 		return $passages;
 	}
 
+  public function notification_info($name, $scheduled_reading)
+  {
+    // format the user's name by using everything but the last name
+    $name_arr = explode(' ', $name);
+    $name = array_pop($name_arr);
+    if ($name_arr) {
+      $name = implode(' ', $name_arr);
+    }
+
+    // total up the words in this day's reading
+    $total_word_count = array_reduce(
+      $scheduled_reading['passages'], 
+      fn($acc, $cur) => $acc + $cur['word_count']);
+    $minutes_to_read = ceil($total_word_count / ($this->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
+    
+    
+    return [
+      'name' => $name,
+      'minutes' => $minutes_to_read
+    ];
+  }
 
 	/*
 	 * @param scheduled_reading array the return value of get_schedule_date()
@@ -653,6 +679,22 @@ class Site extends SiteRegistry {
       foreach($this->all_users() as $user) {
         $redis->delete_stats($this->ID, $user['id']);
       }
+    }
+  }
+
+  function logo_pngs($input_file, $output_path, $sizes)
+  {
+    foreach ($sizes as $size) {
+      $output_file = "$output_path/logo_{$this->ID}_".$size."x".$size.".png";
+      
+      $command = "magick \"{$input_file}\" " .
+                  "-background none " .
+                  "-gravity center " .
+                  "-resize {$size}x{$size} " .
+                  "-extent {$size}x{$size} " .
+                  "\"{$output_file}\"";
+      
+      shell_exec($command);
     }
   }
 }
