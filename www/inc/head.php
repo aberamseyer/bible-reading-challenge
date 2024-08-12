@@ -1,3 +1,4 @@
+<?php global $site; ?>
 <!doctype html>
 <html lang="en-US">
   <head>
@@ -43,10 +44,11 @@
           --color-danger: rgb(251, 139, 139);  /* errors */
         }
       }
+      <?php echo "
       .mountain-wrap .emoji {
-        bottom: <?= $coords[1] ?>%;
-        left: <?= $coords[0] ?>%;
-      }
+        bottom: $coords[1]%;
+        left: $coords[0]%;
+      }"; ?>
     </style>
     <script>
       window.COLORS = {
@@ -59,8 +61,8 @@
         window.PROGRESS_X_1 = $coords[0];
         window.PROGRESS_Y_1 = $coords[1];
         window.PROGRESS_X_2 = $coords[2];
-        window.PROGRESS_Y_2 = $coords[3]";
-        ?>
+        window.PROGRESS_Y_2 = $coords[3];\n";
+      ?>
     </script>
   </head>
   <body>
@@ -80,13 +82,13 @@
           <blockquote id='message'>";
 
         if ($_SESSION['error']) {
-          echo "<img class='icon' src='/img/static/circle-x.svg'>&nbsp;<small>".$_SESSION['error']."</small>";
+          echo "<img alt='x' class='icon' src='/img/static/circle-x.svg'>&nbsp;<small>".$_SESSION['error']."</small>";
         }
         else if ($_SESSION['success']) {
-          echo "<img class='icon' src='/img/static/circle-check.svg'>&nbsp;<small>".$_SESSION['success']."</small>";
+          echo "<img alt='check' class='icon' src='/img/static/circle-check.svg'>&nbsp;<small>".$_SESSION['success']."</small>";
         }
         else if ($_SESSION['email']) {
-          echo "<img class='icon' src='/img/static/email.svg'>&nbsp;<small>".$_SESSION['email']."</small>";
+          echo "<img alt='email' class='icon' src='/img/static/email.svg'>&nbsp;<small>".$_SESSION['email']."</small>";
         }
         
         $_SESSION['error'] = $_SESSION['success'] = $_SESSION['email'] = '';

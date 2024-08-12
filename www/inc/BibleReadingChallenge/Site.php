@@ -181,7 +181,7 @@ class Site extends SiteRegistry {
       </span>";
     }
     
-    echo "<img src='".$this->resolve_img_src('progress')."' class='mountain'>";
+    echo "<img alt='progress' src='".$this->resolve_img_src('progress')."' class='mountain'>";
     echo "</div>";
     return ob_get_clean();
   }

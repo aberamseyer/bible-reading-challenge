@@ -74,7 +74,7 @@ else if ($_REQUEST['reset']) {
         ?>
           <div id='auth-wrap'>
             <div>
-              <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+              <img alt='login' src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
             </div>
             <div>
               <h4>Reset Password</h4>
@@ -108,7 +108,7 @@ require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+      <img alt='login' src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
       <h4>Forgot Password</h4>

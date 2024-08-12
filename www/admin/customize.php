@@ -410,7 +410,7 @@ foreach($db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image
   $delete_disabled = $logo_disabled || $login_disabled || $progress_disabled || $favico_disabled ? 'disabled' : '';
   echo "<tr>
     <td><small>".html($image['uploaded_name'])."</small></td>
-    <td><img src='/admin/image?f=$image[uploads_dir_filename]' class='thumbnail'></td>
+    <td><img alt='' src='/admin/image?f=$image[uploads_dir_filename]' class='thumbnail'></td>
     <td>
       <form method='post'>
         <small style='font-size: 75%'>
@@ -464,7 +464,7 @@ echo "      </tbody>
           <span class='emoji' style='z-index: 1;' id='end'>
             <span class='inner'>⏹️</span>
           </span>
-          <img src='".$site->resolve_img_src('progress')."' class='mountain'>
+          <img alt='progress' src='".$site->resolve_img_src('progress')."' class='mountain'>
         </div>
         <button type='submit'>Save Positions</button>
       </form>";

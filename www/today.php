@@ -204,7 +204,7 @@ foreach($schedules as $i => $each_schedule) {
   }
 
   if (!$personal && $each_schedule->completed($my_id)) {
-    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+    echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
     $add_to_foot .= 
       cached_file('js', '/js/lib/js-confetti.min.js').
       "<script>
@@ -238,7 +238,7 @@ foreach($schedules as $i => $each_schedule) {
         break;
       }
     } while(!$next_reading);
-    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
+    echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
   echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
@@ -253,15 +253,15 @@ if ($site->data('allow_personal_schedules')) {
   // set active tab on page load
   $add_to_foot .= "
     <script type='text/javascript'>
-    document.querySelector('.tabs').addEventListener('change', e => {
-      localStorage.setItem('activeTabId', e.target.id)
-    })
-    const activeTabId = localStorage.getItem('activeTabId')
-    const activeTabEl = document.getElementById(activeTabId)
-    if (activeTabId && activeTabEl) {
-      document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
-      activeTabEl.checked = true
-    }
+      document.querySelector('.tabs').addEventListener('change', e => {
+        localStorage.setItem('activeTabId', e.target.id)
+      })
+      const activeTabId = localStorage.getItem('activeTabId')
+      const activeTabEl = document.getElementById(activeTabId)
+      if (activeTabId && activeTabEl) {
+        document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
+        activeTabEl.checked = true
+      }
     </script>";
 }
 

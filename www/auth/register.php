@@ -56,7 +56,7 @@ require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+      <img alt='login' src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
       <h4>Register</h4>
