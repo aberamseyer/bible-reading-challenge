@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (Notification.permission === 'default') {
       try {
-        const result = Notification.requestPermission()
+        const result = await Notification.requestPermission()
         if (result !== 'granted') {
           throw new Error('Bad permission result')
         }
