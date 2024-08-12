@@ -719,23 +719,35 @@ class Schedule {
 
   public static function create_schedule_form()
   {
+    global $add_to_foot;
     ob_start();
     echo "<p>".back_button("Back to schedules")."</p>";
     
     echo "<h5>Create New Schedule</h5>";
     echo "<form method='post'>
       <input type='hidden' name='new_schedule' value='1'>
-
-      <label>Start date: <input type='date' name='start_date'></label>
-      <label>End date: <input type='date' name='end_date'></label>
       <label>Name: <input type='text' name='name' minlength='1'></label>
+
+      <label>
+        Start date: <input type='date' name='start_date'>
+      </label>
+      <label>
+        End date: <input type='date' name='end_date'>
+      </label>
+      <p>
+        <b data-alldays></b> Calendar Days<br>
+        <b data-weekdays></b> Weekdays
+      </p>
       <button type='submit'>Save</button>
     </form>";
+    $add_to_foot .= cached_file('js', '/js/schedule-bounds.js');
+
     return ob_get_clean();
   }
 
   public static function edit_schedule_form($id, $name, $start_date, $end_date, $active)
   {
+    global $add_to_foot;
     ob_start();
 
     $start_date = new \Datetime($start_date);
@@ -743,14 +755,22 @@ class Schedule {
     echo "<h5>Editing '".html($name)."' schedule</h5>";
     echo "<form method='post'>
       <input type='hidden' name='schedule_id' value='$id'>
-
-      <label>Start date: <input type='date' name='start_date' value='".$start_date->format('Y-m-d')."'></label>
-      <label>End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'></label>
       <label>Name: <input type='text' name='name' minlength='1' value='".html($name)."'></label>
+      <label>
+        Start date: <input type='date' name='start_date' value='".$start_date->format('Y-m-d')."'>
+      </label>
+      <label>
+        End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'>
+      </label>
+      <p>
+        <b data-alldays></b> Calendar Days<br>
+        <b data-weekdays></b> Weekdays
+      </p>
       <button type='submit'>Save</button>
       <button type='submit' ".($active ? "disabled title='You cannot delete the active schedule'" : "")." name='delete' value='1' onclick='return confirm(`Are you sure you want to delete ".html($name)."? This can NEVER be recovered. All existing reading progress, INCLUDING BADGES, will be permanently lost.`)'>Delete Schedule</button>
       <button type='button' onclick='window.location = \"?calendar_id=$id\"'>Edit Calendar</button>
     </form>";
+    $add_to_foot .= cached_file('js', '/js/schedule-bounds.js');
     return ob_get_clean();
   }
 

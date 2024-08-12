@@ -618,7 +618,7 @@ function badges_html($badges) {
 		echo "<div class='badges'>";
 		foreach(array_slice($books, $section[0], $section[1]) as $book) {
 			if(in_array($book['name'], $badges)) {
-				echo "<img class='badge' src='/img/badge/nt/rgb-small/".($book['id']-39).".png'>";
+				echo "<img alt='$book[name] badge' class='badge' src='/img/badge/nt/rgb-small/".($book['id']-39).".png'>";
 			}
 		}
 		echo "</div>";
@@ -701,10 +701,10 @@ function create_schedule_date($schedule_id, $date, $passage, $passage_readings, 
 
 function cached_file($type, $path, $attrs='') {
 	if ($type == 'css') {
-		return "<link rel='stylesheet' href='$path?v=".VERSION."' $attrs>";
+		return "\n<link rel='stylesheet' href='$path?v=".VERSION."' $attrs>";
 	}
 	else if ($type == 'js') {
-		return "<script src='$path?v=".VERSION."' $attrs></script>";
+		return "\n<script src='$path?v=".VERSION."' $attrs></script>";
 	}
 	return '';
 }
@@ -715,7 +715,7 @@ function back_button($text) {
 
 function site_logo() {
 	global $site;
-	return "<img class='logo' src='".$site->resolve_img_src('logo')."' onclick='window.location = `/`'>";
+	return "<img alt='logo' class='logo' src='".$site->resolve_img_src('logo')."' onclick='window.location = `/`'>";
 }
 
 function down_for_maintenance() {

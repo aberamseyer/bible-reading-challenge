@@ -86,7 +86,7 @@ echo "<p>
     ".$site->weekly_progress_canvas($me['id'])."
   </div>
 </div>
-</p>";
+";
 
 echo "<form method='post'>
   <fieldset>

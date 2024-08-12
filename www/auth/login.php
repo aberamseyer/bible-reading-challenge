@@ -39,10 +39,10 @@ require DOCUMENT_ROOT."inc/head.php";
 ?>
   <div id='auth-wrap'>
     <div>
-      <img src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
+      <img alt='login' src='<?= $site->resolve_img_src('login') ?>' style='width: 280px'>
     </div>
     <div>
-      <img src='/img/static/start-reading.svg' style='width: 240px'>
+      <img alt='start reading' src='/img/static/start-reading.svg' style='width: 240px'>
       <p></p>
       <form action='' method='post'>
         <input type='hidden' name='csrf' value='<?= $csrf ?>'>

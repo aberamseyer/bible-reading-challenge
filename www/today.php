@@ -219,7 +219,7 @@ foreach($schedules as $i => $each_schedule) {
   }
 
   if (!$personal && $each_schedule->completed($my_id)) {
-    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
+    echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the challenge! <button type='button' onclick='party()'>Congratulations!</button></blockquote>";
     $add_to_foot .= 
       cached_file('js', '/js/lib/js-confetti.min.js').
       "<script>
@@ -253,7 +253,7 @@ foreach($schedules as $i => $each_schedule) {
         break;
       }
     } while(!$next_reading);
-    echo "<blockquote><img class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
+    echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
   echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);

@@ -82,6 +82,8 @@ Install the `systemd` service `task-queue/brc-task-queue.service`. This is criti
 
 View logs with `journalctl -u brc-task-queue.service -f`
 
+WHENEVER STATS PROCESSING CHANGES this service needs to be restarted. I'm pretty sure php caches `require`s
+
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
 

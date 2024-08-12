@@ -186,7 +186,7 @@ class Site {
       </span>";
     }
     
-    echo "<img src='".$this->resolve_img_src('progress')."' class='mountain'>";
+    echo "<img alt='progress' src='".$this->resolve_img_src('progress')."' class='mountain'>";
     echo "</div>";
     return ob_get_clean();
   }
@@ -594,11 +594,11 @@ class Site {
       $timer->mark('user');
       $badges = badges_for_user($user_id);
       $timer->mark('badges');
-      $last_seen = $redis->get_last_seen($user_id) ?: $user['last_seen'];
+      $last_seen = (int) $redis->get_last_seen($user_id) ?: $user['last_seen'];
       $timer->mark('last_seen');
-      $last_read_ts = $this->db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
+      $last_read_ts = (int) $this->db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
       $timer->mark('last_read_ts');
-      $chapters_ive_read = $this->db->col(
+      $chapters_ive_read = (int) $this->db->col(
         sprintf($chp_qry =
           "SELECT SUM(chapters_read)
           FROM (
@@ -606,24 +606,25 @@ class Site {
             FROM read_dates rd
             JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
             JOIN chapters c ON c.id = sdv.chapter_id
-            WHERE %s
+            JOIN users u ON u.id = rd.user_id
+            WHERE u.site_id = ".$this->ID." AND %s
             GROUP BY chapter_id
             HAVING COUNT(*) >= c.verses
         )", "rd.user_id = $user_id"));
       $timer->mark('chapters_ive_read');
-      $words_ive_read = $this->words_read($user);
+      $words_ive_read = (int) $this->words_read($user);
       $timer->mark('words_ive_read');
-      $deviation = $this->deviation_for_user($user_id);
+      $deviation = (float) $this->deviation_for_user($user_id);
       $timer->mark('deviation');
-      $on_target = $this->on_target_percent_for_user($user_id);
+      $on_target = (float) $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target');
-      $all_club_chapters_read = $this->db->col(sprintf($chp_qry, "1"));
+      $all_club_chapters_read = (int) $this->db->col(sprintf($chp_qry, "1"));
       $timer->mark('all_club_chapters_read');
-      $all_club_words_read = $this->words_read();
+      $all_club_words_read = (int) $this->words_read();
       $timer->mark('words_read');
       $progress_graph_data = $this->progress($user_id);
       $timer->mark('progress_graph_data');
-      $on_target_perc = $this->on_target_percent_for_user($user_id);
+      $on_target_perc = (float) $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target_percent');
       $days_behind = 
         $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$active_schedule->ID." AND date <= '".date('Y-m-d')."'") - 
@@ -646,10 +647,10 @@ class Site {
         'words_ive_read' => $words_ive_read,
       ];
 
-      $total_words_in_schedule = $active_schedule->total_words_in_schedule();
+      $total_words_in_schedule = (int) $active_schedule->total_words_in_schedule();
       if ($total_words_in_schedule) {
         // challenge percent can only happen when a schedule has words
-        $words_read =  $this->words_read($user, $active_schedule->ID);
+        $words_read = (int) $this->words_read($user, $active_schedule->ID);
         $stats['challenge_percent'] = $words_read / $total_words_in_schedule * 100;
         $timer->mark('challenge_percent');
       }
