@@ -1,5 +1,7 @@
 <?php
 
+set_include_path(get_include_path().":".getenv('PATH'));
+
 define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 
 error_reporting(PROD ? 0 : E_ALL^E_NOTICE^E_WARNING);
@@ -13,8 +15,8 @@ define('SESSIONS_DB_FILE', DOCUMENT_ROOT."/../sessions.db"); // only used as bac
 define('SCHEME', PROD ? 'https' : 'http');
 define('SESSION_LENGTH', 60*60*24*14); // 14-day sessions
 
-define('UPLOAD_DIR', DOCUMENT_ROOT."/../upload/");
-define('IMG_DIR', DOCUMENT_ROOT."/img/");
+define('UPLOAD_DIR', DOCUMENT_ROOT."../upload/");
+define('IMG_DIR', DOCUMENT_ROOT."img/");
 define('SCHEDULE_DIR', DOCUMENT_ROOT."/../extras/schedules/");
 
 define('ALL_TRANSLATIONS', ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt']);

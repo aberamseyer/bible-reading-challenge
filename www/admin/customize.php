@@ -112,7 +112,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
         copy(UPLOAD_DIR.$new_image['uploads_dir_filename'], IMG_DIR.$new_image['uploads_dir_filename']);
         if ($key === 'logo') {
           // create new logo images if necessary
-          $site->logo_pngs(UPLOAD_DIR.$new_image['uploads_dir_filename'], IMG_DIR."/static", [120, 180, 192, 512]);
+          $site->logo_pngs(UPLOAD_DIR.$new_image['uploads_dir_filename'], IMG_DIR."static", [120, 180, 192, 512]);
         }
         // activate the new image
         $db->update('sites', [ $key.'_image_id' => $img_id ], 'id = '.$site->ID);

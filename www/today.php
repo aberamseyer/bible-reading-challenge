@@ -20,11 +20,11 @@ if ($_REQUEST['change_trans'] || array_key_exists('change_subscription_type', $_
     if ($_REQUEST['change_subscription_type'] === 'both') {
       $me['email_verses'] = 1;
     }
-    else if ($_REQUEST['change_subscription_type'] === 'email') {
+    if (in_array($_REQUEST['change_subscription_type'], [ 'none', 'email' ], true)) {
       $db->query("DELETE FROM push_subscriptions WHERE user_id = ".$me['id']);
       $me['email_verses'] = 1;
     }
-    else if ($_REQUEST['change_subscription_type'] === 'push') {
+    if (in_array($_REQUEST['change_subscription_type'], [ 'none', 'push' ], true)) {
       $me['email_verses'] = 0;
     }
   }
@@ -114,7 +114,7 @@ echo "<div id='date-header'>
   <h5>".$today->format("l, F j")."</h5>
   <form style='display: flex; width: 30rem; justify-content: space-between; align-items: flex-end;'>
     <select name='change_subscription_type' value=''>
-      <option value='none' ".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">-Notifications-</option>
+      <option value='none' ".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">No Notifications</option>
       <option value='email' ".($me['email_verses'] && !$push_subscribed ? "selected" : "").">Emails</option>
       <option value='push' ".(!$me['email_verses'] && $push_subscribed ? "selected" : "").">Push Notifications</option>
       <option value='both' ".($me['email_verses'] && $push_subscribed ? "selected" : "").">Both</option>

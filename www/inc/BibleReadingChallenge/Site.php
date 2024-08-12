@@ -688,12 +688,12 @@ class Site {
     foreach ($sizes as $size) {
       $output_file = "$output_path/logo_{$this->ID}_".$size."x".$size.".png";
       
-      $command = "magick \"{$input_file}\" " .
-                  "-background none " .
-                  "-gravity center " .
-                  "-resize {$size}x{$size} " .
-                  "-extent {$size}x{$size} " .
-                  "\"{$output_file}\"";
+      $command = "magick ".escapeshellarg($input_file)." ".
+                  "-background none ".
+                  "-gravity center ".
+                  "-resize {$size}x{$size} ".
+                  "-extent {$size}x{$size} ".
+                  escapeshellarg($output_file)." 2>&1";
       
       shell_exec($command);
     }
