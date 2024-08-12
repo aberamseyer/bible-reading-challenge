@@ -22,12 +22,12 @@ require __DIR__."/../www/inc/env.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 
-foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 and id = 1") as $site_id) {
+foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
   $today = new DateTime('now', $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
   if ($today->format('G') != 7) {
-    // continue;
+    continue;
   }
 
   // get scheedule details
@@ -58,7 +58,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 and id = 1") as $site_
     SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, ps.subscription, u.email_verses, ps.id sub_id
     FROM users u
     LEFT JOIN push_subscriptions ps ON ps.user_id = u.id
-    WHERE u.site_id = ".$site->ID." and u.id=1 AND (
+    WHERE u.site_id = ".$site->ID." AND (
       u.email_verses = 1 OR ps.id
     )") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
