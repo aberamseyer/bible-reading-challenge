@@ -62,41 +62,6 @@ CREATE TABLE books(
   abbreviations LONGTEXT NOT NULL,
   word_count INTEGER
 );
-CREATE TABLE sites(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  enabled INTEGER DEFAULT(1),
-  site_name TEXT,
-  domain_www TEXT,
-  domain_www_test TEXT,
-  domain_socket TEXT,
-  domain_socket_test TEXT,
-  short_name TEXT,
-  contact_name TEXT,
-  contact_email TEXT,
-  contact_phone TEXT,
-  email_from_address TEXT,
-  email_from_name TEXT,
-  favico_image_id INTEGER,
-  logo_image_id INTEGER,
-  login_image_id INTEGER,
-  progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'),
-color_primary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_secondary TEXT DEFAULT('rgb(0, 0, 0)'),
-color_fade TEXT DEFAULT('rgb(0, 0, 0)'),
-default_emoji TEXT,
-reading_timer_wpm INTEGER DEFAULT(0),
-start_of_week INTEGER DEFAULT(1),
-time_zone_id TEXT DEFAULT('America/Chicago'),
-env TEXT,
-allow_personal_schedules INTEGER DEFAULT(0),
-translations TEXT DEFAULT ["rcv",
-  "kjv",
-  "esv",
-  "asv",
-  "niv",
-  "nlt"]
-);
 CREATE TABLE schedule_dates(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   schedule_id INTEGER,
@@ -105,6 +70,23 @@ CREATE TABLE schedule_dates(
   passage_chapter_readings TEXT,
   complete_key TEXT,
   word_count INTEGER
+);
+CREATE TABLE users(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id INTEGER,
+  uuid TEXT,
+  name TEXT,
+  trans_pref TEXT,
+  staff INTEGER DEFAULT(0),
+  email TEXT,
+  password TEXT,
+  last_seen TEXT,
+  date_created TEXT,
+  email_verified INTEGER,
+  email_verses INTEGER,
+  streak INTEGER DEFAULT(0),
+  max_streak INTEGER DEFAULT(0),
+  emoji TEXT
 );
 CREATE VIEW read_dates_dated AS SELECT rd.id, rd.user_id, u.name, rd.timestamp, DATETIME(rd.timestamp, 'unixepoch') date, sd.passage
 FROM read_dates rd
@@ -136,24 +118,41 @@ CREATE INDEX idx_images_site_id ON images(site_id);
 CREATE INDEX idx_books_name ON books(name);
 CREATE INDEX idx_read_dates_timestamp ON read_dates(timestamp ASC);
 CREATE INDEX idx_schedule_id ON schedule_dates(schedule_id);
-CREATE TABLE users(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  site_id INTEGER,
-  uuid TEXT,
-  name TEXT,
-  trans_pref TEXT,
-  staff INTEGER DEFAULT(0),
-  email TEXT,
-  password TEXT,
-  last_seen TEXT,
-  date_created TEXT,
-  email_verified INTEGER,
-  email_verses INTEGER,
-  streak INTEGER DEFAULT(0),
-  max_streak INTEGER DEFAULT(0),
-  emoji TEXT
-);
 CREATE INDEX idx_site_id ON users(site_id);
 CREATE INDEX idx_schedule_dates_date ON schedule_dates(date);
 CREATE INDEX idx_users_uuid ON users(uuid);
 CREATE INDEX idx_users_last_seen ON users(last_seen);
+CREATE TABLE push_subscriptions(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  subscription TEXT,
+  last_sent TEXT
+);
+CREATE TABLE sites(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  enabled INTEGER DEFAULT(1),
+  site_name TEXT,
+  domain_www TEXT,
+  domain_www_test TEXT,
+  domain_socket TEXT,
+  domain_socket_test TEXT,
+  short_name TEXT,
+  contact_name TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  email_from_address TEXT,
+  email_from_name TEXT,
+  favico_image_id INTEGER,
+  logo_image_id INTEGER,
+  login_image_id INTEGER,
+  progress_image_id INTEGER,
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(1), time_zone_id TEXT DEFAULT('America/Chicago'), env TEXT, allow_personal_schedules INTEGER DEFAULT(0), translations TEXT DEFAULT ["rcv",
+  "kjv",
+  "esv",
+  "asv",
+  "niv",
+  "nlt"],
+  vapid_pubkey TEXT,
+  vapid_privkey TEXT
+);
+CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
