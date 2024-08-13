@@ -1,7 +1,8 @@
 # Dependencies
 
 ## Language
-Written with php 8.2.20 and apache 2.4.61
+Written with php `8.2.20` and apache `2.4.61`
+- REQUIRES php `8.2` because of [this bug](https://github.com/php/php-src/pull/8292) and Mailgun's API for bulk sending
 
 ## Configuration
 Set the system time zone and php time zone (`date.timezone` in `php.ini`) to the same thing.
@@ -58,16 +59,13 @@ Each site created in the database requires the following values in the 'env' col
 
 ### Emails
 Be sure to set up the email templates in the sendgrid console
-- SENDGRID_API_KEY_ID
-- SENDGRID_API_KEY
-- SENDGRID_REGISTER_EMAIL_TEMPLATE
-- SENDGRID_DAILY_EMAIL_TEMPLATE
-- SENDGRID_FORGOT_PASSWORD_TEMPLATE
+- MAILGUN_SENDING_API_KEY_PROD (used on production domain)
+- MAILGUN_SENDING_API_KEY_LOCAL (used when not on production domain)
 
 ### Google Sign-in button
-also requires configuring OAuth consent screen in Google Cloud Console
+also requires configuring OAuth consent screen in Google Cloud Console. Save this in a `.env` file at the project root
 - GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
+- GOOGLE_CLIENT_SECRET (currently unused)
 
 ## Crons
 files in the `cron` directory should be installed according to the comments at the top of each file
@@ -90,3 +88,6 @@ Any scripts in the `migration` directory are meant to be run-once for a particul
 Numbers indicate the order in which scripts were created and the date changed.
 
 From the root of the project, run `extras/dump-schema.sh` to save the current database schema to `migrations/schema.sql`
+
+## Logo Generation
+For different logo sizes to be generated for PWA installation, the `magick` command must be avilable somewhere in the `PATH` environment. See `logo_pngs()` in `Site.php` where `set_include_path()` is called

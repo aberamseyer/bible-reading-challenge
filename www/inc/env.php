@@ -1,7 +1,5 @@
 <?php
 
-set_include_path(get_include_path().":".getenv('PATH'));
-
 define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
 
 error_reporting(PROD ? 0 : E_ALL^E_NOTICE^E_WARNING);

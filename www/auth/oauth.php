@@ -3,11 +3,13 @@
 $insecure = true;
 require __DIR__."/../inc/init.php";
 
+load_env();
+
 if (!$_POST['g_csrf_token'] || $_POST['g_csrf_token'] != $_COOKIE['g_csrf_token']) {
   $_SESSION['error'] = "Invalid CSRF token";
 }
 else {
-  $client = new Google_Client(['client_id' => $site->env('GOOGLE_CLIENT_ID')]);
+  $client = new Google_Client(['client_id' => GOOGLE_CLIENT_ID ]);
   $payload = $client->verifyIdToken($_POST['credential']);
   if (!$payload) {
     $_SESSION['error'] = "Problem with Google Sign in";

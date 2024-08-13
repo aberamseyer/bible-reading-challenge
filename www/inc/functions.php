@@ -3,8 +3,7 @@
 	require_once __DIR__."/../../vendor/autoload.php";
 	
 	require_once __DIR__."/MailSender/MailSender.php";
-	require_once __DIR__."/MailSender/MailSenderSES.php";
-	require_once __DIR__."/MailSender/MailSenderSendgrid.php";
+	require_once __DIR__."/MailSender/MailSenderMailgun.php";
 	require_once __DIR__."/BibleReadingChallenge/Site.php";
 	require_once __DIR__."/BibleReadingChallenge/Database.php";
 	require_once __DIR__."/BibleReadingChallenge/Redis.php";
@@ -109,33 +108,33 @@
 		}
 	}
 
-	function curl_post_json($url, $headers, $arr) {
+	function curl_post_form($url, $headers, $arr, $json=false) {
 		$debug = false;
 		// $debug = true;
 
 		$curl = curl_init($url);
 		curl_setopt($curl, CURLOPT_POST, true);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($arr));
-		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 'Content-Type: application/json', ...$headers ]);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $json? json_encode($arr) : $arr);
+		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 
+			'Content-type:  '.($json ? 'application/json' : 'multipart/form-data'), 
+			...$headers
+		]);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		/*
+
 		if ($debug) {
 			$temp_file = fopen('php://temp', 'w+');
 			curl_setopt($curl, CURLOPT_VERBOSE, true);
 			curl_setopt($curl, CURLOPT_STDERR, $temp_file);
 		}
-		*/
 
 		$response = curl_exec($curl);
 
-		/*
 		if ($debug) {
 			// Get the verbose output
 			rewind($temp_file);
 			$verboseData = stream_get_contents($temp_file);
 			fclose($temp_file);
 		}
-		*/
 
 		if(curl_errno($curl)) {
 				$error = curl_error($curl);
@@ -143,7 +142,6 @@
 		}
 		curl_close($curl);
 
-		/*
 		if ($debug) {
 			// Dump the cURL data
 			echo "---- cURL Verbose Output ----\n";
@@ -151,7 +149,6 @@
 			echo "---- Response Body ----\n";
 			echo nl2br($response);
 		}
-		*/
 
 		return $response;
 	}
@@ -748,4 +745,20 @@ function down_for_maintenance() {
 		</body>
 	<?php
 	die;
+}
+
+function load_env() {
+	// Load environment file configuration for Google Oauth Client
+	foreach (explode("\n", file_get_contents(DOCUMENT_ROOT."../.env")) as $line) {
+		$line = trim($line);
+		if ($line && !preg_match("/^(\/\/|\#).*$/", $line)) { // line doesn't begin with a comment
+			list($key, $val) = explode("=", $line);
+			if ($key === 'GOOGLE_CLIENT_ID') {
+				define('GOOGLE_CLIENT_ID', $val);
+			}
+			else if ($key === 'GOOGLE_CLIENT_SECRET') {
+				define('GOOGLE_CLIENT_SECRET', $val);
+			}
+		}
+	}
 }

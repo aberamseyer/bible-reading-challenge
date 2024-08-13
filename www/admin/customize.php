@@ -173,7 +173,7 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['email_from_address'] 
   $contact_name = $_POST['contact_name'];
   $contact_email = filter_input(INPUT_POST, 'contact_email', FILTER_VALIDATE_EMAIL);
   $contact_phone = preg_replace('/[^\d]/', '', $_POST['contact_phone']);
-  $email_from_address = filter_input(INPUT_POST, 'email_from_address', FILTER_VALIDATE_EMAIL);
+  $email_from_address = $_POST['email_from_address'];
   $email_from_name = $_POST['email_from_name'];
   $default_emoji = $_POST['default_emoji'];
   $reading_timer_wpm = (int)$_POST['reading_timer_wpm'];
@@ -316,7 +316,7 @@ echo "
     Contact Phone # ".help('Phone # of the one who talks to Abe')." <input type='text' name='contact_phone' value='".html(format_phone($site->data('contact_phone')))."' placeholder='No country code'>
     </label>
     <label>
-    System Email Address ".help('The email address that emails will be sent from. You will likely have to verify this using MX DNS recoreds')." <input type='email' name='email_from_address' value='".html($site->data('email_from_address'))."'>
+    System Email Address ".help('The \'user\' portion of the email address that emails will be sent from.')." <input type='text' maxlength='64' name='email_from_address' value='".html($site->data('email_from_address'))."'> <b>@".$site->data('domain_www')."</b>
     </label>
     <label>
     System Email Name ".help('The name of the sender that emails will be sent from')." <input type='text' name='email_from_name' value='".html($site->data('email_from_name'))."'>

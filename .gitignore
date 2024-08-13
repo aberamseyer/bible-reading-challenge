@@ -16,3 +16,6 @@ test.sql
 brc.db*
 dump.rdb
 sessions.db
+
+# environment
+.env

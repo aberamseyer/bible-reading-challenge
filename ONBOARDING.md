@@ -1,5 +1,5 @@
 # Pointing the Domain
-Create 2 DNS `A` records with the value `5.161.204.56`
+Create 2 DNS `A` records with the value `5.161.204.56` for your www and socket subdomains
 
 > e.g., `brc.churchinfairborn.org` and `brc-socket.churchinfairborn.org`
 
@@ -40,9 +40,9 @@ If these instructions were followed, a single certificate was generated that inc
 Again, check `nginx -t` and `systemctl reload nginx`
 
 # Email
-1. Create an account with `https://app.sendgrid.com`
-2. create 3 templates: Register email, daily email, and forgot password. 
-3. Put the template IDS in the environment configuration
+1. Create an account with `https://app.mailgun.com`
+2. Go to Sending -> Domains, verify a domain using DNS
+3. In the domain list, choose the 'settings' gear -> Sending API keys, and create a 'sending API key'
 
 # Google Sign in
 1. Open Google cloud console, personal project

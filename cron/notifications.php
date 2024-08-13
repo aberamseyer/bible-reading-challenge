@@ -14,7 +14,6 @@
 // https://github.com/Minishlink/web-push-php-example/blob/master/src/send_push_notification.php
 // https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission_static
 
-use Minishlink\WebPush\MessageSentReport;
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 
@@ -53,7 +52,6 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   ]);
   $webPush->setReuseVAPIDHeaders(true);
 
-
   foreach($db->select("
     SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, ps.subscription, u.email_verses, ps.id sub_id
     FROM users u
@@ -76,25 +74,25 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       ) {
       
       $notification_info = $site->notification_info($user['name'], $corp_scheduled_reading);
-        
-      // EMAIL
-      /* the banner image at the top of the email is part of the email template in Sendgrid */
-    
+            
+      // EMAIL    
+      $html = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
+
+      $html .= "<p>Good morning $notification_info[name], here is the scheduled reading for today:</p>";
       /* chapter contents */
-      $html = $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $schedule, $today, true);
+      $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $schedule, $today, true);
       /* unsubscribe */
-      $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_subscription_type=0'>click here to unsubscribe</a>.<small></p>";
-      
-      $streak = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
-      
-      usleep(1_000_000 / 5); // 5 per second at most
-      $site->send_daily_verse_email($user['email'], $notification_info['name'], $notification_info['minutes']." Minute Read", $html, $streak);
+      $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_subscription_type=none'>click here to unsubscribe</a>.<small></p>";
+      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html);
+      printf("[v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
+      usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }
 
-    // if, not else if. a user can receive an email and a push notification.
+    // if, not else if. a user can receive both an email and a push notification.
     // also, a user may receive a push notification for his personal schedule and not the corporate schedule
     if ($user['sub_id']) {
       // PUSH NOTIFICATION
+      // loop over the corporate and personal schedule, building a notification for their combined information
       $subscription = Subscription::create(json_decode($user['subscription'], true));
       $body_lines = [];
       $time = 0;

@@ -98,18 +98,16 @@ class Site {
     if (!$soft) {
       foreach (explode("\n", $this->data('env')) as $line) {
         $line = trim($line);
-        if ($line && !preg_match("/^\/\/.*$/", $line)) { // line doesn't begin with a comment
+        if ($line && !preg_match("/^(\/\/|\#).*$/", $line)) { // line doesn't begin with a comment
           list($key, $val) = explode("=", $line);
-          $this->env[ $key ] = $val;
+          $this->env[ trim($key) ] = trim($val);
         }
       }
-  
-      $this->ms = new \Email\MailSenderSendgrid(
-        $this->env('SENDGRID_API_KEY'), 
-        $this->env('SENDGRID_DAILY_EMAIL_TEMPLATE'), 
-        $this->env('SENDGRID_REGISTER_EMAIL_TEMPLATE'), 
-        $this->env('SENDGRID_FORGOT_PASSWORD_TEMPLATE'),
-        $this->data('email_from_address'),
+
+      $this->ms = new \Email\MailSenderMailgun(
+        $this->data('domain_www'),
+        $this->env('MAILGUN_SENDING_API_KEY_'.(PROD ? 'PROD' : 'LOCAL')), 
+        $this->data('email_from_address').'@'.$this->data('domain_www'),
         $this->data('email_from_name')
       );
     }
@@ -125,24 +123,87 @@ class Site {
     return $this->env[ $key ];
   }
 
+  public function format_email_body($message_content)
+  {
+    return str_replace('{BODY_HTML}', $message_content, '<!DOCTYPE html>
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+          <style type="text/css">
+            body, p, div {
+              font-family: arial,helvetica,sans-serif;
+              font-size: 14px;
+            }
+            body {
+              color: #000000;
+            }
+            body a {
+              color: #1188E6;
+              text-decoration: none;
+            }
+            p {
+              margin: 0; padding: 0;
+            }
+          </style>
+        </head>
+        <body>
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td></td>
+              <td align="center" width="600">
+                <div>
+                  <img src="https://'.$this->data('domain_www').'/img/static/logo_'.$this->ID.'_512x512.png" width="200" height="200" style="display: block; max-width: 200px;">
+                </div>
+                <br>
+                <div style="text-align: left;">
+                {BODY_HTML}
+                </div>
+              </td>
+              <td></td>
+            </tr>
+          </table>
+        </body>
+      </html>');
+  }
+
   public function send_register_email($to, $link)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->register_email_template(), [ 'confirm_link' => $link ]);
+    $this->ms->send_bulk_email(
+      [
+        $to => [ 'link' => $link ]
+      ],
+      "Bible Reading Challenge Registration", 
+      $this->format_email_body(
+        '<p style="margin: auto; max-width: 600px; text-align: left;">
+            Thank you for registering for our Bible reading challenge!
+            To begin, confirm your email address by clicking <a href="%recipient.link%">here</a>.
+        </p>')
+    );
   }
 
   public function send_forgot_password_email($to, $link)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template(), [ "reset_link" => $link ]);
+    $this->ms->send_bulk_email(
+      [
+        $to => [ 'link' => $link ]
+      ],
+      "Bible Reading Challenge Registration", 
+      $this->format_email_body(
+        '<p style="margin: auto; max-width: 600px; text-align: left;">
+            A password reset was requested. If you did this, please click <a href="%recipient.link%"> here</a>.
+            Otherwise, you can ignore this email.
+        </p>')
+    );
   }
 
-  public function send_daily_verse_email($to, $name, $subject, $content, $streak)
+  public function send_daily_verse_email($to, $subject, $content)
   {
-    $this->ms->send_dynamic_email($to, $this->ms->forgot_password_template(), [
-      "subject" => $subject,
-      "name" => $name,
-      "html" => $content,
-      "streak" => $streak
-    ]);
+    $this->ms->send_bulk_email(
+      [ $to => [] ],
+      $subject, 
+      $this->format_email_body($content)
+    );
   }
 
 	public function get_active_schedule($refresh=false)
@@ -685,6 +746,8 @@ class Site {
 
   function logo_pngs($input_file, $output_path, $sizes)
   {
+    set_include_path(get_include_path().":".getenv('PATH'));
+
     foreach ($sizes as $size) {
       $output_file = "$output_path/logo_{$this->ID}_".$size."x".$size.".png";
       
