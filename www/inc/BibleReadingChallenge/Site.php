@@ -391,14 +391,11 @@ class Site {
 			echo "<p>Nothing to read today!</p>";
 	
 			// look for the next time to read in the schedule.
-			$days = $schedule->get_next_reading($today);
-			foreach($days as $day) {
-				$dt = new \Datetime($day['date']);
-				if ($today < $dt) {
-					echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
-					break;
-				}
-			}
+			$next_reading = $schedule->get_next_reading($today);
+      if ($next_reading) {
+        $dt = new \Datetime($next_reading['date']);
+        echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
+      }
 		}
 		echo "</article>";
 		return ob_get_clean();
