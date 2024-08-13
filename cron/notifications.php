@@ -146,13 +146,13 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
         $endpoint = $report->getRequest()->getUri()->__toString();
         if ($report->isSuccess()) {
-          echo "[v] Message sent successfully for subscription {$endpoint}.";
+          echo "[v] Message sent successfully for subscription {$endpoint}.\n";
           $db->update('push_subscriptions', [
-            'last_sent' => date("Y-m-d H:i:s")
+            'last_sent' => $today->format("Y-m-d H:i:s") // in local timezone
           ], "id = ".$user['sub_id']);
         }
         else {
-          echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}";
+          echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
           
           $db->query("DELETE FROM push_subscriptions WHERE id = ".$user['sub_id']);
           
