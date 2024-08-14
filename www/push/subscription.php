@@ -17,14 +17,14 @@ switch ($method) {
     $db->query("DELETE FROM push_subscriptions WHERE user_id = ".$me['id']);
     $db->insert('push_subscriptions', [
       'user_id' => $me['id'],
-      'subscription' => json_encode($subscription),
+      'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES),
     ]);
     echo "Success: created subscription.";
     break;
   case 'PUT':
     // update the key and token of subscription corresponding to the endpoint
     $db->update('push_subscriptions', [
-      'subscription' => json_encode($subscription),
+      'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES),
     ], "user_id = ".$me['id']);
     echo "Success: updated subscription.";
     break;

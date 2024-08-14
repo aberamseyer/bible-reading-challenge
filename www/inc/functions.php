@@ -114,7 +114,7 @@
 
 		$curl = curl_init($url);
 		curl_setopt($curl, CURLOPT_POST, true);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $json? json_encode($arr) : $arr);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $json? json_encode($arr, JSON_UNESCAPED_SLASHES) : $arr);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 
 			'Content-type:  '.($json ? 'application/json' : 'multipart/form-data'), 
 			...$headers

@@ -70,7 +70,7 @@ class MailSenderMailgun implements MailSender {
         'to' => array_keys($to),
         'subject' => $subject,
         'html' => $raw_html_email,
-        'recipient-variables' => json_encode($to)
+        'recipient-variables' => json_encode($to, JSON_UNESCAPED_SLASHES)
       ]
     ); 
   }

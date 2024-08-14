@@ -139,7 +139,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
                 'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
               ]
             ]
-          ])
+          ], JSON_UNESCAPED_SLASHES)
         );
 
         $endpoint = $report->getRequest()->getUri()->__toString();
@@ -162,7 +162,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
             'getReason' => $report->getReason(),
             'getRequest' => print_r($report->getRequest(), true),
             'getResponse' => print_r($report->getResponse(), true),
-          ]));
+          ]), JSON_UNESCAPED_SLASHES);
         }
       }
     }
