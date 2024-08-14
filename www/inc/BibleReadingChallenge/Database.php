@@ -78,7 +78,11 @@ class Database {
   {
 		$result = $this->db->query($query);
 		if (!$result) {
-			echo "<p><b>Warning:</b> A sqlite3 error occurred: <b>" . $this->db->lastErrorMsg() . "</b></p>";
+			$msg = "<p><b>Warning:</b> A sqlite3 error occurred: <b>" . $this->db->lastErrorMsg() . "</b></p>";
+			if (CLI) {
+				$msg = strip_tags($msg);
+			}
+			echo $msg;
 			debug($query);
 		}
 		if ($return == "insert_id")

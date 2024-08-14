@@ -53,12 +53,13 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $webPush->setReuseVAPIDHeaders(true);
 
   foreach($db->select("
-    SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, ps.subscription, u.email_verses, ps.id sub_id
+    SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, u.email_verses, GROUP_CONCAT(ps.id, ',') sub_ids
     FROM users u
     LEFT JOIN push_subscriptions ps ON ps.user_id = u.id
     WHERE u.site_id = ".$site->ID." AND (
       u.email_verses = 1 OR ps.id
-    )") as $user) {
+    )
+    GROUP BY u.id") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
     $last_seen_date = new Datetime('@'.$user['last_seen']);
     if ($last_seen_date < $recently) {
@@ -90,10 +91,9 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
     // if, not else if. a user can receive both an email and a push notification.
     // also, a user may receive a push notification for his personal schedule and not the corporate schedule
-    if ($user['sub_id']) {
+    if ($user['sub_ids']) {
       // PUSH NOTIFICATION
       // loop over the corporate and personal schedule, building a notification for their combined information
-      $subscription = Subscription::create(json_decode($user['subscription'], true));
       $body_lines = [];
       $time = 0;
       foreach([ 
@@ -125,46 +125,64 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       if ($body_lines) { // $body_lines will be empty if there are no scheduled readings
         $body_lines[] = "It'll take about $time minutes. Read now?";
 
-        // we're not using queueNotification() and flushPooled() because when I was testing it,
-        // there was no way to retrieve the sub_id out of the MessageSentReport in the flushPooled() callback
-        // the library code said the payload was supposed to be in the object (via getRequestPayload()), but it was an empty string
-        $report = $webPush->sendOneNotification(
-          $subscription,
-          json_encode([
-            'title' => $site->data('short_name')." Daily Bible Reading",
-            'options' => [
-              'body' => implode("\n", $body_lines),
-              'icon' => "/img/static/logo_".$site->ID."_512x512.png",
-              'data' => [
-                'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
+        $subs = $db->select("
+          SELECT *
+          FROM push_subscriptions
+          WHERE id IN($user[sub_ids])");
+        foreach($subs as $sub_row) {
+          // send a push to each device this user has subscribed
+          $subscription = Subscription::create(json_decode($sub_row['subscription'], true), true);
+          // we're not using queueNotification() and flushPooled() because when I was testing it,
+          // there was no way to retrieve the sub_id out of the MessageSentReport in the flushPooled() callback
+          // the library code said the payload was supposed to be in the object (via getRequestPayload()), but it was an empty string
+          $report = $webPush->queueNotification(
+            $subscription,
+            json_encode([
+              'title' => $site->data('short_name')." Daily Bible Reading",
+              'options' => [
+                'body' => implode("\n", $body_lines),
+                'icon' => "/img/static/logo_".$site->ID."_512x512.png",
+                'data' => [
+                  'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
+                ]
               ]
-            ]
-          ], JSON_UNESCAPED_SLASHES)
-        );
-
-        $endpoint = $report->getRequest()->getUri()->__toString();
-        if ($report->isSuccess()) {
-          echo "[v] Message sent successfully for subscription {$endpoint}.\n";
-          $db->update('push_subscriptions', [
-            'last_sent' => $today->format("Y-m-d H:i:s") // in local timezone
-          ], "id = ".$user['sub_id']);
-        }
-        else {
-          echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
-          
-          $db->query("DELETE FROM push_subscriptions WHERE id = ".$user['sub_id']);
-          
-          error_log(json_encode([
-            'sub' => $user['sub_id'],
-            'endpoint' => $endpoint,
-            'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
-            'responseOfPushService' => $report->getResponse(),
-            'getReason' => $report->getReason(),
-            'getRequest' => print_r($report->getRequest(), true),
-            'getResponse' => print_r($report->getResponse(), true),
-          ]), JSON_UNESCAPED_SLASHES);
+            ], JSON_UNESCAPED_SLASHES)
+          );
         }
       }
     }
   }
+
+  // send all the notifications for this site
+  $webPush->flushPooled(function($report) use ($today) {
+    $db = \BibleReadingChallenge\Database::get_instance();
+    
+    $endpoint = $report->getRequest()->getUri()->__toString();
+    $sub_id = $db->col("SELECT id FROM push_subscriptions WHERE endpoint = '".$db->esc($endpoint)."'");
+    if ($report->isSuccess()) {
+      echo "[v] Message sent successfully for subscription {$endpoint}.\n";
+      if ($sub_id) {
+        $db->update('push_subscriptions', [
+          'last_sent' => $today->format("Y-m-d H:i:s") // in local timezone
+        ], "id = ".$sub_id);
+      }
+    }
+    else {
+      echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
+      
+      if ($sub_id) {
+        $db->query("DELETE FROM push_subscriptions WHERE id = ".$sub_id);
+      }
+      
+      error_log(json_encode([
+        'sub' => $sub_id,
+        'endpoint' => $endpoint,
+        'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
+        'responseOfPushService' => $report->getResponse(),
+        'getReason' => $report->getReason(),
+        'getRequest' => print_r($report->getRequest(), true),
+        'getResponse' => print_r($report->getResponse(), true),
+      ]), JSON_UNESCAPED_SLASHES);
+    }
+  }, 100, 10);
 }

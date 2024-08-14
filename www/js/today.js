@@ -1,12 +1,8 @@
 // pretty much just https://github.com/Minishlink/web-push-php-example
 document.addEventListener('DOMContentLoaded', async () => {
-  const pushOptions = document.querySelectorAll('option[value=push], option[value=both]')
-  if (!pushOptions) {
-    return
-  }
-  else {
-    pushOptions.forEach(el => el.dataset.textContent = el.textContent)
-  }
+  const headerForm = document.querySelector('#date-header form')
+  const subscribeLabel = headerForm.querySelector('[data-push-label]')
+  const subscribeInput = subscribeLabel.querySelector('input')
 
   if (!('serviceWorker' in navigator)) {
     console.warn('Service workers are not supported by this browser')
@@ -30,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // If its denied, the button should appears as such, until the user changes the permission manually
   if (Notification.permission === 'denied') {
     console.warn('Notifications are denied by the user')
-    changeOptionsState('incompatible')
+    changeOptionsState('blocked')
     return
   }
 
@@ -45,33 +41,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   push_updateSubscription()
 
   function changeOptionsState(state) {
-    const updateState = state => {
-      pushOptions.forEach(el => {
-        switch (state) {
-          case 'enabled':
-            el.disabled = false
-            el.dataset.textContent = el.textContent
-            break
-          case 'disabled':
-            el.disabled = false
-            el.textContent = el.dataset.textContent
-            break
-          case 'computing':
-            el.disabled = true
-            el.textContent = 'Loading...'
-            break
-          case 'incompatible':
-            el.disabled = true
-            el.textContent = 'Notifications blocked'
-            break
-          default:
-            console.error('Unhandled push button state', state)
-            break
-        }
-      })
+    switch (state) {
+      case 'enabled':
+      case 'disabled':
+        subscribeInput.disabled = false
+        subscribeLabel.childNodes[0].textContent = 'Push notifications '
+        subscribeLabel.style.display = 'block'
+        headerForm.style.width = '40rem'
+        break
+      case 'computing':
+        subscribeInput.disabled = false
+        subscribeLabel.childNodes[0].textContent = 'Loading... '
+        subscribeLabel.style.display = 'block'
+        headerForm.style.width = '34rem'
+        break
+      case 'incompatible':
+        subscribeInput.disabled = true
+        subscribeLabel.childNodes[0].textContent = 'Push incompatible '
+        subscribeLabel.style.display = 'none'
+        headerForm.style.width = '22rem'
+        break
+      case 'blocked':
+        subscribeInput.disabled = true
+        subscribeLabel.childNodes[0].textContent = 'Push blocked '
+        subscribeLabel.style.display = 'block'
+        headerForm.style.width = '36rem'
+        break;
+      default:
+        console.error('Unhandled push button state', state)
+        break
     }
-
-    updateState(state)
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -114,12 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await checkNotificationPermission()
       const serviceWorkerRegistration = await navigator.serviceWorker.ready
-      try {
-        // just in case something funny happened (like our VAPID keys changed)
-        await push_unsubscribe()
-      } catch (err) {
-        console.err(err)
-      }
       const subscription = await serviceWorkerRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBKEY),
@@ -135,13 +128,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // to manually change the notification permission to
         // subscribe to push messages
         console.warn('Notifications are denied by the user.')
-        changeOptionsState('incompatible')
+        changeOptionsState('blocked')
       } else {
-        // A problem occurred with the subscription common reasons
+        // A problem occurred with the subscription. Common reasons
         // include network errors or the user skipped the permission
         console.error('Impossible to subscribe to push notifications', e)
         changeOptionsState('disabled')
       }
+      subscribeInput.checked = false
     }
   }
 
@@ -154,6 +148,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!subscription) {
         // We aren't subscribed to push, so leave UI in state to allow the user to enable push
         return
+      }
+      else {
+        // we're already subscribed
+        subscribeInput.checked = true
       }
   
       // Keep your server in sync with the latest endpoint
@@ -211,16 +209,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       })
     })
   }
-  
-  document.querySelector('select[name=change_subscription_type]')
-  .addEventListener('change', async function(event) {
-    if (event.target.value === 'email') {
-      await push_unsubscribe()
+  subscribeInput.addEventListener('change', function() {
+    if (this.checked) { // this.checked is the new state
+      push_subscribe()
     }
     else {
-      await push_subscribe()
+      push_unsubscribe()
     }
-    event.target.form.submit()
   })
-
 })

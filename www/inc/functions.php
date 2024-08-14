@@ -58,8 +58,8 @@
 		";
 
 		$output = ob_get_clean();
-		if (php_sapi_name() === 'cli') {
-			$output = strip_tags(nl2br($output));
+		if (CLI) {
+			$output = strip_tags($output);
 		}
 
 		echo $output;
@@ -521,7 +521,7 @@ function xs($num) {
 }
 
 function help($tip) {
-	return "<span class='cursor' title='$tip'>?&#x20DD;</span>";
+	return "<span class='cursor' title='".html($tip)."'>?&#x20DD;</span>";
 }
 
 function toggle_all_users($initial_count) {

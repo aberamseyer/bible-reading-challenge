@@ -7,27 +7,15 @@ $websocket_nonce = bin2hex(random_bytes(24));
 $redis->set_websocket_nonce($me['id'], $websocket_nonce);
 
 // set translation, update it if the select box changed
-
-if ($_REQUEST['change_trans'] || array_key_exists('change_subscription_type', $_REQUEST)) {
+if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
   if (!$site->check_translation($new_trans)) {
     $new_trans = $site->get_translations_for_site()[0];
   }
   
-  if (array_key_exists('change_subscription_type', $_REQUEST)) {
-    // email subscriptions are enabled via a flag in the users table.
-    // push notifications are enabled via a row in the push_subscriptions table. insertion into that table is handled in push/subscription.php
-    if ($_REQUEST['change_subscription_type'] === 'both') {
-      $me['email_verses'] = 1;
-    }
-    if (in_array($_REQUEST['change_subscription_type'], [ 'none', 'email' ], true)) {
-      $db->query("DELETE FROM push_subscriptions WHERE user_id = ".$me['id']);
-      $me['email_verses'] = 1;
-    }
-    if (in_array($_REQUEST['change_subscription_type'], [ 'none', 'push' ], true)) {
-      $me['email_verses'] = 0;
-    }
-  }
+  $me['email_verses'] = array_key_exists('change_email_me', $_REQUEST)
+    ? $_REQUEST['change_email_me']
+    : 0;
   $db->update("users", [
     'trans_pref' => $me['trans_pref'] = $new_trans,
     'email_verses' => $me['email_verses']
@@ -107,25 +95,27 @@ foreach($schedules as $each_schedule) {
 $page_title = "Read";
 require DOCUMENT_ROOT."inc/head.php";
 
-$push_subscribed = $db->col("SELECT id FROM push_subscriptions WHERE user_id = ".$me['id']);
 
 // header with translation selector and email pref
 echo "<div id='date-header'>
   <h5>".$today->format("l, F j")."</h5>
-  <form style='display: flex; width: 30rem; justify-content: space-between; align-items: flex-end;'>
-    <select name='change_subscription_type' value=''>
-      <option value='none' ".(!$me['email_verses'] && !$push_subscribed ? "selected" : "").">No Notifications</option>
-      <option value='email' ".($me['email_verses'] && !$push_subscribed ? "selected" : "").">Emails</option>
-      <option value='push' ".(!$me['email_verses'] && $push_subscribed ? "selected" : "").">Push Notifications</option>
-      <option value='both' ".($me['email_verses'] && $push_subscribed ? "selected" : "").">Both</option>
-    </select>
+  <form style='width: 22rem; display: flex; justify-content: space-between; align-items: flex-end;' method='post'>
+    <label>
+      Email me 
+      <input type='checkbox' name='change_email_me' value='1' ".($me['email_verses'] ? 'checked' : '')." onchange='this.form.submit()'>
+    </label>
+    <label style='display: none;' data-push-label>
+      Push notifications
+      <input type='checkbox' name='push_subscribe' value='1'>
+    </label>".help("Push notifications are sent directly to your device like any other app. On some devices, this is only possible if you add this website to your homescreen.\n".
+        "If this says 'Push blocked', you have previously denied notification permissions and will need to change this in your browser settings'")."
     <input type='hidden' name='today' value='".$today->format('Y-m-d')."'>
     <select name='change_trans' onchange='this.form.submit();'>";
     foreach($site->get_translations_for_site() as $trans_opt)
       echo "
         <option value='$trans_opt' ".($trans_opt == $trans ? "selected" : "").">".strtoupper($trans_opt)."</option>";
   echo "</select>
-  </form>
+    </form>
   </div>";
 
 if ($me['streak']) {

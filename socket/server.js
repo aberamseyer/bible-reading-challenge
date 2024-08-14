@@ -77,7 +77,7 @@ Promise.all([
       removeUser(connectionId)
     }, { once: true })
     
-    function setupListeners(connectionId, userRow) {
+    function setupListeners(connectionId, userRow, refreshNonce) {
       const newUser = {
         id: connectionId,
         site_id: userRow.site_id,
@@ -113,6 +113,7 @@ Promise.all([
       
       // Handle incoming messages from clients
       ws.addEventListener('message', event => {
+        refreshNonce()
         const data = JSON.parse(event.data)
         let user
     
@@ -162,7 +163,11 @@ Promise.all([
         const user_id = await redisClient.get(`bible-reading-challenge:websocket-nonce/${nonce}`)
         db.get(`SELECT id, site_id, name, emoji FROM users WHERE id = ?`, [ user_id ], (err, row) => {
           if (row) {
-            setupListeners(connectionId, row)
+            const refreshNonce = () => {
+              redisClient.expire(`bible-reading-challenge:websocket-nonce/${nonce}`, 20)
+            }
+            refreshNonce()
+            setupListeners(connectionId, row, refreshNonce)
           }
           else {
             console.log(`Bad nonce: ${nonce}`)
