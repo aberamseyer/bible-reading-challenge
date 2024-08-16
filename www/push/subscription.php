@@ -22,6 +22,13 @@ function insert_sub($user_id, $subscription) {
   ]);
 }
 
+function update_sub($sub_id, $subscription) {
+  $db = BibleReadingChallenge\Database::get_instance();
+  $db->update('push_subscriptions', [
+    'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES)
+  ], "id = ".$sub_id);
+}
+
 switch ($method) {
   case 'POST':
     // create a new subscription entry in your database
@@ -30,18 +37,14 @@ switch ($method) {
       echo "Success: created subscription.";
     }
     else {
-      $db->update('push_subscriptions', [
-        'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES)
-      ], "id = ".$existing_sub['id']);
+      update_sub($existing_sub['id'], $subscription);
       echo "Success: matching subscription, updated.";
     }
     break;
   case 'PUT':
     // update the key and token of subscription corresponding to the endpoint
     if ($existing_sub) {
-      $db->update('push_subscriptions', [
-        'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES)
-      ], "id = ".$existing_sub['id']);
+      update_sub($existing_sub['id'], $subscription);
       echo "Success: updated subscription.";
     }
     else {
