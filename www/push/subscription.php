@@ -25,10 +25,16 @@ function insert_sub($user_id, $subscription) {
 switch ($method) {
   case 'POST':
     // create a new subscription entry in your database
-    if ($existing_sub) {
+    if (!$existing_sub) {
       insert_sub($me['id'], $subscription);
+      echo "Success: created subscription.";
     }
-    echo "Success: created subscription.";
+    else {
+      $db->update('push_subscriptions', [
+        'subscription' => json_encode($subscription, JSON_UNESCAPED_SLASHES)
+      ], "id = ".$existing_sub['id']);
+      echo "Success: matching subscription, updated.";
+    }
     break;
   case 'PUT':
     // update the key and token of subscription corresponding to the endpoint
