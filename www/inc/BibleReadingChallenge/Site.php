@@ -552,7 +552,7 @@ class Site {
       $accum_words_read += (int)$rd['word_count'];
       foreach ($threshholds as $thresh => $words) {
         if ($accum_words_read >= (int)$words && !$progress[ $thresh ]) {
-          $progress [ $thresh ] = date('Y-m-d', strtotime($rd['date']));
+          $progress [ $thresh ] = $rd['date'];
         }
       }
     }
@@ -633,6 +633,43 @@ class Site {
     return (int)$words_read;
   }
 
+  public function site_stats($refresh=false)
+  {
+    $redis = Redis::get_instance();
+    $stats = $redis->get_site_stats($this->ID);
+    if ($refresh) {
+      $stats = false;
+    }
+
+    if (!$stats) {
+      $timer = new PerfTimer();
+      $all_club_chapters_read = (int) $this->db->col(
+        "SELECT SUM(chapters_read)
+        FROM (
+          SELECT sdv.chapter_id, COUNT(*) / c.verses AS chapters_read
+          FROM read_dates rd
+          JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
+          JOIN chapters c ON c.id = sdv.chapter_id
+          JOIN users u ON u.id = rd.user_id
+          WHERE u.site_id = ".$this->ID."
+          GROUP BY chapter_id
+          HAVING COUNT(*) >= c.verses
+        )");
+      $timer->mark('all_club_chapters_read');
+      $all_club_words_read = (int) $this->words_read();
+      $timer->mark('words_read');
+
+      $stats = [
+        'all_club_chapters_read' => $all_club_chapters_read,
+        'all_club_words_read' => $all_club_words_read,
+      ];
+
+      $redis->set_site_stats($this->ID, $stats);
+    }
+
+    return $stats;
+  }
+
   /**
    * returns an array filled with different statistics for the user, cached
    */
@@ -657,7 +694,6 @@ class Site {
       $last_read_ts = (int) $this->db->col("SELECT MAX(timestamp) FROM read_dates WHERE user_id = $user[id]");
       $timer->mark('last_read_ts');
       $chapters_ive_read = (int) $this->db->col(
-        sprintf($chp_qry =
           "SELECT SUM(chapters_read)
           FROM (
             SELECT sdv.chapter_id, COUNT(*) / c.verses AS chapters_read
@@ -665,10 +701,10 @@ class Site {
             JOIN schedule_date_verses sdv ON rd.schedule_date_id = sdv.schedule_date_id
             JOIN chapters c ON c.id = sdv.chapter_id
             JOIN users u ON u.id = rd.user_id
-            WHERE u.site_id = ".$this->ID." AND %s
+            WHERE u.site_id = ".$this->ID." AND rd.user_id = $user_id
             GROUP BY chapter_id
             HAVING COUNT(*) >= c.verses
-        )", "rd.user_id = $user_id"));
+          )");
       $timer->mark('chapters_ive_read');
       $words_ive_read = (int) $this->words_read($user);
       $timer->mark('words_ive_read');
@@ -676,10 +712,6 @@ class Site {
       $timer->mark('deviation');
       $on_target = (float) $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target');
-      $all_club_chapters_read = (int) $this->db->col(sprintf($chp_qry, "1"));
-      $timer->mark('all_club_chapters_read');
-      $all_club_words_read = (int) $this->words_read();
-      $timer->mark('words_read');
       $progress_graph_data = $this->progress($user_id);
       $timer->mark('progress_graph_data');
       $on_target_perc = (float) $this->on_target_percent_for_user($user_id);
@@ -690,8 +722,6 @@ class Site {
       $timer->mark('days_behind');
 
       $stats = [
-        'all_club_chapters_read' => $all_club_chapters_read,
-        'all_club_words_read' => $all_club_words_read,
         'badges' => json_encode($badges),
         'challenge_percent' => 0,
         'chapters_ive_read' => $chapters_ive_read,
@@ -715,6 +745,7 @@ class Site {
 
       $redis->set_user_stats($user_id, $stats);
       $stats['badges'] = $badges;
+      $stats['progress_graph_data'] = $progress_graph_data;
     }
     else {
       // badges are stored as a json string, so re-assign the decoded value
@@ -727,16 +758,22 @@ class Site {
 
   /**
    * deletes stats for either a single user id (if passed) or the entire site's users
+   * Note: there is no "invalidate_site_stats" function, because a site's stats will never be
+   * invalidated apart from a user's stats being invalidated
    */
-  public function invalidate_stats($user_id = 0)
+  public function invalidate_user_stats($user_id = 0)
   {
     $redis = Redis::get_instance();
+    $redis->delete_site_stats($this->ID);
+    $redis->enqueue_site_stats();
     if ($user_id) {
-      $redis->delete_stats($this->ID, $user_id);
+      $redis->delete_user_stats($this->ID, $user_id);
+      $redis->enqueue_user_stats($this->ID, $user_id);
     }
     else {
       foreach($this->all_users() as $user) {
-        $redis->delete_stats($this->ID, $user['id']);
+        $redis->delete_user_stats($this->ID, $user['id']);
+        $redis->enqueue_user_stats($this->ID, $user['id']);
       }
     }
   }

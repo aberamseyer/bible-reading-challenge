@@ -29,16 +29,24 @@ function process_job($job) {
 
   list($site_id, $user_id) = explode("|", $job);
   $site = BibleReadingChallenge\SiteRegistry::get_site((int)$site_id);
-  $user = $db->row("
-    SELECT id, name
-    FROM users
-    WHERE id = ".intval($user_id)." AND site_id = ".$site->ID);
-  if (!$site || !$user) {
+  if ($user_id && $site_id) {
+    // user stats job
+    $user = $db->row("
+      SELECT id, name
+      FROM users
+      WHERE id = ".intval($user_id)." AND site_id = ".$site->ID);
+    $site->user_stats($user['id'], true);
+  }
+  else if ($site_id) {
+    // site  stats job
+    $site->site_stats(true);
+  }
+
+  if (!$site && !$user) {
     $redis->stats_job_finished($job);
     throw new \Exception("Bad site_id/user_id combination: ".$job);
   }
   else {
-    $site->user_stats($user['id'], true);
     $redis->stats_job_finished($job);
     echo "Finished $job in ".number_format((hrtime(true) - $start) / 1e6, 2)."ms\n";
   }

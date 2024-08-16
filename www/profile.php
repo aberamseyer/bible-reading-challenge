@@ -48,6 +48,7 @@ else {
 echo "</div>";
 
 $stats = $site->user_stats($me['id']);
+$site_stats = $site->site_stats();
 echo "
   <div class='two-columns'>
     <div>
@@ -62,8 +63,8 @@ echo "
     <div>
       <h5>Club Stats</h5>
       <ul>
-        <li>All-club chapters read: <b>".number_format($stats['all_club_chapters_read'])."</b></li>
-        <li>All-club words read: <b>".number_format($stats['all_club_words_read'])."</b></li>
+        <li>All-club chapters read: <b>".number_format($site_stats['all_club_chapters_read'])."</b></li>
+        <li>All-club words read: <b>".number_format($site_stats['all_club_words_read'])."</b></li>
       </ul>
     </div>
   </div>";
