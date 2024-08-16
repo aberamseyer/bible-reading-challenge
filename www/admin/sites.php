@@ -31,18 +31,15 @@ if ($_POST) {
       'web_push_privkey' => $keys['privateKey']
     ]);
     // create default schedule so everything doesn't break
-    $start_date = date('Y-m-d', strtotime('January 1'));
-    $new_sched_id = $db->insert('schedules', [
-      'site_id' => $new_site_id,
-      'name' => 'Default Schedule',
-      'start_date' => $start_date,
-      'end_date' => date('Y-m-d', strtotime('December 31')),
-      'active' => 1
-    ]);
+    $start_date = new Datetime(date('Y-m-d', strtotime('January 1')));
+    $end_date = new Datetime(date('Y-m-d', strtotime('December 31')));
+    $new_sched_id = BibleReadingChallenge\Schedule::create($start_date, $end_date, 'Default Schedule', $new_site_id, 1);
+    $new_schedule = new BibleReadingChallenge\Schedule($new_site_id, $new_sched_id);
+
     $passage_readings = parsed_passages_to_passage_readings(parse_passages('Genesis 1'));
-    create_schedule_date($new_sched_id, $start_date, 'Genesis 1', $passage_readings, passage_readings_word_count($passage_readings));
-    $new_site = BibleReadingChallenge\SiteRegistry::get_site($new_site_id, true);
+    $new_schedule->create_schedule_date($start_date->format('Y-m-d'), 'Genesis 1', $passage_readings, passage_readings_word_count($passage_readings));
     
+    $new_site = BibleReadingChallenge\SiteRegistry::get_site($new_site_id, true);
     // create user and assign as staff:
     // already verified, so no email sent or verify key cached
     $ret = $new_site->create_user($_POST['email'], $_POST['name'], false, false, true);

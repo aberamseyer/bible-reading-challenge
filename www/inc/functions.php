@@ -290,7 +290,7 @@
 					<input type='hidden' data-passage name='days[".$current_day->format('Y-m-d')."][passage]' value=''>
 					<input type='hidden' data-id name='days[".$current_day->format('Y-m-d')."][id]' value=''>";
 					$calendar .= "
-						<input type='text' class='label' size='1'>";
+						<input type='text' class='label' size='1'".(strpos($class, 'past') !== false ? 'disabled' : '').">";
 			}
 			else if ($availble_day) {
 				$calendar .= "
@@ -682,18 +682,6 @@ function chartjs_js() {
 		cached_file('js', '/js/lib/chart.min.js').
 		cached_file('js', '/js/lib/chartjs-adapter-date-fns.min.js').
 		cached_file('js', '/js/lib/chart.inc.js');
-}
-
-function create_schedule_date($schedule_id, $date, $passage, $passage_readings, $word_count) {
-	$db = BibleReadingChallenge\Database::get_instance();
-	$db->insert("schedule_dates", [
-		'schedule_id' => $schedule_id,
-		'date' => $date,
-		'passage' => $passage,
-		'passage_chapter_readings' => json_encode($passage_readings),
-		'complete_key' => bin2hex(random_bytes(16)),
-		'word_count' => $word_count
-	]);
 }
 
 function cached_file($type, $path, $attrs='') {

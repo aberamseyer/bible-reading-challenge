@@ -38,6 +38,8 @@ body {
   padding: 1rem;
   border: 2px solid var(--color-bg-alt);
   transition: .2s left;
+  max-height: 600px;
+  overflow-y: scroll;
 }
 #editor:hover {
   left: -1px;

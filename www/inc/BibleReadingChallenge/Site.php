@@ -209,7 +209,7 @@ class Site {
 	public function get_active_schedule($refresh=false)
   {
     if (!$this->active_schedule || $refresh) {
-      $id = (int)$this->db->col("SELECT id FROM schedules WHERE active = 1 AND site_id = ".$this->ID);
+      $id = (int)$this->db->col("SELECT id FROM schedules WHERE site_id = ".$this->ID." AND user_id IS NULL AND active = 1");
       $this->active_schedule = new Schedule($this->ID, $id);
     }
     return $this->active_schedule;
@@ -574,14 +574,14 @@ class Site {
       '__email_verified' => $verified,
       'emoji' => $emoji ?: $this->data('default_emoji')
     ]);
-    $this->db->insert('schedules', [
-      'site_id' => $this->ID,
-      'user_id' => $user_id,
-      'name' => "$name's Default Schedule",
-      'start_date' => date('Y-m-d', strtotime('January 1')),
-      'end_date' => date('Y-m-d', strtotime('December 1')),
-      'active' => 1
-    ]);
+    Schedule::create(
+      new \Datetime(date('Y-m-d', strtotime('January 1'))), 
+      new \Datetime(date('Y-m-d', strtotime('December 31'))), 
+      "$name's Default Schedule",
+      $this->ID,
+      1,
+      $user_id
+    );
     return [
       'insert_id' => $user_id,
       'verify_token' => $verify_token,

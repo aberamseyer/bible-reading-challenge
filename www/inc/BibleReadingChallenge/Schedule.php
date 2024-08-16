@@ -58,22 +58,9 @@ class Schedule {
       <details>
         <summary><b>Instructions</b></summary>
         <small>
-          Hover mouse on the left edge of the screen for a book reference and some autofill tools<br>
+          Hover mouse on the left edge of the screen for a book reference and autofill tools<br>
+          Verse abbreviations can be used, and any of these options can be combined with a <code>;</code> (e.g., <code>Eph 2:21-22; Jude 1; Galatians 3-4</code>)<br>
           You have many options to make filling these days easier:
-          <h6>Manually</h6>
-          <ul>
-            <li>Type in the boxes to enter verse references. Use the <kbd>Tab</kbd>key with <kbd>Copy</kbd> and <kbd>Paste</kbd> to make this fast</li>
-            <li>Available verse formats:
-              <ul>
-                <li>Full chapters: <code>Matthew 28</code></li>
-                <li>Multiple Chapters: <code>John 1-2</code></li>
-                <li>Partial Chapters: <code>Matthew 1:1-29</code></li>
-                <li>Verses across chapters: <code>John 7:53-8:9</code></li>
-                <li>Exactly one verse: <code>Zech 6:13</code></li>
-              </ul>
-              Verse abbreviations can be used, and any of these options can be combined with a <code>;</code> (e.g., <code>Eph 2:21-22; Jude 1; Galatians 3-4</code>)
-            </li>
-          </ul>
           <h6>Autofill</h6>
           To use autofill, begin by selecting a day by clicking it's number.
           <ul>
@@ -116,6 +103,19 @@ class Schedule {
             <li>Clicking the single arrow left or right will \"push\" all dates in that direction, stopping at an empty calendar date</li>
             <li>Clicking the double arrow left or right will merge that date's reading with the one immediately to its left or right</li>
           </ul>
+          <h6>Manually</h6>
+          <ul>
+            <li>Type in the boxes to enter verse references. Use the <kbd>Tab</kbd>key with <kbd>Copy</kbd> and <kbd>Paste</kbd> to make this fast</li>
+            <li>Available verse formats:
+              <ul>
+                <li>Full chapters: <code>Matthew 28</code></li>
+                <li>Multiple Chapters: <code>John 1-2</code></li>
+                <li>Partial Chapters: <code>Matthew 1:1-29</code></li>
+                <li>Verses across chapters: <code>John 7:53-8:9</code></li>
+                <li>Exactly one verse: <code>Zech 6:13</code></li>
+              </ul>
+            </li>
+          </ul>
         </small>
       </details>
       <small>When you're happy with the state of the calendar, <mark>DONT FORGET to click \"Save readings\"</mark> at the bottom!</small>";
@@ -144,17 +144,6 @@ class Schedule {
     // fixed editor
     echo "
     <div id='editor'>
-      <div>Chapters in each book</div>
-      <div class='chapters'>";
-      for($i = 0; $i < 39; $i++)
-        echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
-    echo "
-    </div><br>
-    <div class='chapters'>";
-        for($i = 39; $i < 66; $i++)
-          echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
-    echo "
-    </div><br>
       <div>
         <label for='fill-mode'>Fill Mode</label>
         <select id='fill-mode'>
@@ -186,6 +175,17 @@ class Schedule {
           <label><input type='checkbox' name='days[]' value='6' checked> S</label>
         </div>
         <button type='button' id='clear' disabled>Clear after selected</button>
+      </div><br>
+      <div>Chapters in each book</div>
+      <div class='chapters'>";
+      for($i = 0; $i < 39; $i++)
+        echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
+    echo "
+      </div><br>
+      <div class='chapters'>";
+          for($i = 39; $i < 66; $i++)
+            echo "<small>".$book_chapters[$i]['name'].": ".count($book_chapters[$i]['chapters'])."</small>";
+      echo "
       </div>
     </div>";
     echo $this->html_calendar(true);
@@ -439,8 +439,7 @@ class Schedule {
         $passage_readings = parsed_passages_to_passage_readings($passages);
         $word_count = passage_readings_word_count($passage_readings);
 
-        create_schedule_date(
-          $this->ID,
+        $this->create_schedule_date(
           $date,
           $day['passage'],
           parsed_passages_to_passage_readings($passages),
@@ -472,21 +471,19 @@ class Schedule {
   {
     $values = [
       'site_id' => $site_id,
+      '__user_id' => $user_id,
       'name' => $name,
       'start_date' => $start_date->format('Y-m-d'),
       'end_date' => $end_date->format('Y-m-d'),
       'active' => $active ? 1 : 0,
     ];
-    if ($user_id) {
-      $values['user_id'] = $user_id;
-    }
     return Database::get_instance()->insert('schedules', $values);
   }
 
   public static function too_many_personal_schedules(int $user_id)
   {
     if ($user_id) {
-      $num_schedules = (int) Database::get_instance()->col("SELECT COUNT(*) FROM schedules WHERE user_id = ".$user_id);
+      $num_schedules = (int) Database::get_instance()->col("SELECT COUNT(*) FROM schedules WHERE user_id IS NOT NULL AND user_id = ".$user_id);
       return $num_schedules >= 20;
     }
     return false;
@@ -514,16 +511,39 @@ class Schedule {
       SELECT id FROM schedule_dates WHERE schedule_id = ".$this->ID."
     )");
     $this->db->query("DELETE FROM schedule_dates WHERE schedule_id = ".$this->ID);
-    $this->db->query("DELETE FROM schedules WHERE site_id = ".$this->data('site_id')." AND id  = ".$this->ID);
+    $this->db->query("DELETE FROM schedules WHERE site_id = ".$this->data('site_id')." AND id = ".$this->ID);
+  }
+
+  function create_schedule_date($date, $passage, $passage_readings, $word_count)
+  {
+    $this->db->insert('schedule_dates', [
+      'schedule_id' => $this->ID,
+      'date' => $date,
+      'passage' => $passage,
+      'passage_chapter_readings' => json_encode($passage_readings),
+      'complete_key' => bin2hex(random_bytes(16)),
+      'word_count' => $word_count
+    ]);
   }
 
   public function duplicate()
   {
-    $s_id = Schedule::create(new \Datetime($this->data('start_date')), new \Datetime($this->data('end_date')), "Copy of ".$this->data('name'), $this->data('site_id'), 0, $this->data('user_id') ?: null);
-    $this->db->query("
-      INSERT INTO schedule_dates (schedule_id, date, passage)
-        SELECT $s_id, date, passage
-        FROM schedule_dates WHERE schedule_id = ".$this->ID);
+    $s_id = Schedule::create(
+      new \Datetime($this->data('start_date')), 
+      new \Datetime($this->data('end_date')), 
+      "Copy of ".$this->data('name'), 
+      $this->data('site_id'), 
+      0, 
+      $this->data('user_id') ?: null
+    );
+    $new_sched = new Schedule($this->data('site_id'), $s_id);
+    foreach($this->db->select("
+      SELECT date, passage, passage_chapter_readings, word_count
+      FROM schedule_dates
+      WHERE schedule_id = ".$this->ID) as $sd
+    ) {
+      $new_sched->create_schedule_date($sd['date'], $sd['passage'], json_decode($sd['passage_chapter_readings'], true), $sd['word_count']);
+    }
     return $s_id;
   }
 
