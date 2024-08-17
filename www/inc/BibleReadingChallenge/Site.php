@@ -82,7 +82,7 @@ class Site {
     $this->data = $this->db->get_db()->querySingle($stmt->getSQL(true), true);
 
     if (!$this->data) {
-      die("Nothing to see here: ".$id);
+      down_for_maintenance("<p>Nothing to see here: $id</p>");
     }
     else {
       $this->ID = $this->data('id');
@@ -559,8 +559,8 @@ class Site {
     return $progress;
   }
 
-  public function create_user($email, $name, $password=false, $emoji=false, $verified=false) {
-    $uuid = uniqid();
+  public function create_user($email, $name, $password=false, $emoji=false, $verified=false, $uuid=false) {
+    $uuid = $uuid ?: uniqid();
     $hash = password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
     $user_id = $this->db->insert("users", [ 

@@ -49,3 +49,13 @@ Again, check `nginx -t` and `systemctl reload nginx`
 2. Navigate to APIs & Services -> Credentials -> CoC login button
 3. Add the new domain to the Authorized Javascript origins list
 4. Add {NEW_DOMAIN}/auth/oath to the Authorized redirect URI list
+
+# Apple Sign in
+Overview [here](https://developer.apple.com/documentation/sign_in_with_apple/configuring_your_environment_for_sign_in_with_apple)
+
+1. [Follow these instructions](https://developer.apple.com/help/account/configure-app-capabilities/configure-sign-in-with-apple-for-the-web) to register the website within the Apple developer console
+2. In [this menu](https://developer.apple.com/account/resources/identifiers/list), you will need to register first an App ID, and then a Service ID. The App ID receives info about private relay email updates, the Service ID primarily handles the oauth and redirect URLs. An 'App' is an overarching term for related services, a 'Service' is the application the user is actively on.
+    - When creating an App ID, you will enter the endpoint Apple will notify when user account events occur. This is currently unimplemented in `www/auth/oauth/apple-update.php`
+    - When creating the Service ID, you will enter the domain (no https) of the BRC website and the redirect url, which should be `/auth/oauth/apple`
+3. Place private key file in `extras/keys`. It should be named `AuthKey_<key_id>.p8`. Put the key ID in an environment variable called `APPLE_SIGNIN_KEY_ID`. These are currently unused because we are not making any signed requests to Apple.
+4. Register the email domain and email 'from' address under Services -> Sign in with Apple for Email Communication. You may need to do something to comply with SPF/DKIM.

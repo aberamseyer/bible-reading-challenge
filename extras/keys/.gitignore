@@ -1,0 +1,5 @@
+# Ignore all the keys in the folder
+*
+
+# Except the .gitignore
+!.gitignore

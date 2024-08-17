@@ -13,13 +13,15 @@ else {
   $payload = $client->verifyIdToken($_POST['credential']);
   if (!$payload) {
     $_SESSION['error'] = "Problem with Google Sign in";
-  } else {
+  }
+  else {
     $payload['email'] = strtolower($payload['email']);
     $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($payload['email'])."'");
     // account doesn't exist, create
     if (!$user_row) {
       // oauth makes the email already verified, so no email sent or verify key cached
-      $ret = $site->create_user($payload['email'], $payload['name']);
+      $ret = $site->create_user($payload['email'], $payload['name'], false, false, true);
+      $id = $ret['insert_id'];
       $_SESSION['success'] = "Welcome to the challenge!";
     }
     else {

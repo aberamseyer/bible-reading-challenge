@@ -60,7 +60,7 @@ require DOCUMENT_ROOT."inc/head.php";
         data-client_id="<?= GOOGLE_CLIENT_ID ?>"
         data-context="signin"
         data-ux_mode="popup"
-        data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth"
+        data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth/google"
         data-auto_prompt="false">
       </div>
       <div class="g_id_signin center"
@@ -71,6 +71,39 @@ require DOCUMENT_ROOT."inc/head.php";
         data-size="large"
         data-logo_alignment="left">
       </div>
+      <?php
+        if ($site->env('APPLE_SIGNIN_KEY_ID')) {
+          echo "
+          <div 
+            class='center'
+            style='margin-top: 7px;'
+            id='appleid-signin'
+            data-mode='center-align'
+            data-type='sign in'
+            data-color='black'
+            data-border='true'
+            data-width='90%'
+            data-height='30px'
+          ></div>";
+          $add_to_foot .= "
+            <script type='text/javascript' src='https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js'></script>
+            <script type='text/javascript'>
+              if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              // dark mode
+                document.getElementById('appleid-signin').setAttribute('data-color', 'white')
+              }
+              AppleID.auth.init({
+                clientId: '".$site->env('APPLE_SIGNIN_CLIENT_ID')."',
+                scope: 'email name',
+                redirectURI: 'https://".$site->DOMAIN."/auth/oauth/apple',
+                state: '".time()."',
+                nonce: '".session_id()."',
+                usePopup: false
+              });
+            </script>
+            ";
+        }
+      ?>
       <div class='text-center'><small><a href='/privacy'>Privacy Policy</a></small></div>
       <?php $add_to_foot .= "<script src='https://accounts.google.com/gsi/client' async></script>"; ?>
     </div>

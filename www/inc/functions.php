@@ -703,7 +703,7 @@ function site_logo() {
 	return "<img alt='logo' class='logo' src='".$site->resolve_img_src('logo')."' onclick='window.location = `/`'>";
 }
 
-function down_for_maintenance() {
+function down_for_maintenance($msg_html="") {
 	?>
 	<!doctype html>
 	<html lang="en-US">
@@ -724,6 +724,7 @@ function down_for_maintenance() {
 			<p>
 				Sorry, but we're working on some technical stuff right now. We should be back up shortly.
 			</p>
+			<?= $msg_html ?>
 			<details>
 				<summary>Still not working?</summary>
 				<p>
@@ -749,4 +750,24 @@ function load_env() {
 			}
 		}
 	}
+}
+
+function jwk_to_pem($jwk) {
+  $modulus = $jwk['n'];
+  $exponent = $jwk['e'];
+  
+  $modulus = str_replace(['-', '_'], ['+', '/'], $modulus);
+  $exponent = str_replace(['-', '_'], ['+', '/'], $exponent);
+
+  $modulus = base64_decode($modulus);
+  $exponent = base64_decode($exponent);
+
+  $modulus = unpack('H*', $modulus)[1];
+  $exponent = unpack('H*', $exponent)[1];
+
+  $rsaKey = "-----BEGIN RSA PUBLIC KEY-----\n";
+  $rsaKey .= chunk_split(base64_encode(hex2bin("3082010a0282010100" . $modulus . "0203010001")), 64, "\n");
+  $rsaKey .= "-----END RSA PUBLIC KEY-----\n";
+
+  return $rsaKey;
 }
