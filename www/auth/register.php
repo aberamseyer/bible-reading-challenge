@@ -48,7 +48,7 @@ else if ($_POST['email']) {
     $ret = $site->create_user($_POST["email"], $_POST['name'], $_POST["password"]);
     $redis->set_verify_email_key($ret['insert_id'], $ret['verify_token']);
     $site->send_register_email($_POST['email'], SCHEME."://".$site->DOMAIN."/auth/register?confirm=".$ret['uuid']."&key=".$ret['verify_token']);
-    $_SESSION['email'] = "Registration email sent. Check your inbox!";
+    $_SESSION['email'] = "Registration email sent! Check your spam folder if it doesn't seem to arrive.";
     redirect("/auth/login");
   }
 }

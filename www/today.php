@@ -234,15 +234,21 @@ foreach($schedules as $i => $each_schedule) {
       </script>";
   }
   if ($today_completed) {
+    // when making up readings, it is nice to have a link to jump to the next incomplete day. this algorithm finds that day.
     $each_day = clone($today);
     do {
       $next_reading = $each_schedule->get_next_reading($each_day);
-      $dt = new Datetime($next_reading['date']);
-      if ($today < $dt && $dt < new Datetime() && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
-        $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
-        break;
+      if ($next_reading) {
+        $dt = new Datetime($next_reading['date']);
+        if ($dt < $today->format('Y-m-d') && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
+          $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
+          break;
+        }
+        else {
+          $each_day = new Datetime($next_reading['date']);
+        }
       }
-    } while(!$next_reading);
+    } while($next_reading);
     echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
