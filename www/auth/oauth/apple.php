@@ -24,7 +24,7 @@ else {
   $jwk = null;
 
   if (!$kid) {
-    $_SESSION['error'] = "Authentication response could not be validated.";
+    $_SESSION['error'] = "Invalid authentication response.";
   }
   else {
     foreach($keyset['keys'] as $key) {
@@ -35,12 +35,13 @@ else {
     }
 
     if (!$jwk) {
-      $_SESSION['error'] = "Authentication response could not be validated.";
+      $_SESSION['error'] = "Could not find a key to validate authentication response.";
     }
     else {
       $pem = jwk_to_pem($jwk);
 
       try {
+        JWT::$leeway = 60;
         $payload = (array) JWT::decode($jwt, new Key($pem, $jwk['alg']));
       } catch (\Exception $e) {
         error_log("Token validation failed: " . $e->getMessage());
@@ -60,11 +61,18 @@ else {
         // https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/authenticating_users_with_sign_in_with_apple#3383773
         // Users can change their email address or start/stop using sign in with apple. The documentation here says that the 'sub' claim will be a stable, app-specific uuid
         // tied to a user regardless of email address or name changes
-        $user_id = $db->col("SELECT id FROM users WHERE site_id = ".$site->ID." AND uuid = '".$db->esc($payload['sub'])."'");
+        $user_id = $db->col("
+          SELECT id
+          FROM users
+          WHERE site_id = ".$site->ID." AND (
+            uuid = '".$db->esc($payload['sub'])."' OR
+            email = '".$db->esc($payload['email'])."'
+          )");
         if ($user_id) {
           // account exists
           $_SESSION['success'] = "Welcome back!";
           $db->update('users', [
+            'uuid' => $payload['sub'],
             'email' => $payload['email'], // overwrite the email to whatever apple told us this user has
             'email_verified' => 1         // assume it's verified
           ], "id = $user_id");
