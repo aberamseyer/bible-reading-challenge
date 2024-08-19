@@ -31,8 +31,8 @@ if ($_POST) {
       'web_push_privkey' => $keys['privateKey']
     ]);
     // create default schedule so everything doesn't break
-    $start_date = new Datetime(date('Y-m-d', strtotime('January 1')));
-    $end_date = new Datetime(date('Y-m-d', strtotime('December 31')));
+    $start_date = new DateTime(date('Y-m-d', strtotime('January 1')));
+    $end_date = new DateTime(date('Y-m-d', strtotime('December 31')));
     $new_sched_id = BibleReadingChallenge\Schedule::create($start_date, $end_date, 'Default Schedule', $new_site_id, 1);
     $new_schedule = new BibleReadingChallenge\Schedule($new_site_id, $new_sched_id);
 

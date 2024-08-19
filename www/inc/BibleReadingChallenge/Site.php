@@ -169,10 +169,7 @@ class Site {
 
   public function send_register_email($to, $link)
   {
-    $this->ms->send_bulk_email(
-      [
-        $to => [ 'link' => $link ]
-      ],
+    $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
       "Bible Reading Challenge Registration", 
       $this->format_email_body(
         '<p style="margin: auto; max-width: 600px; text-align: left;">
@@ -184,10 +181,7 @@ class Site {
 
   public function send_forgot_password_email($to, $link)
   {
-    $this->ms->send_bulk_email(
-      [
-        $to => [ 'link' => $link ]
-      ],
+    $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
       "Bible Reading Challenge Registration", 
       $this->format_email_body(
         '<p style="margin: auto; max-width: 600px; text-align: left;">
@@ -320,7 +314,6 @@ class Site {
       fn($acc, $cur) => $acc + $cur['word_count']);
     $minutes_to_read = ceil($total_word_count / ($this->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
     
-    
     return [
       'name' => $name,
       'minutes' => $minutes_to_read
@@ -393,7 +386,7 @@ class Site {
 			// look for the next time to read in the schedule.
 			$next_reading = $schedule->get_next_reading($today);
       if ($next_reading) {
-        $dt = new \Datetime($next_reading['date']);
+        $dt = new \DateTime($next_reading['date']);
         echo "<p>The next reading will be on <b>".$dt->format('F j')."</b>.</p>";
       }
 		}
@@ -479,7 +472,8 @@ class Site {
   /**
    * how many days we've read in the last four weeks
    */
-  function four_week_trend_canvas($user_id) {
+  function four_week_trend_canvas($user_id)
+  {
     $counts = $this->weekly_reading_data($user_id, 4);
     $data = json_encode(array_column($counts, 'count', 'day_start'));
     return "<canvas data-graph='$data' width='200' style='margin: auto;'></canvas>";
@@ -559,7 +553,8 @@ class Site {
     return $progress;
   }
 
-  public function create_user($email, $name, $password=false, $emoji=false, $verified=false, $uuid=false) {
+  public function create_user($email, $name, $password=false, $emoji=false, $verified=false, $uuid=false)
+  {
     $uuid = $uuid ?: uniqid();
     $hash = password_hash($password ?: bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
     $verify_token = uniqid("", true).uniqid("", true);
@@ -569,14 +564,14 @@ class Site {
       'name' => $name,
       'email' => $email,
       'password' => $hash,
-      'trans_pref' => 'rcv',
+      'trans_pref' => $this->get_translations_for_site()[0],
       'date_created' => time(),
       '__email_verified' => $verified,
       'emoji' => $emoji ?: $this->data('default_emoji')
     ]);
     Schedule::create(
-      new \Datetime(date('Y-m-d', strtotime('January 1'))), 
-      new \Datetime(date('Y-m-d', strtotime('December 31'))), 
+      new \DateTime(date('Y-m-d', strtotime('January 1'))), 
+      new \DateTime(date('Y-m-d', strtotime('December 31'))), 
       "$name's Default Schedule",
       $this->ID,
       1,
@@ -612,14 +607,14 @@ class Site {
   /**
    * the number of words read for either a specific user across all schedules, within a specific schedule OR the entire club (Site)
    */
-  public function words_read($user = 0, $schedule_id = 0) {
+  public function words_read($user = 0, $schedule_id = 0)
+  {
     $word_qry = "
         SELECT SUM(word_count)
         FROM schedule_dates sd
         JOIN read_dates rd ON sd.id = rd.schedule_date_id
         JOIN schedules s ON s.id = sd.schedule_id
-        WHERE s.site_id = ".$this->ID." AND %s
-    ";
+      WHERE s.site_id = ".$this->ID." AND %s";
     if (!$user) {
       $words_read = $this->db->col(sprintf($word_qry, '1'));
     }

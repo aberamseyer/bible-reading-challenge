@@ -24,9 +24,9 @@ if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST))
 $trans = $me['trans_pref'];
 
 // figure out what today is (if overridden)
-$today = new Datetime();
+$today = new DateTime();
 if ($_GET['today'] && strtotime($_GET['today'])) {
-  $override_date = new Datetime($_GET['today']);
+  $override_date = new DateTime($_GET['today']);
   $today = allowed_schedule_date($override_date)
     ? $override_date
     : $today;
@@ -239,13 +239,13 @@ foreach($schedules as $i => $each_schedule) {
     do {
       $next_reading = $each_schedule->get_next_reading($each_day);
       if ($next_reading) {
-        $dt = new Datetime($next_reading['date']);
+        $dt = new DateTime($next_reading['date']);
         if ($dt < $today->format('Y-m-d') && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
           $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
           break;
         }
         else {
-          $each_day = new Datetime($next_reading['date']);
+          $each_day = new DateTime($next_reading['date']);
         }
       }
     } while($next_reading);

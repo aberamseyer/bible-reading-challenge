@@ -15,8 +15,8 @@ if (!$argv[1] || !$argv[2]) {
 }
 
 try {
-  $start_date = new Datetime($argv[1]);  // e.g., '2023-08-21', the first day of the reading challenge schedule (or whatever you want)
-  $current_date = new Datetime($argv[2]);  // probably today's date  
+  $start_date = new DateTime($argv[1]);  // e.g., '2023-08-21', the first day of the reading challenge schedule (or whatever you want)
+  $current_date = new DateTime($argv[2]);  // probably today's date  
 }
 catch (Exception $e) {
   die('invalid dates supplied'.PHP_EOL);
@@ -35,7 +35,7 @@ foreach($db->cols("SELECT * FROM sites") as $site_id) {
   $schedule = $site->get_active_schedule();
   
   foreach($period as $day) {
-    $yesterday = new Datetime('@'.strtotime('yesterday', $day->format('U')), $site->TZ);
+    $yesterday = new DateTime('@'.strtotime('yesterday', $day->format('U')), $site->TZ);
     
     $scheduled_reading = $schedule->get_schedule_date($yesterday);
   

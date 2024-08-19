@@ -45,8 +45,8 @@ class Schedule {
 
   public function html_instructions()
   {
-    $start_date = new \Datetime($this->data['start_date']);
-    $end_date = new \Datetime($this->data['end_date']);
+    $start_date = new \DateTime($this->data['start_date']);
+    $end_date = new \DateTime($this->data['end_date']);
   
     return "
       <h3>Editing calendar for '".html($this->data('name'))."'</h3>
@@ -219,7 +219,7 @@ class Schedule {
         // we +1 day bc the client sends us the day the user selected (one day before we start generating)
         $start_date->modify('+1 day');
       }
-      $end_date = new \Datetime($this->data['end_date']);
+      $end_date = new \DateTime($this->data['end_date']);
       $period = new \DatePeriod(
         $start_date,
         new \DateInterval('P1D'),
@@ -449,7 +449,7 @@ class Schedule {
     }
   }
 
-  public function update(\Datetime $start_date, \Datetime $end_date, $name)
+  public function update(\DateTime $start_date, \DateTime $end_date, $name)
   {
     $this->db->update("schedules", [
       'name' => $name,
@@ -467,7 +467,7 @@ class Schedule {
       )");
   }
 
-  public static function create(\Datetime $start_date, \Datetime $end_date, $name, $site_id, $active, $user_id=null)
+  public static function create(\DateTime $start_date, \DateTime $end_date, $name, $site_id, $active, $user_id=null)
   {
     $values = [
       'site_id' => $site_id,
@@ -529,8 +529,8 @@ class Schedule {
   public function duplicate()
   {
     $s_id = Schedule::create(
-      new \Datetime($this->data('start_date')), 
-      new \Datetime($this->data('end_date')), 
+      new \DateTime($this->data('start_date')), 
+      new \DateTime($this->data('end_date')), 
       "Copy of ".$this->data('name'), 
       $this->data('site_id'), 
       0, 
@@ -592,11 +592,11 @@ class Schedule {
 
 	public function html_calendar($editable = false)
   {
-		$start_date = new \Datetime($this->data('start_date'));
-		$end_date = new \Datetime($this->data('end_date'));
+		$start_date = new \DateTime($this->data('start_date'));
+		$end_date = new \DateTime($this->data('end_date'));
 
 		$period = new \DatePeriod(
-			new \Datetime($start_date->format('Y-m').'-01'),
+			new \DateTime($start_date->format('Y-m').'-01'),
 			new \DateInterval('P1M'), // 1 month
 			$end_date,
 			\DatePeriod::INCLUDE_END_DATE
@@ -770,8 +770,8 @@ class Schedule {
     global $add_to_foot;
     ob_start();
 
-    $start_date = new \Datetime($start_date);
-    $end_date = new \Datetime($end_date);
+    $start_date = new \DateTime($start_date);
+    $end_date = new \DateTime($end_date);
     echo "<h5>Editing '".html($name)."' schedule</h5>";
     echo "<form method='post'>
       <input type='hidden' name='schedule_id' value='$id'>
@@ -796,8 +796,8 @@ class Schedule {
 
   public static function handle_create_sched_post($site_id, $user_id=null)
   {
-    $start_date = new \Datetime($_POST['start_date']);
-    $end_date = new \Datetime($_POST['end_date']);
+    $start_date = new \DateTime($_POST['start_date']);
+    $end_date = new \DateTime($_POST['end_date']);
     if (!$start_date || !$end_date || $start_date >= $end_date) {
       $_SESSION['error'] = "Start date must be before end date.";
     }
@@ -863,8 +863,8 @@ class Schedule {
       redirect();
     }
     else {
-      $start = new \Datetime($_POST['start_date']);
-      $end = new \Datetime($_POST['end_date']);
+      $start = new \DateTime($_POST['start_date']);
+      $end = new \DateTime($_POST['end_date']);
       if (!$start || !$end) {
         $_SESSION['error'] = "Invalid dates";
       }

@@ -19,7 +19,7 @@ foreach($db->cols("SELECT id FROM sites") as $site_id) {
 
   $schedule = $site->get_active_schedule();
 
-  $yesterday = new Datetime('@'.strtotime('yesterday'), $site->TZ);
+  $yesterday = new DateTime('@'.strtotime('yesterday'), $site->TZ);
   $scheduled_reading = $schedule->get_schedule_date($yesterday);
 
   if ($scheduled_reading) {

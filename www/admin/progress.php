@@ -15,8 +15,8 @@ echo admin_navigation();
 
 echo "<h5 class='text-center'>Group Monthly Progress</h5>";
 $end_of_month = date('Y-m-t'); // 't' is the how many days in the month
-$start = new Datetime($schedule->data('start_date'));
-$end_date = new Datetime($schedule->data('end_date'));
+$start = new DateTime($schedule->data('start_date'));
+$end_date = new DateTime($schedule->data('end_date'));
 $next = clone($start); $next->modify('+1 month');
 $prev = clone($start);
 $timer = new \BibleReadingChallenge\PerfTimer();

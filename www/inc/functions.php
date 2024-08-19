@@ -202,9 +202,9 @@
 		return do_nav($nav_elements, false, 'navigation');
 	}
 
-	function allowed_schedule_date(Datetime $date) {
+	function allowed_schedule_date(DateTime $date) {
 		global $staff;
-		return $staff || (new Datetime()) > $date;
+		return $staff || (new DateTime()) > $date;
 	}
 
 	function generate_calendar($year, $month, $start_date, $end_date, $editable = false) {
@@ -240,7 +240,7 @@
 		}
 		
 		// Iterate through each day of the month
-		$today = new Datetime();
+		$today = new DateTime();
 		for ($day = 1; $day <= $days_in_month; $day++) {
 			// Start a new row if it's Sunday
 			if ($current_day_of_week == 0) {
@@ -750,24 +750,4 @@ function load_env() {
 			}
 		}
 	}
-}
-
-function jwk_to_pem($jwk) {
-  $modulus = $jwk['n'];
-  $exponent = $jwk['e'];
-  
-  $modulus = str_replace(['-', '_'], ['+', '/'], $modulus);
-  $exponent = str_replace(['-', '_'], ['+', '/'], $exponent);
-
-  $modulus = base64_decode($modulus);
-  $exponent = base64_decode($exponent);
-
-  $modulus = unpack('H*', $modulus)[1];
-  $exponent = unpack('H*', $exponent)[1];
-
-  $rsaKey = "-----BEGIN RSA PUBLIC KEY-----\n";
-  $rsaKey .= chunk_split(base64_encode(hex2bin("3082010a0282010100" . $modulus . "0203010001")), 64, "\n");
-  $rsaKey .= "-----END RSA PUBLIC KEY-----\n";
-
-  return $rsaKey;
 }

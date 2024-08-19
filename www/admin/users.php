@@ -225,14 +225,14 @@ else {
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {
     list($start, $end) = explode('|', $_GET['week_range']);
-    $user_start_date = new Datetime($start);
-    $user_end_date = new Datetime($end);
+    $user_start_date = new DateTime($start);
+    $user_end_date = new DateTime($end);
   }
 
-  $last_beginning = $user_start_date ?: new Datetime("last $starting_day_of_week");
+  $last_beginning = $user_start_date ?: new DateTime("last $starting_day_of_week");
   
-  $schedule_start_date = new Datetime($schedule->data('start_date'));
-  $schedule_end_date = new Datetime($schedule->data('end_date'));
+  $schedule_start_date = new DateTime($schedule->data('start_date'));
+  $schedule_end_date = new DateTime($schedule->data('end_date'));
 
   // week picker
   $period = new DatePeriod(
@@ -242,7 +242,7 @@ else {
     DatePeriod::INCLUDE_END_DATE
   );
 
-  $today = new Datetime(date('Y-m-d'));
+  $today = new DateTime(date('Y-m-d'));
   $is_special_day = $today->format('N') == (int)$site->data('start_of_week');
   $today_for_disabled_check = clone($today);
   if ($is_special_day) {

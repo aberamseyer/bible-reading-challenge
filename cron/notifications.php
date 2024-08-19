@@ -31,7 +31,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
   // get scheedule details
   $corp_schedule = $site->get_active_schedule();
-  $recently = new Datetime($corp_schedule->data('start_date'));
+  $recently = new DateTime($corp_schedule->data('start_date'));
   $recently->modify('-3 months');
   
   $corp_scheduled_reading = $corp_schedule->get_schedule_date($today);
@@ -61,7 +61,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     )
     GROUP BY u.id") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
-    $last_seen_date = new Datetime('@'.$user['last_seen']);
+    $last_seen_date = new DateTime('@'.$user['last_seen']);
     if ($last_seen_date < $recently) {
       continue;
     }
