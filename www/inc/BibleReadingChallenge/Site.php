@@ -632,7 +632,8 @@ class Site {
   public function site_stats($refresh=false)
   {
     $redis = Redis::get_instance();
-    $stats = $redis->get_site_stats($this->ID);
+    // $stats = $redis->get_site_stats($this->ID);
+    $stats = false;
     if ($refresh) {
       $stats = false;
     }
@@ -757,19 +758,19 @@ class Site {
   * Note: there is no "invalidate_site_stats" function, because a site's stats will never be
   * invalidated apart from a user's stats being invalidated
   */
-  public function invalidate_user_stats($user_id = 0)
+  public function invalidate_stats($user_id = 0)
   {
     $redis = Redis::get_instance();
     $redis->delete_site_stats($this->ID);
-    $redis->enqueue_stats($this->ID);
+    $this->site_stats(true);
     if ($user_id) {
       $redis->delete_user_stats($user_id);
-      $redis->enqueue_stats($this->ID."|".$user_id);
+      $this->user_stats($user_id, true);
     }
     else {
       foreach ($this->all_users() as $user) {
         $redis->delete_user_stats($user["id"]);
-        $redis->enqueue_stats($this->ID."|".$user["id"]);
+        $this->user_stats($user["id"], true);
       }
     }
   }

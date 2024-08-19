@@ -18,8 +18,6 @@ class Redis {
 	const WEBSOCKET_NONCE_KEYSPACE = 'websocket-nonce/';
 	CONST VERIFY_EMAIL_KEYSPACE = 'email-verify/';
 	const FORGOT_PASSWORD_KEYSPACE = 'forgot-password/';
-	const STATS_QUEUE = 'stats-queue';	// a LIST of jobs to work on
-	const STATS_PROCESSING_SET = 'stats-queue-processing';	// a SET of the currently running jobs
 
 	private $offline = false;
 
@@ -83,14 +81,6 @@ class Redis {
 			$this->client()->expire('config/version', 60);
 		}
 		return $version;
-	}
-
-	/**
-	 * call this after calculating the stats of a user when stats are not found
-	 */
-	public function cache_stats($id, $stats)
-	{
-		return $this->client->hmset(Redis::USER_STATS_KEYSPACE.$id, $stats);
 	}
 
 	/**
@@ -218,34 +208,5 @@ class Redis {
 	{
 		$retval = $this->client->del(Redis::SITE_STATS_KEYSPACE.$site_id);
 		return $retval;
-	}
-
-	public function enqueue_stats($stats_key)
-	{
-		$this->client->lrem(Redis::STATS_QUEUE, 0, $stats_key);
-		return $this->client->lpush(Redis::STATS_QUEUE, $stats_key);
-	}
-
-	/**
-	 * a stats job is a string in either of these formats:
-	 * 1) $site_id
-	 * 2) $site_id|$user_id
-	 */
-	public function dequeue_stats()
-	{
-		list($set_key, $stats_job) = $this->client->brpop(Redis::STATS_QUEUE, 0);
-		if ($this->client->sismember(Redis::STATS_PROCESSING_SET, $stats_job)) {
-			// stats got double-queued and is already being processed, so don't duplicate the work
-			throw new \Exception("double-queued job: $stats_job");
-		}
-		else {
-			$this->client->sadd(Redis::STATS_PROCESSING_SET, $stats_job);
-			return $stats_job;
-		}
-	}
-
-	public function stats_job_finished($job)
-	{
-		return $this->client->srem(Redis::STATS_PROCESSING_SET, $job);
 	}
 }

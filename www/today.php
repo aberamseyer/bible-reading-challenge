@@ -84,7 +84,7 @@ foreach($schedules as $each_schedule) {
         'schedule_date_id' => $scheduled_reading['id'],
         'timestamp' => time()
       ]);
-      $site->invalidate_user_stats($my_id);
+      $site->invalidate_stats($my_id);
       if ($each_schedule->completed($my_id)) {
         $each_schedule->set_just_completed($my_id, true);
       }

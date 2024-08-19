@@ -70,18 +70,6 @@ also requires configuring OAuth consent screen in Google Cloud Console. Save thi
 ## Crons
 files in the `cron` directory should be installed according to the comments at the top of each file
 
-## Queue Processing
-Install the `systemd` service `task-queue/brc-task-queue.service`. This is critical for updating user statistics whenever something changes:
-1. Copy to `/etc/systemd/system/brc-task-queue.service`
-2. Reload the systemd daemon: `sudo systemctl daemon-reload`
-3. Enable it: `sudo systemctl enable brc-task-queue.service`
-4. Start it: `sudo systemctl start brc-task-queue.service`
-5. Check the status: `sudo systemctl status brc-task-queue.service`
-
-View logs with `journalctl -u brc-task-queue.service -f`
-
-WHENEVER STATS PROCESSING CHANGES this service needs to be restarted. I'm pretty sure php caches `require`s
-
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
 
