@@ -1,7 +1,7 @@
 <?php
 
 $insecure = true;
-require __DIR__."/../inc/init.php";
+require __DIR__."/../../inc/init.php";
 
 load_env();
 
