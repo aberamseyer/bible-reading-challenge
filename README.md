@@ -22,7 +22,7 @@ In apache and nginx configuration, be sure file uploads are also set to be at le
 ## Database
 
 #### SQLite
-Requires minimum version 3.46 (support for GROUP_CONCAT(..ORDER BY..) and ->> syntax)
+Requires MINIMUM version 3.46 (support for `GROUP_CONCAT(..ORDER BY..)`, `->>` syntax, and `strftime('%U')` modifier)
 
 Create an SQLite database file named "brc.db" in root of project from schema.sql
 

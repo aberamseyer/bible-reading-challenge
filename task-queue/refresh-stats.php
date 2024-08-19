@@ -16,7 +16,7 @@ if (count($argv) > 1) {
   $site_id = $db->col("SELECT site_id FROM users WHERE id = $user_id");
   if ($site_id && $user_id) {
     $redis->delete_site_stats($site_id);
-    $redis->delete_user_stats($site_id, $user_id);
+    $redis->delete_user_stats($user_id);
     $redis->enqueue_stats($site_id);
     $redis->enqueue_stats("$site_id|$user_id");
   }
@@ -27,9 +27,11 @@ else {
     $site = \BibleReadingChallenge\SiteRegistry::get_site($site_id);
     echo  "Deleting site stats:".$site->ID."\n";
     $redis->delete_site_stats($site_id);
+    $redis->enqueue_stats($site_id);
     foreach([ ...$site->all_users(), ...$site->all_users(true) ] as $user) {
       echo  "Deleting user stats:".$user['id']."\n";
-      $site->invalidate_user_stats($users['id']);
+      $redis->delete_user_stats($user['id']);
+      $redis->enqueue_stats($site_id."|".$user['id']);
     }
   }
 }

@@ -264,7 +264,7 @@
 				$class .= " today";
 			if ($current_day == $start_date)
 				$class .= " start";
-			if ($current_day == $end_date)
+      if ($current_day == $end_date)
 				$class .= " end";
 			$calendar .= "
 				<td class='reading-day $class' data-date='".$current_day->format('Y-m-d')."'>";

@@ -208,7 +208,7 @@ class Redis {
 		return $this->client->hgetall(Redis::SITE_STATS_KEYSPACE.$site_id) ?: [];
 	}
 
-	public function delete_user_stats($site_id, $user_id)
+	public function delete_user_stats($user_id)
 	{
 		$retval = $this->client->del(Redis::USER_STATS_KEYSPACE.$user_id);
 		return $retval;
