@@ -256,9 +256,9 @@
 				$class = "inactive";
 				$availble_day = false;
 			}
-			else if ($current_day->format('Y-m-d') > $today->format('Y-m-d'))
+			else if ($current_day > $today)
 				$class .= " future";
-			else if ($current_day->format('Y-m-d') < $today->format('Y-m-d'))
+			else if ($current_day < $today)
 				$class .= " past";
 			else
 				$class .= " today";
