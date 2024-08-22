@@ -83,7 +83,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       /* chapter contents */
       $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $schedule, $today, true);
       /* unsubscribe */
-      $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_subscription_type=none'>click here to unsubscribe</a>.<small></p>";
+      $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
       $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html);
       printf("[v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
