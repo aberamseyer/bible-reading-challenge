@@ -113,7 +113,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
         $notification_info = $site->notification_info($user['name'], $arr['sr']);
         if (count($body_lines) === 0) {
-          $body_lines[] = "Good morning $notification_info[name]. Keep up your $user[streak]-day streak.";
+          $body_lines[] = "Good morning $notification_info[name].".($user['streak'] > 1 ? "Keep up your $user[streak]-day streak." : "");
         }
         $time += $notification_info['minutes'];
         
