@@ -76,7 +76,7 @@ echo "
 
 echo $site->mountain_for_emojis($emojis, $me['id']);
 
-echo "<p>
+echo "
 <div class='two-columns'>
   <div>
     <h6 class='text-center'>Progress</h6>

@@ -239,7 +239,7 @@ th, td {
   display: block;
   position: relative;
   width: 455px;
-  height: 250px;
+  max-height: 250px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
