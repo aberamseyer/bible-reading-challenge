@@ -238,7 +238,7 @@ th, td {
 .mountain-wrap {
   display: block;
   position: relative;
-  max-width: 100%;
+  width: 455px;
   height: 250px;
   display: flex;
   justify-content: center;

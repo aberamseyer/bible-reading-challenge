@@ -461,14 +461,16 @@ echo "      </tbody>
             </label>
           </div>
         </div>
-        <div class='mountain-wrap'>
-          <span class='emoji' style='z-index: 1;' id='start'>
-            <span class='inner'>▶️</span>
-          </span>
-          <span class='emoji' style='z-index: 1;' id='end'>
-            <span class='inner'>⏹️</span>
-          </span>
-          <img alt='progress' src='".$site->resolve_img_src('progress')."' class='mountain'>
+        <div class='center'>
+          <div class='mountain-wrap'>
+            <span class='emoji' style='z-index: 1;' id='start'>
+              <span class='inner'>▶️</span>
+            </span>
+            <span class='emoji' style='z-index: 1;' id='end'>
+              <span class='inner'>⏹️</span>
+            </span>
+            <img alt='progress' src='".$site->resolve_img_src('progress')."' class='mountain'>
+          </div>
         </div>
         <button type='submit'>Save Positions</button>
       </form>";

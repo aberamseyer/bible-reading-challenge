@@ -228,7 +228,9 @@ class Site {
   public function mountain_for_emojis($emojis, $my_id = 0, $hidden = false)
   {  
     ob_start();
-    echo "<div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
+    echo "
+    <div class='center'>
+      <div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
     
     foreach($emojis as $i => $datum) {
       $style = '';
@@ -236,13 +238,14 @@ class Site {
         $style = "style='z-index: 10'";
       }
       echo "
-      <span class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
-        <span class='inner'>$datum[emoji]</span>
-      </span>";
+        <span class='emoji' data-percent='$datum[percent_complete]' data-id='$datum[id]' $style>
+          <span class='inner'>$datum[emoji]</span>
+        </span>";
     }
     
-    echo "<img alt='progress' src='".$this->resolve_img_src('progress')."' class='mountain'>";
-    echo "</div>";
+    echo "  <img alt='progress' src='".$this->resolve_img_src('progress')."' class='mountain'>
+        </div>
+      </div>";
     return ob_get_clean();
   }
   
