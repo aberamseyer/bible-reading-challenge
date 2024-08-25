@@ -109,7 +109,7 @@ function initFourWeekTrendChart(element, labels, values) {
     data: {
       labels: labels,
       datasets: [{
-        label: 'chapters read each week',
+        label: 'days read each week',
         data: values,
         fill: false,
         tension: 0.5,

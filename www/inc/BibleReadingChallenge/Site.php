@@ -491,7 +491,7 @@ class Site {
         -- generates last $WEEKS weeks to join what we read to
         WITH RECURSIVE week_sequence AS (
           SELECT 
-            DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0') AS cdate
+            DATE('now', '".$this->TZ_OFFSET." hours', '-7 days', 'weekday 0') AS cdate
           UNION ALL
           SELECT DATE(cdate, '-7 days') 
           FROM week_sequence
@@ -510,7 +510,7 @@ class Site {
         WHERE rd.user_id = $user_id
         GROUP BY week
       ) rd ON rd.week = sd.week
-      WHERE sd.week >= STRFTIME('%Y-%U', DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0', '-".(7*$WEEKS)." days')) 
+      WHERE sd.week >= STRFTIME('%Y-%U', DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0', '-".(7*($WEEKS+1))." days')) 
       ORDER BY sd.week ASC
       LIMIT $WEEKS");
   }
@@ -538,20 +538,27 @@ class Site {
     
     $progress = [];
     $read_dates = $this->db->select("
+    SELECT date, SUM(word_count) OVER (ORDER BY date) cummulative_word_count
+    FROM (
       SELECT DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours') date, SUM(sdv.word_count) word_count
       FROM read_dates rd
       JOIN schedule_date_verses sdv ON sdv.schedule_date_id = rd.schedule_date_id
       WHERE sdv.schedule_id = ".$this->get_active_schedule()->ID." AND rd.user_id = $user_id
       GROUP BY sdv.chapter_id
-      ORDER BY timestamp");
+      ORDER BY timestamp
+    )");
     
-    $accum_words_read = 0;
     foreach($read_dates as $rd) {
-      $accum_words_read += (int)$rd['word_count'];
       foreach ($threshholds as $thresh => $words) {
-        if ($accum_words_read >= (int)$words && !$progress[ $thresh ]) {
+        if ($rd['cummulative_word_count'] >= (int)$words && !$progress[ $thresh ]) {
           $progress [ $thresh ] = $rd['date'];
         }
+      }
+    }
+    $count = count($progress)+1;  // $progress is 1-indexed
+    for ($i = 2; $i < $count; $i++) {
+      if ($progress[ $i-1 ] == $progress[ $i ]) {
+        unset($progress[ $i - 1]);
       }
     }
     return $progress;
