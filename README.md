@@ -43,6 +43,9 @@ docker run -v /home/bible-reading-challenge/:/data --restart unless-stopped -d -
 docker run -it --rm -v ./:/data -p 6379:6379 redis:7-alpine
 ```
 
+##### Stats
+to refresh stats use `redis-cli --scan --pattern "bible-reading-challenge:user-stats/*" | xargs -L 1 redis-cli del`
+
 ### Schema
 to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > migrations/schema.sql`
 
