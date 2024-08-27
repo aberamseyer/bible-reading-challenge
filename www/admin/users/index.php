@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../inc/init.php";
+require __DIR__."/../../inc/init.php";
 
 if (!$staff) {
   redirect('/');
@@ -335,7 +335,7 @@ else {
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";
-  echo "<p>Click a user's name to see more details.<br>You can see recent signups <a href='/admin/recent' target='_blank'>here</a>.</p>";
+  echo "<p>Click a user's name to see more details.<br>You can see recent signups <a href='/admin/users/recent'>here</a>.</p>";
   echo toggle_all_users($user_count);
 
   // table of users

@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__."/../inc/init.php";
+require __DIR__."/../../inc/init.php";
 
 if (!$staff) {
   redirect('/');
@@ -23,7 +23,9 @@ $recent_users = BibleReadingChallenge\Database::get_instance()->select("
 $page_title = "Recent Signups";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require DOCUMENT_ROOT."inc/head.php";
+echo admin_navigation();
 ?>
+<p><?= back_button("Back") ?></p>
 <form action='/admin/recent' method='get'>
   <label>
     Show those registered since:
@@ -49,7 +51,7 @@ require DOCUMENT_ROOT."inc/head.php";
     <tbody>
       <?php foreach($recent_users as $user): ?>
         <tr>
-          <td><?= $user['name'] ?></td>
+          <td><a href='/admin/users?user_id=<?= $user['id']?>'><?= $user['name'] ?></a></td>
           <td><?= $user['email'] ?></td>
           <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] == 1 ? 'check' : 'x' ?>.svg'>
           <td><?= date('D, M j, Y', strtotime($user['registered'])) ?></td>
