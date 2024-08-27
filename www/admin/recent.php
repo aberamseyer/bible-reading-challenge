@@ -15,7 +15,7 @@ if (!$since) {
 }
 
 $recent_users = BibleReadingChallenge\Database::get_instance()->select("
-  SELECT id, name, email, DATE(date_created, 'unixepoch', '".$site->TZ_OFFSET." hours') registered
+  SELECT id, name, email, email_verses, DATE(date_created, 'unixepoch', '".$site->TZ_OFFSET." hours') registered
   FROM users
   WHERE site_id = ".$site->ID." AND date_created >= $since
   ORDER BY date_created DESC;");
@@ -41,6 +41,7 @@ require DOCUMENT_ROOT."inc/head.php";
       <tr>
         <th>Name</th>
         <th>Email</th>
+        <th>Receiving Emails?</th>
         <th>Registered</th>
       </tr>
     </thead>
@@ -49,6 +50,7 @@ require DOCUMENT_ROOT."inc/head.php";
         <tr>
           <td><?= $user['name'] ?></td>
           <td><?= $user['email'] ?></td>
+          <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] == 1 ? 'check' : 'x' ?>.svg'>
           <td><?= date('D, M j, Y', strtotime($user['registered'])) ?></td>
         </tr>
       <?php endforeach; ?>
