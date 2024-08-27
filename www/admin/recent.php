@@ -35,6 +35,7 @@ require DOCUMENT_ROOT."inc/head.php";
     <button type='submit'>Refresh</button>
   </label>
 </form>
+<p><b><?= count($recent_users) ?></b> record<?= xs($recent_users) ?></p>
 <div class='table-scroll'>
   <table>
     <thead>
