@@ -66,8 +66,11 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       continue;
     }
 
-    $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $user['id']);
-    $personal_scheduled_reading = $personal_schedule->get_schedule_date($today);
+    $personal_schedule = null;
+    if ($site->data('allow_personal_schedules')) {
+      $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $user['id']);
+      $personal_scheduled_reading = $personal_schedule->get_schedule_date($today);
+    }
   
     if ($corp_scheduled_reading &&
         $user['email_verses'] && 
