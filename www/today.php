@@ -161,6 +161,9 @@ foreach($schedules as $i => $each_schedule) {
         echo "You and ".($total_readers-1)." other".xs($total_readers-1)." have completed this reading";
       }
     }
+    else if ($total_readers) {
+      echo $total_readers." other".xs($total_readers-1)." have completed this reading";
+    }
     echo "</small></p>";
   }
   if ($scheduled_reading) {    

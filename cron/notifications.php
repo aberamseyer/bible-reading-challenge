@@ -32,7 +32,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   // get scheedule details
   $corp_schedule = $site->get_active_schedule();
   $recently = new DateTime($corp_schedule->data('start_date'));
-  $recently->modify('-3 months');
+  $recently->modify('-6 months');
   
   $corp_scheduled_reading = $corp_schedule->get_schedule_date($today);
   
