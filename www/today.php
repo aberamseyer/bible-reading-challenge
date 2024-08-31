@@ -162,7 +162,8 @@ foreach($schedules as $i => $each_schedule) {
       }
     }
     else if ($total_readers) {
-      echo $total_readers." other".xs($total_readers-1)." have completed this reading";
+      $nf = new \NumberFormatter("en", NumberFormatter::SPELLOUT);
+      echo ucwords($nf->format($total_readers))." other".xs($total_readers)." have completed this reading";
     }
     echo "</small></p>";
   }
