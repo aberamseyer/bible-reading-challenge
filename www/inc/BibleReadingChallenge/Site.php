@@ -219,9 +219,11 @@ class Site {
       $where = "last_seen >= '$nine_mo' OR (last_seen IS NULL AND date_created >= '$nine_mo')";
     }
     return $this->db->select("
-      SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, u.email_verses, streak, max_streak, u.trans_pref
+      SELECT u.id, u.name, u.emoji, u.email, u.staff, u.date_created, u.last_seen, u.email_verses, COALESCE(MIN(ps.id), 0) push_notifications, streak, max_streak, u.trans_pref
       FROM users u
+      LEFT JOIN push_subscriptions ps ON ps.user_id = u.id
       WHERE site_id = ".$this->ID." AND ($where)
+      GROUP BY u.id
       ORDER BY LOWER(name) ASC");
   }
   

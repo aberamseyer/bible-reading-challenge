@@ -44,7 +44,7 @@ echo admin_navigation();
       <tr>
         <th>Name</th>
         <th>Email</th>
-        <th>Receiving Emails?</th>
+        <th>Receiving Notifications?</th>
         <th>Registered</th>
       </tr>
     </thead>
@@ -53,7 +53,7 @@ echo admin_navigation();
         <tr>
           <td><a href='/admin/users?user_id=<?= $user['id']?>'><?= $user['name'] ?></a></td>
           <td><?= $user['email'] ?></td>
-          <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] == 1 ? 'check' : 'x' ?>.svg'>
+          <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] || $user['push_notifications'] == 1 ? 'check' : 'x' ?>.svg'>
           <td><?= date('D, M j, Y', strtotime($user['registered'])) ?></td>
         </tr>
       <?php endforeach; ?>

@@ -9,13 +9,13 @@ const compareRows = (a, b, currentSortColumn) => {
   else if (column === "last-read") {
     return new Date(tdA.getAttribute('data-last-read')) > new Date(tdB.getAttribute('data-last-read')) ? 1 : -1
   }
-  else if (column === "email") {
-    const a_email = parseInt(tdA.getAttribute('data-email'))
-    const b_email = parseInt(tdB.getAttribute('data-email'))
-    if (a_email == b_email)
+  else if (column === "notifications") {
+    const a_notifications = parseInt(tdA.getAttribute('data-notifications'))
+    const b_notifications = parseInt(tdB.getAttribute('data-notifications'))
+    if (a_notifications == b_notifications)
       return a.querySelector('td[data-name]').textContent.localeCompare(b.querySelector('td[data-name]').textContent)
     else
-      return a_email > b_email ? 1 : -1
+      return a_notifications > b_notifications ? 1 : -1
   }
   else if (column === 'trend') {
     const a_arr = Object.values(JSON.parse(a.querySelector('[data-graph]').dataset.graph))

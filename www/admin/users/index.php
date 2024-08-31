@@ -350,8 +350,8 @@ else {
           <th data-sort='last-read'>
             Last read
           </th>
-          <th data-sort='email'>
-            Emails
+          <th data-sort='notifications'>
+            Notifications
           </th>
           <th data-sort='trend'>
             4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule (personal or corporate) or week is selected")."
@@ -375,7 +375,7 @@ else {
       <tr class='".($user['last_read'] ? '' : 'hidden')."'>
         <td data-name class='left'><small><a href='?user_id=$user[id]' title='Last seen: ".($user['last_seen'] ? date('M j', $user['last_seen']) : "N/A")."'>".$user['emoji'].'&nbsp;&nbsp;&nbsp;&nbsp;'.html($user['name'])."</a></small></td>
         <td ".last_read_attr($user['last_read'])."><small>".($user['last_read'] ? date('M j', $user['last_read']) : 'N/A')."</small></td>
-        <td data-email='".($user['email_verses'] ? 1 : 0)."'>".($user['email_verses'] ? '<img alt="check" src="/img/static/circle-check.svg" class="icon">' : '<img alt="x" src="/img/static/circle-x.svg" class="icon">')."</td>
+        <td data-notifications='".($user['email_verses'] || $user['push_notifications'] ? 1 : 0)."'>".($user['email_verses'] || $user['push_notifications'] ? '<img alt="check" src="/img/static/circle-check.svg" class="icon">' : '<img alt="x" src="/img/static/circle-x.svg" class="icon">')."</td>
         <td data-trend>
           ".$site->four_week_trend_canvas($user['id'])."
         </td>
