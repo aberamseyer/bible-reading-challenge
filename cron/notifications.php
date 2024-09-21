@@ -3,7 +3,7 @@
 //
 // Sends notifications to users with the daily reading portion
 //
-// crontab entry: 45 * * * * php /home/bible-reading-challenge/cron/notifications.php
+// crontab entry: 31 * * * * php /home/bible-reading-challenge/cron/notifications.php
 //
 
 
@@ -53,27 +53,26 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $webPush->setReuseVAPIDHeaders(true);
 
   foreach($db->select("
-    SELECT u.id, u.name, u.email, u.trans_pref, u.last_seen, u.streak, u.email_verses, GROUP_CONCAT(ps.id, ',') sub_ids
-    FROM users u
-    LEFT JOIN push_subscriptions ps ON ps.user_id = u.id
-    WHERE u.site_id = ".$site->ID." AND (
-      u.email_verses = 1 OR ps.id
-    )
-    GROUP BY u.id") as $user) {
+    SELECT id, name, email, trans_pref, last_seen, streak, email_verses
+    FROM users
+    WHERE site_id = ".$site->ID) as $user) {
     // if a user hasn't been active near the period of the schedule, we won't email them
-    $last_seen_date = new DateTime('@'.$user['last_seen']);
+    $last_seen_date = $user['last_seen']
+      ? new DateTime('@'.$user['last_seen'])
+      : 0;
     if ($last_seen_date < $recently) {
       continue;
     }
 
     $personal_schedule = null;
+    $personal_scheduled_reading = null;
     if ($site->data('allow_personal_schedules')) {
       $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $user['id']);
       $personal_scheduled_reading = $personal_schedule->get_schedule_date($today);
     }
   
     if ($corp_scheduled_reading &&
-        $user['email_verses'] && 
+        $user['email_verses'] == 1 && 
         !$corp_schedule->day_completed($user['id'], $corp_scheduled_reading['id']) // skip anyone who's already read today (ptl early risers!)
       ) {
       
@@ -94,7 +93,11 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
     // if, not else if. a user can receive both an email and a push notification.
     // also, a user may receive a push notification for his personal schedule and not the corporate schedule
-    if ($user['sub_ids']) {
+    $subs = $db->select("
+      SELECT *
+      FROM push_subscriptions
+      WHERE user_id = ".$user['id']);
+    if ($subs) {
       // PUSH NOTIFICATION
       // loop over the corporate and personal schedule, building a notification for their combined information
       $body_lines = [];
@@ -128,16 +131,9 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       if ($body_lines) { // $body_lines will be empty if there are no scheduled readings
         $body_lines[] = "It'll take about $time minutes. Read now?";
 
-        $subs = $db->select("
-          SELECT *
-          FROM push_subscriptions
-          WHERE id IN($user[sub_ids])");
         foreach($subs as $sub_row) {
           // send a push to each device this user has subscribed
           $subscription = Subscription::create(json_decode($sub_row['subscription'], true), true);
-          // we're not using queueNotification() and flushPooled() because when I was testing it,
-          // there was no way to retrieve the sub_id out of the MessageSentReport in the flushPooled() callback
-          // the library code said the payload was supposed to be in the object (via getRequestPayload()), but it was an empty string
           $report = $webPush->queueNotification(
             $subscription,
             json_encode([
@@ -151,6 +147,8 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
               ]
             ], JSON_UNESCAPED_SLASHES)
           );
+          $endpoint_host = parse_url($sub_row['endpoint'], PHP_URL_HOST);
+          printf("[v] Queued notification for user:%s, sub_id:%s on site: %s for endpoint:%s\n", $user['name'], $sub_row['id'], $site->ID, $endpoint_host);
         }
       }
     }
@@ -162,11 +160,17 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     
     $endpoint = $report->getRequest()->getUri()->__toString();
     $sub_id = $db->col("SELECT id FROM push_subscriptions WHERE endpoint = '".$db->esc($endpoint)."'");
+    $encoded_report = json_encode([
+      'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
+      'responseOfPushService' => $report->getResponse(),
+      'getReason' => $report->getReason()  
+    ], JSON_UNESCAPED_SLASHES);
+
     if ($report->isSuccess()) {
       echo "[v] Message sent successfully for subscription {$endpoint}.\n";
       if ($sub_id) {
         $db->update('push_subscriptions', [
-          'last_sent' => $today->format("Y-m-d H:i:s") // in local timezone
+          'last_sent' => time()
         ], "id = ".$sub_id);
       }
     }
@@ -174,18 +178,14 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
       
       if ($sub_id) {
+        error_log("Failed to deliver sub_id:".$sub_id.":".$encoded_report);
         $db->query("DELETE FROM push_subscriptions WHERE id = ".$sub_id);
       }
-      
-      error_log(json_encode([
-        'sub' => $sub_id,
-        'endpoint' => $endpoint,
-        'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
-        'responseOfPushService' => $report->getResponse(),
-        'getReason' => $report->getReason(),
-        'getRequest' => print_r($report->getRequest(), true),
-        'getResponse' => print_r($report->getResponse(), true),
-      ]), JSON_UNESCAPED_SLASHES);
     }
+    $db->update("push_subscriptions", [
+      'last_log' => $encoded_report,
+      'last_updated' => time()
+    ], 'id = '.$sub_id);
   }, 100, 10);
+  usleep(100_000);
 }

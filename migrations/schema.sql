@@ -126,7 +126,8 @@ CREATE TABLE push_subscriptions(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
   subscription TEXT,
-  last_sent TEXT
+  last_sent TEXT,
+  last_updated TEXT
 );
 CREATE TABLE sites(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
