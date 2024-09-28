@@ -728,7 +728,7 @@ function down_for_maintenance($msg_html="") {
 			<details>
 				<summary>Still not working?</summary>
 				<p>
-					If this has been here a while, please <a href='mailto:brc@ramseyer.dev?subject=<?= rawurlencode("Site is down").'&body='.rawurlencode("The BRC site is broken: \n".var_export($_SERVER, true))?>'>let Abe know</a>.
+					If this has been here a while, please <a href='mailto:brc@ramseyer.dev?subject=<?= rawurlencode("Site is down").'&body='.rawurlencode("The BRC site is broken: \n".var_export($_SERVER, true))?>'>let me know</a>.
 				</p>
 			</details>
 		</body>

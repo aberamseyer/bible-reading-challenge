@@ -240,11 +240,12 @@ foreach($schedules as $i => $each_schedule) {
   if ($today_completed) {
     // when making up readings, it is nice to have a link to jump to the next incomplete day. this algorithm finds that day.
     $each_day = clone($today);
+    $real_today = new DateTime(); // when we're in the past, $today is not the actual date.
     do {
       $next_reading = $each_schedule->get_next_reading($each_day);
       if ($next_reading) {
         $dt = new DateTime($next_reading['date']);
-        if ($dt < $today->format('Y-m-d') && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
+        if ($dt <= $real_today && !$each_schedule->day_completed($my_id, $next_reading['id'])) { // if reading to check is between the real day and our current "today", and it's not yet read 
           $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>Next reading &gt;&gt;</a>";
           break;
         }

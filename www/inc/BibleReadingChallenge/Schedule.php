@@ -654,7 +654,8 @@ class Schedule {
     $next_date = $this->db->col("
       SELECT date
       FROM schedule_dates
-      WHERE date > '".$after_date->format('Y-m-d')."'");
+      WHERE date > '".$after_date->format('Y-m-d')."'
+      ORDER BY date ASC");
     return $next_date ?
       $this->get_schedule_date(new \DateTime($next_date))
       : false;
