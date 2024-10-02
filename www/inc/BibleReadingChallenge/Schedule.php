@@ -449,12 +449,13 @@ class Schedule {
     }
   }
 
-  public function update(\DateTime $start_date, \DateTime $end_date, $name)
+  public function update(\DateTime $start_date, \DateTime $end_date, $name, $notes)
   {
     $this->db->update("schedules", [
       'name' => $name,
       'start_date' => $start_date->format('Y-m-d'),
-      'end_date' => $end_date->format('Y-m-d')
+      'end_date' => $end_date->format('Y-m-d'),
+      'notes' => $notes
     ], "id = ".$this->ID);
 
     // delete all scheduled readings that have been invalidated by the new start and end dates
@@ -766,7 +767,7 @@ class Schedule {
     return ob_get_clean();
   }
 
-  public static function edit_schedule_form($id, $name, $start_date, $end_date, $active)
+  public static function edit_schedule_form($id, $name, $start_date, $end_date, $active, $notes)
   {
     global $add_to_foot;
     ob_start();
@@ -783,6 +784,7 @@ class Schedule {
       <label>
         End date: <input type='date' name='end_date' value='".$end_date->format('Y-m-d')."'>
       </label>
+      <textarea name='notes' rows='5' placeholder='Notes for future reference..'>".html($notes ?: "")."</textarea>
       <p>
         <b data-alldays></b> Calendar Days<br>
         <b data-weekdays></b> Weekdays
@@ -890,7 +892,7 @@ class Schedule {
           $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
         }
         else {
-          $this->update($start, $end, $_POST['name']);
+          $this->update($start, $end, $_POST['name'], $_POST['notes']);
 
           $_SESSION['success'] = "Saved schedule";
         }
@@ -965,28 +967,31 @@ class Schedule {
           <th data-sort='end'>
             End
           </th>
+          <th>Notes</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>";
 
     foreach($my_schedules as $each_schedule) {
-        echo "
-          <tr class='".($each_schedule->data('active') ? 'active' : '')."'>
-            <td data-name><a href='?edit=".$each_schedule->ID."'><small>".html($each_schedule->data('name'))."</small></a></td>
-            <td data-start='".$each_schedule->data('start_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('start_date')))."</small></td>
-            <td data-end='".$each_schedule->data('end_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('end_date')))."</small></td>
-            <td>
-              <form method='post'>
-                <small>
-                  <input type='hidden' name='schedule_id' value='".$each_schedule->ID."'>
-                  <button type='submit' name='set_active' value='1' ".($each_schedule->data('active') ? 'disabled' : '').">Set active</button>
-                  <button type='submit' name='duplicate' value='1'>Duplicate</button>
-                  <button type='button' onclick='window.location = `?calendar_id=".$each_schedule->ID."`'>Edit Calendar</button>
-                </small>
-              </form>
-            </td>
-          </tr>";
+      $notes = $each_schedule->data('notes') ?: "";
+      echo "
+        <tr class='".($each_schedule->data('active') ? 'active' : '')."'>
+          <td data-name><a href='?edit=".$each_schedule->ID."'><small>".html($each_schedule->data('name'))."</small></a></td>
+          <td data-start='".$each_schedule->data('start_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('start_date')))."</small></td>
+          <td data-end='".$each_schedule->data('end_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('end_date')))."</small></td>
+          <td title='".html($notes)."'><small>".substr($notes, 0, 13).(strlen($notes) > 13 ? ".." : "")."</small></td>
+          <td>
+            <form method='post'>
+              <small>
+                <input type='hidden' name='schedule_id' value='".$each_schedule->ID."'>
+                <button type='submit' name='set_active' value='1' ".($each_schedule->data('active') ? 'disabled' : '').">Set active</button>
+                <button type='submit' name='duplicate' value='1'>Duplicate</button>
+                <button type='button' onclick='window.location = `?calendar_id=".$each_schedule->ID."`'>Edit Calendar</button>
+              </small>
+            </form>
+          </td>
+        </tr>";
     }
     echo "
         </tbody>

@@ -54,7 +54,8 @@
           $editing_schedule->data('name'), 
           $editing_schedule->data('start_date'), 
           $editing_schedule->data('end_date'), 
-          (int)$editing_schedule->data('active'));
+          (int)$editing_schedule->data('active'),
+          $editing_schedule->data('notes'));
     }
     else {
       // all schedules summary
