@@ -143,7 +143,9 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
                 'icon' => "/img/static/logo_".$site->ID."_512x512.png",
                 'data' => [
                   'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
-                ]
+                ],
+                'tag' => 'daily-reading-reminder', // causes new notifications to replace old ones
+                'renotify' => true // causes replacement notifications to not silently replace old ones
               ]
             ], JSON_UNESCAPED_SLASHES)
           );
