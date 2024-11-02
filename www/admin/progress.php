@@ -34,7 +34,7 @@ if ($total_words_in_schedule) { // graphs are meaningless if there is nothing in
     $next->modify('+1 month');
     $prev->modify('+1 month');
   } while ($next->format('Y-m-t') <= $end_date->format('Y-m-t') && //  one for each month in the schedule
-    $end_of_month > $end_date->format('Y-m-t')); // only graphs up through this month
+    $next->format('Y-m-t') <= $end_of_month); // only graphs up through this month
   $timer->mark('end emoji');
   
   foreach($graphs as $i => $graph) {
