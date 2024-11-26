@@ -11,35 +11,24 @@ self.addEventListener('push', function (event) {
   }
 })
 
-self.addEventListener('notificationclick', function(event) {
-  const clickedNotification = event.notification
-  clickedNotification.close()
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
 
-  const data = clickedNotification.data
+  const urlToOpen = new URL(event.notification.data.link, self.location.origin).href
 
-  // Do something as the result of the notification click
-  const urlToOpen = new URL(data.link, self.location.origin).href;
+  event.waitUntil(
+    clients.matchAll({ 
+      type: 'window', 
+      includeUncontrolled: true })
+    .then(clientList => {
+      const matchingClient = clientList.find(client => client.url === urlToOpen)
 
-  const promiseChain = clients.matchAll({
-    type: 'window',
-    includeUncontrolled: true
-  })
-  .then(windowClients => {
-    let matchingClient = null;
-    for (let i = 0; i < windowClients.length; i++) {
-      const windowClient = windowClients[i]
-      if (windowClient.url === urlToOpen) {
-        matchingClient = windowClient
-        break
+      if (matchingClient) {
+        matchingClient.focus()
+        matchingClient.postMessage({ action: 'refresh' })
+      } else {
+        clients.openWindow(urlToOpen)
       }
-    }
-
-    if (matchingClient) {
-      return matchingClient.focus()
-    } else {
-      return clients.openWindow(urlToOpen)
-    }
-  });
-
-  event.waitUntil(promiseChain);
+    })
+  )
 })
