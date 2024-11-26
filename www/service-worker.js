@@ -19,7 +19,8 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ 
       type: 'window', 
-      includeUncontrolled: true })
+      includeUncontrolled: true 
+    })
     .then(clientList => {
       const matchingClient = clientList.find(client => client.url === urlToOpen)
 
