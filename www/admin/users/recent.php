@@ -26,7 +26,7 @@ require DOCUMENT_ROOT."inc/head.php";
 echo admin_navigation();
 ?>
 <p><?= back_button("Back") ?></p>
-<form action='/admin/recent' method='get'>
+<form action='/admin/users/recent' method='get'>
   <label>
     Show those registered since:
     <input 
@@ -53,7 +53,7 @@ echo admin_navigation();
         <tr>
           <td><a href='/admin/users?user_id=<?= $user['id']?>'><?= $user['name'] ?></a></td>
           <td><?= $user['email'] ?></td>
-          <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] || $user['push_notifications'] == 1 ? 'check' : 'x' ?>.svg'>
+          <td><img alt='check' class='icon' src='/img/static/circle-<?= $user['email_verses'] == 1 || $user['push_notifications'] == 1 ? 'check' : 'x' ?>.svg'>
           <td><?= date('D, M j, Y', strtotime($user['registered'])) ?></td>
         </tr>
       <?php endforeach; ?>
