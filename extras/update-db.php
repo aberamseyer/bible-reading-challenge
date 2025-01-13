@@ -13,7 +13,7 @@ echo PHP_EOL;
 
 
 $today = date('Ymd');
-$filename = "brc-".$today."_090501Z.sql.gz";
+$filename = "brc-".$today."_100501Z.sql.gz";
 $remote_url = "https://files.ramseyer.dev/export/$filename";
 
 $context = stream_context_create([

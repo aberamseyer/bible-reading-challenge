@@ -27,13 +27,22 @@ function createUser(id, position, name, emoji, zIndex) {
   return newUser
 }
 
+
 function setup() {
   ws = new WebSocket(WS_URL)
   initTime = Date.now()
   ws.addEventListener('open', () => {
     console.log('Connected to server')
-    let myId
+    let myId, myDbId
     const people = new Map()
+
+    function setInteractions(interactions) {
+      document.querySelectorAll('.verse').forEach((verseEl, i) => {
+        const matchingInteractions = interactions.filter(int => int.position == i)
+        verseEl.dataset.liked_by_me = matchingInteractions.some(i => i.user_id == myDbId)
+        verseEl.dataset.interactions = JSON.stringify(matchingInteractions)
+      })
+    }
   
     ws.send(`init|${WEBSOCKET_NONCE}`)
 
@@ -51,6 +60,7 @@ function setup() {
         case 'init-client':
           console.log(`initializing with ${data.people.length} users and id: ${data.id}`)
           myId = data.id
+          myDbId = data.dbId
   
           people.clear()
           zIndex = 2
@@ -102,8 +112,11 @@ function setup() {
             people.delete(data.id)
           }
           break
+        case 'set-interactions':
+          console.log(`interactions from server:`, data)
+          setInteractions(data.interactions, )
+          break
       }
-      
     });
     
     ws.addEventListener('close', ({ code, reason }) => {
@@ -126,6 +139,17 @@ function setup() {
           }))
         }
       }, 50)
+    })
+    document.querySelectorAll('.verse').forEach((verseEl, i) => {
+      verseEl.addEventListener('dblclick', () => {
+        const isLiked = verseEl.dataset.liked_by_me === `true`
+        ws.send(JSON.stringify({ 
+          type: 'interact',
+          interaction_type: 'LIKE',
+          position: i,
+          newValue: !isLiked
+        }))
+      })
     })
   }, { once: true })
 }

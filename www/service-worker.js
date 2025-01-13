@@ -14,7 +14,8 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
-  const urlToOpen = new URL(event.notification.data.link, self.location.origin).href
+  const notificationUrl = new URL(event.notification.data.link)
+  const originAndPath = url => url.origin + url.pathname
 
   event.waitUntil(
     clients.matchAll({ 
@@ -22,11 +23,12 @@ self.addEventListener('notificationclick', (event) => {
       includeUncontrolled: true 
     })
     .then(clientList => {
-      const matchingClient = clientList.find(client => client.url === urlToOpen)
+      const matchingClient = clientList.find(client => 
+        originAndPath(notificationUrl) === originAndPath(new URL(client.url)))
 
       if (matchingClient) {
         matchingClient.focus()
-        matchingClient.postMessage({ action: 'refresh' })
+        matchingClient.postMessage({ navigate: notificationUrl.href })
       } else {
         clients.openWindow(urlToOpen)
       }
