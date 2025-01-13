@@ -56,7 +56,7 @@ echo "
       <ul>
         <li>Current Challenge progress: <b>".($stats['challenge_percent'] ? round($stats['challenge_percent'], 2) : '-')."%</b></li>
         <li>Current / Longest streak: <b>$me[streak] day".xs($me['streak'])."</b> / <b>$me[max_streak] day".xs($me['max_streak'])."</b></li>
-        <li>On-target: <b>".round($stats['on_target_percent'], 2)." %</b> ".help("% of dates where the reading was marked complete on the day it was assigned")."</li>
+        <li>On-target ".help("% of dates where the reading was marked complete on the day it was assigned").": <b>".round($stats['on_target_percent'], 2)." %</b></li>
         <li>Chapters I've read: <b>".number_format($stats['chapters_ive_read'])."</b></li>
         <li>Words I've read: <b>".number_format($stats['words_ive_read'])."</b></li>
       </ul>
