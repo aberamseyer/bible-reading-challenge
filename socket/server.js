@@ -22,7 +22,7 @@ Promise.all([
       .connect()
   }),
   new Promise(res => {
-    const db = new sqlite3.Database(`${__dirname}/../brc.db`, sqlite3.OPEN_READWRITE | sqlite3.OPEN_FULLMUTEX)
+    const db = new sqlite3.Database(`${__dirname}/../brc.db`, sqlite3.OPEN_READONLY)
     db
       .on('error', err => console.err(`SQLite3 threw:`, err))
       .on('open', () => {
@@ -65,26 +65,6 @@ Promise.all([
       }
     }
   }
-
-  function broadcastLikes (siteId, scheduleDateId) {
-    db.all(`
-      SELECT i.id, i.user_id, i.position 
-      FROM interactions i
-      JOIN users u ON u.id = i.user_id
-      WHERE u.site_id = $siteId AND 
-        i.schedule_date_id = $scheduleDateId AND
-        i.interaction_type = 'LIKE'`, 
-      {
-        $siteId: siteId,
-        $scheduleDateId: scheduleDateId
-      }, 
-      (err, rows) => {
-        broadcast({
-          type: 'set-interactions',
-          interactions: rows
-        }, null, siteId)
-      })
-  }
   
   // server listening for websocket connection
   server.on('connection', ws => {
@@ -101,12 +81,10 @@ Promise.all([
       const newUser = {
         id: connectionId,
         site_id: userRow.site_id,
-        databaseId: userRow.id,
         ws,
         position: `0px`,
         emoji: userRow.emoji,
-        name: userRow.name,
-        schedule_date_id: userRow.schedule_date_id
+        name: userRow.name
       }
       people.set(connectionId, newUser)
   
@@ -117,12 +95,11 @@ Promise.all([
         people: [ ...people.values() ]
           .filter(p => p.id !== connectionId) // everyone but ourself
           .filter(p => p.site_id === newUser.site_id) // only people in our same system
-          .map(p => ({
+          .map(p => ({ 
             id: p.id,
             position: p.position,
             emoji: p.emoji,
-            name: p.name,
-            databaseId: p.databaseId
+            name: p.name
           }))
         }))
   
@@ -131,8 +108,7 @@ Promise.all([
           id: connectionId,
           position: `0px`,
           emoji: userRow.emoji,
-          name: userRow.name,
-          databaseId: userRow.databaseId
+          name: userRow.name
         }, connectionId, userRow.site_id)
       
       // Handle incoming messages from clients
@@ -156,8 +132,7 @@ Promise.all([
                   id: data.id,
                   position: userToSend.position,
                   emoji: userToSend.emoji,
-                  name: userToSend.name,
-                  databaseId: userToSend.databaseId
+                  name: userToSend.name
                 }))
             }
             break
@@ -177,96 +152,32 @@ Promise.all([
                 position: data.position,
               }, connectionId, user.site_id)
             break
-          case 'interact':
-            const connectedUser = people.get(connectionId)
-            if (data.interaction_type === 'LIKE') {
-              const versePosition = Math.max(0, +data.position)
-              if (data.newValue) {
-                const dbHash = {
-                  $interaction_type: data.interaction_type === 'LIKE' ? 'LIKE' : 'COMMENT',
-                  $value: data.newValue,
-                  $user_id: connectedUser.databaseId,
-                  $schedule_date_id: connectedUser.schedule_date_id,
-                  $position: versePosition,
-                  $timestamp: epoch()
-                }
-                // doesn't exist, add like
-                db.run(`
-                  INSERT INTO interactions (interaction_type, value, user_id, schedule_date_id, position, timestamp)
-                  VALUES ($interaction_type, $value, $user_id, $schedule_date_id, $position, $timestamp)`, 
-                  dbHash, 
-                  err => {
-                    if (err) { 
-                      console.log(dbHash)
-                      console.error(err)
-                    }
-                    else 
-                      broadcastLikes(connectedUser.site_id, connectedUser.schedule_date_id)
-                  })
-              }
-              else {
-                // already exists, unlike
-                const dbHash = {
-                  $user_id: connectedUser.databaseId,
-                  $schedule_date_id: connectedUser.schedule_date_id,
-                  $position: versePosition
-                }
-                db.run(`
-                  DELETE FROM interactions
-                  WHERE 
-                    user_id=$user_id AND 
-                    schedule_date_id=$schedule_date_id AND
-                    interaction_type='LIKE' AND
-                    position = $position`, dbHash, (err) => {
-                    if (err) {
-                      console.log(dbHash)
-                      console.error(err)
-                      return
-                    }
-                    else {
-                      broadcastLikes(connectedUser.site_id, connectedUser.schedule_date_id)
-                    }
-                  })
-              }
-            }
-            break
         }
       });
     }
   
     // websocket listening for messages
     ws.addEventListener('message', async event => {
-      const err = message => {
-        console.log(`${message}: ${event.data}`)
-        ws.terminate();
+      const [ init, nonce ] = event.data.split('|')
+      if (init === 'init' && nonce) {
+        const user_id = await redisClient.get(`bible-reading-challenge:websocket-nonce/${nonce}`)
+        db.get(`SELECT id, site_id, name, emoji FROM users WHERE id = ?`, [ user_id ], (err, row) => {
+          if (row) {
+            const refreshNonce = () => {
+              redisClient.expire(`bible-reading-challenge:websocket-nonce/${nonce}`, 20)
+            }
+            refreshNonce()
+            setupListeners(connectionId, row, refreshNonce)
+          }
+          else {
+            console.log(`Bad nonce: ${nonce}`)
+            ws.terminate()
+          }
+        })
       }
-      try {
-        const [ init, nonce ] = event.data.split('|')
-        if (init === 'init' && nonce) {
-          // 'value' is of the form "schedule_date_id|user_id" (see Redis.php)
-          const value = await redisClient.get(`bible-reading-challenge:websocket-nonce/${nonce}`)
-            const [ schedule_date_id, user_id ] = value.split('|');
-            db.get(`
-              SELECT id, site_id, name, emoji, ${schedule_date_id} schedule_date_id
-              FROM users WHERE id = ?`, [ user_id ], (err, row) => {
-              if (row) {
-                const refreshNonce = () => {
-                  redisClient.expire(`bible-reading-challenge:websocket-nonce/${nonce}`, 20)
-                }
-                refreshNonce()
-                setupListeners(connectionId, row, refreshNonce)
-              }
-              else {
-                err(`Bad nonce: ${nonce}`)
-              }
-            })
-        }
-        else {
-          err(`Invalid initialization code from client`)
-        } 
-      }
-      catch (e) {
-        err(`Exception in initialization: ${e.name}, ${e.message}`)
+      else {
+        console.log(`invalid initialization code: ${event.data}`)
+        ws.terminate()
       }
     }, { once: true })
   })
@@ -280,4 +191,3 @@ Promise.all([
   }, 5000)
 })
 
-const epoch = () => Math.floor(Date.now() / 1000)

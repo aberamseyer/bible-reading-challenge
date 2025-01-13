@@ -22,7 +22,6 @@ if ($_POST['user_id']) {
       else {
         $db->query("DELETE FROM read_dates WHERE user_id = ".$to_change['id']);
         $db->query("DELETE FROM users WHERE site_id = ".$site->ID." AND id = ".$to_change['id']);
-        $db->query("DELETE FROM interactions WHERE user_id = ".$to_change['id']);
         $_SESSION['success'] = $to_change['name']." was deleted.";
       }
     }
@@ -89,23 +88,6 @@ if ($_POST['merge_from_account']) {
       WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM read_dates WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM users WHERE id = $merge_from_account[id]");
-
-    // interactions
-    $db->query("
-      DELETE FROM interactions
-      WHERE 
-        user_id = $merge_from_account[id] AND
-        read_date_id IN (
-          SELECT read_date_id
-          FROM interactions
-          WHERE 
-            user_id = $merge_to_account[id] AND 
-            interactions_type = 'LIKE'
-        )");
-    $db->query("
-      UPDATE interactions
-      SET user_id = $merge_to_account[id]
-      WHERE user_id = $merge_from_account[id]");
 
     $_SESSION['success'] = "Deleted account: ".html($merge_from_account['email'])." and updated ".count($difference)." unread day".xs(count($difference))." to ".html($merge_to_account['email']);
     redirect('/admin/users?user_id='.$merge_to_account['id']);

@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // listens for message from serviceworker to trigger reload
 navigator.serviceWorker.addEventListener('message', event => {
-  if (event.data.navigate) {
-      window.location = event.data.navigate
+  if (event.data.action === 'refresh') {
+      window.location.reload()
   }
 })

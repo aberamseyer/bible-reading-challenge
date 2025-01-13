@@ -2,6 +2,10 @@
 
 require __DIR__."/inc/init.php";
 
+// this key is used by the websocket client to authenticate as the current user
+$websocket_nonce = bin2hex(random_bytes(24));
+$redis->set_websocket_nonce($me['id'], $websocket_nonce);
+
 // set translation, update it if the select box changed
 if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
   $new_trans = $_REQUEST['change_trans'];
@@ -164,11 +168,7 @@ foreach($schedules as $i => $each_schedule) {
     echo "</small></p>";
   }
   if ($scheduled_reading) {    
-    if ($i === 0) { // only if the corporate schedule exists
-      // this key is used by the websocket client to authenticate as the current user
-      $websocket_nonce = bin2hex(random_bytes(24));
-      $redis->set_websocket_nonce($scheduled_reading['id'], $me['id'], $websocket_nonce);
-      
+    if ($i === 0) {
       $add_to_foot .= "<style>
         article {
           position: relative;

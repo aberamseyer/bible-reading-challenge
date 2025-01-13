@@ -102,10 +102,10 @@ class Redis {
 	/**
 	 * sets a nonce on 'today' page load for the websocket client to use as an auth token for the current user
 	 */
-	public function set_websocket_nonce($schedule_date_id, $user_id, $nonce)
+	public function set_websocket_nonce($id, $nonce)
 	{
 		$key = Redis::WEBSOCKET_NONCE_KEYSPACE.$nonce;
-		$this->client->set($key, "$schedule_date_id|$user_id");
+		$this->client->set($key, $id);
 		$this->client->expire($key, 10);
 
 		return true;
