@@ -17,6 +17,8 @@ foreach($db->cols("SELECT id FROM sites") as $site_id) {
     continue;
   }
 
+  $site->invalidate_stats();
+
   $schedule = $site->get_active_schedule();
 
   $yesterday = new DateTime('@'.strtotime('yesterday'), $site->TZ);

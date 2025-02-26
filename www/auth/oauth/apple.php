@@ -23,10 +23,10 @@ else {
   $kid = $header["kid"];
   
   try {
-    JWT::$leeway = 60;
+    JWT::$leeway = 120; // threw errors when it was only 60
     $payload = (array) JWT::decode($jwt, JWK::parseKeySet($keyset));
   } catch (\Exception $e) {
-    error_log("Token validation failed: " . $e->getMessage());
+    error_log("Token validation failed: " . $e->getMessage() . "|" . $jwt . "|" . json_encode(JWK::parseKeySet($keyset), true));
     $_SESSION['error'] = "Authentication response could not be validated.";
     session_write_close();
     redirect('/');
