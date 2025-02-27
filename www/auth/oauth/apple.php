@@ -2,6 +2,7 @@
 
 $insecure = true;
 require __DIR__."/../../inc/init.php";
+global $db, $site, $redis;
 
 load_env();
 
@@ -14,14 +15,14 @@ if (!$_POST['state'] || !$_POST['code'] || !$_POST['id_token']) {
 }
 else {
   $keyset = json_decode(file_get_contents('https://appleid.apple.com/auth/keys'), true);
-  
+
   $jwt = $_REQUEST['id_token'];
-  
+
   $token_parts = explode('.', $jwt);
   $header = json_decode(base64_decode($token_parts[0]), true);
-  
+
   $kid = $header["kid"];
-  
+
   try {
     JWT::$leeway = 120; // threw errors when it was only 60
     $payload = (array) JWT::decode($jwt, JWK::parseKeySet($keyset));
@@ -31,7 +32,7 @@ else {
     session_write_close();
     redirect('/');
   }
-  
+
   // sucessful decoding with valid signature
   if ($payload['nonce'] !== session_id()) {
     $_SESSION['error'] = "Session mismatch.";

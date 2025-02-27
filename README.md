@@ -1,3 +1,10 @@
+# Bible Reading Challenge
+An application for coordinated reading schedules to read through the Bible together with customizable personal and group schedules, push notifications, emails, and lots of statistics.
+
+Supports multiple deployments of the application running from the same source code and database, each customizable to match branding
+
+See also [here](https://abe.ramseyer.dev/work/bible-reading-challenge/)
+
 # Dependencies
 
 ## Language
