@@ -5,7 +5,7 @@ require __DIR__."/../../inc/init.php";
 
 load_env();
 
-// Firebase is just a library for parsing JWT tokens. We're not actually using firebase here.
+// Firebase\JWT is just a library for parsing JWT tokens. We're not actually using firebase here.
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 
@@ -62,7 +62,7 @@ else {
       log_user_in($user_id);
     }
     else {
-      // Sign in with apple only returns the "user" JSON object on the first successfulauth;enntication
+      // Sign in with apple only returns the "user" JSON object on the first successful authentication
       $user_arr = json_decode($_REQUEST['user'], true);
       if (!$user_arr) {
         $_SESSION['error'] = "Authentication response from Apple did not contain sign in details.";

@@ -37,7 +37,8 @@ CREATE TABLE schedules(
   name TEXT,
   start_date TEXT,
   end_date TEXT,
-  active INTEGER DEFAULT(0)
+  active INTEGER DEFAULT(0) ,
+  notes TEXT
 );
 CREATE TABLE verses(
   id INTEGER NOT NULL
@@ -88,6 +89,52 @@ CREATE TABLE users(
   max_streak INTEGER DEFAULT(0),
   emoji TEXT
 );
+CREATE TABLE sites(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  enabled INTEGER DEFAULT(1),
+  site_name TEXT,
+  domain_www TEXT,
+  domain_www_test TEXT,
+  domain_socket TEXT,
+  domain_socket_test TEXT,
+  short_name TEXT,
+  contact_name TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  email_from_address TEXT,
+  email_from_name TEXT,
+  favico_image_id INTEGER,
+  logo_image_id INTEGER,
+  login_image_id INTEGER,
+  progress_image_id INTEGER,
+  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), 
+  color_primary TEXT DEFAULT('rgb(0, 0, 0)'), 
+  color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), 
+  color_fade TEXT DEFAULT('rgb(0, 0, 0)'), 
+  default_emoji TEXT, 
+  reading_timer_wpm INTEGER DEFAULT(0), 
+  start_of_week INTEGER DEFAULT(1), 
+  time_zone_id TEXT DEFAULT('America/Chicago'), 
+  env TEXT, 
+  allow_personal_schedules INTEGER DEFAULT(0), 
+  translations TEXT DEFAULT ["rcv",
+  "kjv",
+  "esv",
+  "asv",
+  "niv",
+  "nlt"],
+  vapid_pubkey TEXT,
+  vapid_privkey TEXT
+);
+CREATE TABLE push_subscriptions(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  last_sent TEXT,
+  endpoint TEXT,
+  subscription TEXT,
+  last_log TEXT,
+  last_updated TEXT
+);
 CREATE VIEW read_dates_dated AS SELECT rd.id, rd.user_id, u.name, rd.timestamp, DATETIME(rd.timestamp, 'unixepoch') date, sd.passage
 FROM read_dates rd
 JOIN schedule_dates sd ON rd.schedule_date_id = sd.id
@@ -122,38 +169,5 @@ CREATE INDEX idx_site_id ON users(site_id);
 CREATE INDEX idx_schedule_dates_date ON schedule_dates(date);
 CREATE INDEX idx_users_uuid ON users(uuid);
 CREATE INDEX idx_users_last_seen ON users(last_seen);
-CREATE TABLE push_subscriptions(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER,
-  subscription TEXT,
-  last_sent TEXT,
-  last_updated TEXT
-);
-CREATE TABLE sites(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  enabled INTEGER DEFAULT(1),
-  site_name TEXT,
-  domain_www TEXT,
-  domain_www_test TEXT,
-  domain_socket TEXT,
-  domain_socket_test TEXT,
-  short_name TEXT,
-  contact_name TEXT,
-  contact_email TEXT,
-  contact_phone TEXT,
-  email_from_address TEXT,
-  email_from_name TEXT,
-  favico_image_id INTEGER,
-  logo_image_id INTEGER,
-  login_image_id INTEGER,
-  progress_image_id INTEGER,
-  progress_image_coordinates TEXT DEFAULT('[50,0,50,88]'), color_primary TEXT DEFAULT('rgb(0, 0, 0)'), color_secondary TEXT DEFAULT('rgb(0, 0, 0)'), color_fade TEXT DEFAULT('rgb(0, 0, 0)'), default_emoji TEXT, reading_timer_wpm INTEGER DEFAULT(0), start_of_week INTEGER DEFAULT(1), time_zone_id TEXT DEFAULT('America/Chicago'), env TEXT, allow_personal_schedules INTEGER DEFAULT(0), translations TEXT DEFAULT ["rcv",
-  "kjv",
-  "esv",
-  "asv",
-  "niv",
-  "nlt"],
-  vapid_pubkey TEXT,
-  vapid_privkey TEXT
-);
+CREATE INDEX idx_push_subscriptions_endpoint ON push_subscriptions(endpoint);
 CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);

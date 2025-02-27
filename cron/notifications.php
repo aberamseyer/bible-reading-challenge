@@ -33,14 +33,14 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $corp_schedule = $site->get_active_schedule();
   $recently = new DateTime($corp_schedule->data('start_date'));
   $recently->modify('-6 months');
-  
+
   $corp_scheduled_reading = $corp_schedule->get_schedule_date($today);
-  
+
   // web push init for site
   $auth = [
     'VAPID' => [
       'subject' => "https://".$site->DOMAIN,
-      'publicKey' => $site->data('vapid_pubkey'), 
+      'publicKey' => $site->data('vapid_pubkey'),
       'privateKey' => $site->data('vapid_privkey'),
     ],
   ];
@@ -56,7 +56,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     SELECT id, name, email, trans_pref, last_seen, streak, email_verses
     FROM users
     WHERE site_id = ".$site->ID) as $user) {
-    // if a user hasn't been active near the period of the schedule, we won't email them
+    // if a user hasn't been active near the period of the schedule, we won't notify them
     $last_seen_date = $user['last_seen']
       ? new DateTime('@'.$user['last_seen'])
       : 0;
@@ -70,20 +70,20 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $user['id']);
       $personal_scheduled_reading = $personal_schedule->get_schedule_date($today);
     }
-  
+
     if ($corp_scheduled_reading &&
-        $user['email_verses'] == 1 && 
+        $user['email_verses'] == 1 &&
         !$corp_schedule->day_completed($user['id'], $corp_scheduled_reading['id']) // skip anyone who's already read today (ptl early risers!)
       ) {
-      
+
       $notification_info = $site->notification_info($user['name'], $corp_scheduled_reading);
-            
-      // EMAIL    
+
+      // EMAIL
       $html = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
 
       $html .= "<p>Good morning $notification_info[name], here is the scheduled reading for today:</p>";
       /* chapter contents */
-      $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $schedule, $today, true);
+      $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
       $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html);
@@ -102,7 +102,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       // loop over the corporate and personal schedule, building a notification for their combined information
       $body_lines = [];
       $time = 0;
-      foreach([ 
+      foreach([
         [
           's' => &$corp_schedule,
           'sr' => &$corp_scheduled_reading,
@@ -122,7 +122,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
           $body_lines[] = "Good morning $notification_info[name].".($user['streak'] > 1 ? "Keep up your $user[streak]-day streak." : "");
         }
         $time += $notification_info['minutes'];
-        
+
         $body_lines[] = $i === 0
           ? "We're reading ".$arr['sr']['reference']." today"
           : "You scheduled ".$arr['sr']['reference']." for yourself to read today.";
@@ -157,15 +157,15 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   }
 
   // send all the notifications for this site
-  $webPush->flushPooled(function($report) use ($today) {
+  $webPush->flushPooled(function($report) {
     $db = \BibleReadingChallenge\Database::get_instance();
-    
+
     $endpoint = $report->getRequest()->getUri()->__toString();
     $sub_id = $db->col("SELECT id FROM push_subscriptions WHERE endpoint = '".$db->esc($endpoint)."'");
     $encoded_report = json_encode([
       'isTheEndpointWrongOrExpired' => $report->isSubscriptionExpired(),
       'responseOfPushService' => $report->getResponse(),
-      'getReason' => $report->getReason()  
+      'getReason' => $report->getReason()
     ], JSON_UNESCAPED_SLASHES);
 
     if ($report->isSuccess()) {
@@ -178,7 +178,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     }
     else {
       echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
-      
+
       if ($sub_id) {
         error_log("Failed to deliver sub_id:".$sub_id.":".$encoded_report);
         $db->query("DELETE FROM push_subscriptions WHERE id = ".$sub_id);

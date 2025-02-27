@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sqlite3 brc.db ".schema --indent" > ../migrations/schema.sql
+sqlite3 brc.db ".schema --indent" > ./migrations/schema.sql

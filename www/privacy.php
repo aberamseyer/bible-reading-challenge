@@ -12,7 +12,7 @@ require DOCUMENT_ROOT."inc/head.php";
 <h1>Privacy Policy</h1>
 
 <p>Effective Date: 2023-07-13</p>
-<p>Thank you for visiting the University of Illinois Christians on Campus Bible Reading Challenge website. This Privacy Policy outlines how we collect, use, disclose, and protect your personal information when you interact with our website. We value your privacy and are committed to safeguarding your personal data.</p>
+<p>Thank you for visiting the <?= $site->data('site_name') ?> Bible Reading Challenge website. This Privacy Policy outlines how we collect, use, disclose, and protect your personal information when you interact with our website. We value your privacy and are committed to safeguarding your personal data.</p>
 
 <h2> 1. Information We Collect </h2>
 <h3>1.1 Personal Information</h3>
@@ -45,7 +45,7 @@ require DOCUMENT_ROOT."inc/head.php";
 <p>We use Log Data for statistical purposes, to analyze trends, and administer the website. This data is collected on an aggregated and anonymous basis and does not personally identify you.</p>
 
 <h2>3. Third-Party OAuth Login</h2>
-<p>If you choose to log in to our website using a third-party OAuth login service (such as Google), please note that we may receive certain information about you from these third-party platforms, including your profile information and email address. We only collect and use this information to facilitate the authentication process and to create a personalized user experience.</p>
+<p>If you choose to log in to our website using a third-party OAuth login service (such as Google or Apple), please note that we may receive certain information about you from these third-party platforms, including your profile information and email address. We only collect and use this information to facilitate the authentication process and to create a personalized user experience.</p>
 
 <h2>4. Disclosure of Information</h2>
 <p>We do not sell, trade, or otherwise transfer your personal information to third parties for their marketing purposes. However, we may share your information with trusted third-party service providers who assist us in operating our website, conducting our business, or providing services to you, as long as those parties agree to keep this information confidential.</p>

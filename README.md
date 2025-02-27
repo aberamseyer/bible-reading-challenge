@@ -30,7 +30,7 @@ Initialize it with the data from `migrations/bible-import.sql`
 
 Enable WAL mode: `sqlite3 brc.db "PRAGMA journal_mode=WAL;"`
 
-An example backup script example can be found in `cron/db-backup.sh`
+An example backup script example can be found in `extras/db-backup.sh`
 
 #### Redis
 Redis is used for session management.
