@@ -5,6 +5,8 @@ Supports multiple deployments of the application running from the same source co
 
 See also [here](https://abe.ramseyer.dev/work/bible-reading-challenge/)
 
+The live deployment of my personal site for this [here](https://brc.ramseyer.dev). Feel free to join and read with me!
+
 # Dependencies
 
 ## Language
