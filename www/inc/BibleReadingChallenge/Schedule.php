@@ -749,7 +749,7 @@ class Schedule {
       FROM (
         SELECT *
         FROM schedule_dates
-        WHERE schedule_id = ".$this->ID."
+        WHERE schedule_id = ".$this->ID." AND date < '".date('Y-m-d')."'
       ) sd
       WHERE sd.id NOT IN (
         SELECT schedule_date_id
