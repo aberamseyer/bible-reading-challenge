@@ -47,7 +47,7 @@ class Schedule {
   {
     $start_date = new \DateTime($this->data['start_date']);
     $end_date = new \DateTime($this->data['end_date']);
-  
+
     return "
       <h3>Editing calendar for '".html($this->data('name'))."'</h3>
       <p>
@@ -119,14 +119,14 @@ class Schedule {
         </small>
       </details>
       <small>When you're happy with the state of the calendar, <mark>DONT FORGET to click \"Save readings\"</mark> at the bottom!</small>";
-    
+
   }
 
   public function html_calendar_with_editor()
   {
     global $add_to_foot;
     ob_start();
-  
+
     // sort books/chapters into some arrays for easier printing
     $book_chapters = [];
     foreach($this->db->select("
@@ -140,7 +140,7 @@ class Schedule {
           'chapters' => json_decode($b['chapters'], true)
         ];
       }
-    
+
     // fixed editor
     echo "
     <div id='editor'>
@@ -189,7 +189,7 @@ class Schedule {
       </div>
     </div>";
     echo $this->html_calendar(true);
-  
+
     $add_to_foot .= "
       <script>
         const CALENDAR_ID = ".$this->data['id']."
@@ -197,12 +197,12 @@ class Schedule {
         const BOOKS_RE = ".BOOKS_RE."
         const BOOKS_ABBR_LOOKUP = ".json_encode(
           array_combine(
-            array_map('strtolower', array_keys(BOOK_NAMES_AND_ABBREV)), 
+            array_map('strtolower', array_keys(BOOK_NAMES_AND_ABBREV)),
             array_column(BOOK_NAMES_AND_ABBREV, 'name'))
           )."
       </script>".
       cached_file('js', '/js/edit-calendar.js');
-  
+
 
     return ob_get_clean();
   }
@@ -246,7 +246,7 @@ class Schedule {
         $d_arr = is_array($differences)
           ? $differences
           : [ $differences ];
-          
+
         $i = 0;
         foreach(array_combine($book_arr, $chp_arr) as $b => $c) {
           $rate = clamp((int)$d_arr[ $i++ ], 1, 10); // between 1 and 10 chapters per day
@@ -264,7 +264,7 @@ class Schedule {
             JOIN books b ON b.id = c.book_id
             WHERE c.id > ".intval($starting_id)."
             LIMIT ".count($days)*$rate)); // reverse the array so we can use array_pop in the loop for sorting instead of array_shift, which is slower
-  
+
           $iter_result = [];
           if ($chapters) { // just to make sure no parameters were funky. lazy input validation.
             $sorted = [];
@@ -313,7 +313,7 @@ class Schedule {
               break;
             }
           }
-        } 
+        }
 
         if ($fp) {
           // first, calculate the number of lines in the file "just in case"
@@ -348,7 +348,7 @@ class Schedule {
                 }
                 if (!preg_match($has_book_regex, $line)) {
                   $line = $curr_book.' '.$line;
-                }  
+                }
                 foreach(explode(';', trim($line)) as $piece) {
                   $value_arr[] = trim($piece);
                 }
@@ -359,8 +359,8 @@ class Schedule {
                   $lines_per_day -= 1;
                 }
               }
-              
-              
+
+
               $result[ $date ] = $value_arr;
             }
           }
@@ -372,14 +372,14 @@ class Schedule {
               }
               if (!preg_match($has_book_regex, $line)) {
                 $line = $curr_book.' '.$line;
-              }  
+              }
               $result[ $date ] = explode('; ', trim($line));
             }
           }
           fclose($fp);
         }
       }
-      
+
       return $result;
     }
     else {
@@ -413,7 +413,7 @@ class Schedule {
         // update
         $passages = parse_passages($day['passage']);
         $passage_readings = parsed_passages_to_passage_readings($passages);
-        
+
 
         $this->db->update("schedule_dates", [
           'passage' => $day['passage'],
@@ -530,11 +530,11 @@ class Schedule {
   public function duplicate()
   {
     $s_id = Schedule::create(
-      new \DateTime($this->data('start_date')), 
-      new \DateTime($this->data('end_date')), 
-      "Copy of ".$this->data('name'), 
-      $this->data('site_id'), 
-      0, 
+      new \DateTime($this->data('start_date')),
+      new \DateTime($this->data('end_date')),
+      "Copy of ".$this->data('name'),
+      $this->data('site_id'),
+      0,
       $this->data('user_id') ?: null
     );
     $new_sched = new Schedule($this->data('site_id'), $s_id);
@@ -568,8 +568,8 @@ class Schedule {
     $schedules = [];
     foreach(Database::get_instance()->cols("
       SELECT id FROM schedules
-      WHERE 
-        user_id = ".intval($user_id)." AND 
+      WHERE
+        user_id = ".intval($user_id)." AND
         site_id = ".intval($site_id)."
       ORDER BY active DESC, start_date DESC
       ") as $id) {
@@ -602,7 +602,7 @@ class Schedule {
 			$end_date,
 			\DatePeriod::INCLUDE_END_DATE
 		);
-		
+
 		ob_start();
 		if ($editable) {
 			echo "<form method='post'>
@@ -636,7 +636,7 @@ class Schedule {
       ORDER BY
         %s
       LIMIT 20";
-    
+
     return $this->db->select(
       $for_user_id
         ? sprintf($query,
@@ -644,7 +644,7 @@ class Schedule {
             "CASE WHEN u.id = $for_user_id THEN 9999999999 -- sort me first, then the top readers
             ELSE percent_complete
             END DESC")
-        : sprintf($query, 
+        : sprintf($query,
             "rd.timestamp BETWEEN $start_timestamp AND $end_timestamp",
             "percent_complete DESC")
     );
@@ -656,6 +656,7 @@ class Schedule {
       SELECT date
       FROM schedule_dates
       WHERE date > '".$after_date->format('Y-m-d')."'
+        AND schedule_id = ".$this->ID."
       ORDER BY date ASC");
     return $next_date ?
       $this->get_schedule_date(new \DateTime($next_date))
@@ -684,7 +685,7 @@ class Schedule {
   {
     $sd = $this->db->row("
       SELECT *
-      FROM schedule_dates 
+      FROM schedule_dates
       WHERE schedule_id = ".$this->ID."
         AND date = '".$specific_date->format('Y-m-d')."'
       ORDER BY date ASC");
@@ -739,12 +740,36 @@ class Schedule {
         AND user_id = $user_id");
   }
 
+  // when making up readings, it is nice to have a link to jump to the next incomplete day. this algorithm finds that day.
+  public function first_unread_day(int $for_user_id, \DateTime $from_date)
+  {
+    $next_reading_link = "";
+    $first_unread_date = $this->db->col("
+      SELECT MIN(sd.date)
+      FROM (
+        SELECT *
+        FROM schedule_dates
+        WHERE schedule_id = ".$this->ID."
+      ) sd
+      WHERE sd.id NOT IN (
+        SELECT schedule_date_id
+        FROM read_dates
+        WHERE user_id = $for_user_id
+      )");
+    if ($first_unread_date) {
+      $dt = new \DateTime($first_unread_date);
+      $backward = $from_date > $dt;
+      $next_reading_link = " <a href='?today=".$dt->format('Y-m-d')."'>".($backward ? "&lt;&lt; Back to unread day" : "Next unread day &gt;&gt;")."</a>";
+    }
+    return $next_reading_link;
+  }
+
   public static function create_schedule_form()
   {
     global $add_to_foot;
     ob_start();
     echo "<p>".back_button("Back to schedules")."</p>";
-    
+
     echo "<h5>Create New Schedule</h5>";
     echo "<form method='post'>
       <input type='hidden' name='new_schedule' value='1'>
@@ -896,7 +921,7 @@ class Schedule {
 
           $_SESSION['success'] = "Saved schedule";
         }
-      } 
+      }
     }
     redirect();
   }
@@ -997,7 +1022,7 @@ class Schedule {
         </tbody>
       </table>
       <br>";
-    
+
     return ob_get_clean();
   }
 }
