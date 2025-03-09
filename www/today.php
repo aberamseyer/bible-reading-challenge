@@ -239,7 +239,7 @@ foreach($schedules as $i => $each_schedule) {
       </script>";
   }
   if ($today_completed) {
-    $next_reading_link = $schedule->first_unread_day($my_id, $today);
+    $next_reading_link = $each_schedule->first_unread_day($my_id, $today);
     echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
