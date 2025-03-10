@@ -271,13 +271,13 @@
 			if ($editable)
 					$calendar .= "<div class='date-container'>
 						<small class='arrow-container'>
-							<div title='Shift left'>&larr;</div>
-							<div title='Merge left'>&#8606;</div>
+							<div>".tip("Shift Left", "&larr;")."</div>
+							<div>".tip("Merge left", "&#8606;")."</div>
 						</small>
 						<span class='date'>$day</span>
 						<small class='arrow-container'>
-							<div title='Shift right'>&rarr;</div>
-							<div title='Merge right'>&#8608;</div>
+							<div>".tip("Shift right", "&rarr;")."</div>
+							<div>".tip("Merge right", "&#8608;")."</div>
 						</small>
 					</div>";
 			else
@@ -520,8 +520,12 @@ function xs($num) {
 	else return 's';
 }
 
+function tip($help_text, $plain_text, $direction='bottom') {
+	return "<span class='cursor hint--large hint--".$direction."' aria-label='".html($help_text)."'>".$plain_text."</span>";
+}
+
 function help($tip) {
-	return "<span class='cursor' title='".html($tip)."'>?&#x20DD;</span>";
+	return tip($tip, "?&#x20DD;");
 }
 
 function toggle_all_users($initial_count) {

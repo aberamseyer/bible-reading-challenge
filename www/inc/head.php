@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" href="<?= $site->resolve_img_src('favico') ?>">
     <?= cached_file('css', '/css/normalize.css', 'media="screen"') ?>
     <?= cached_file('css', '/css/sakura-coc.css', 'media="screen"') ?>
+    <?= cached_file('css', '/css/hint.base.min.css', 'media="screen"') ?>
     <?= cached_file('css', '/css/style.css', 'media="screen"') ?>
     <?= $add_to_head ?>
     <title><?= html($site->data('short_name')) ?><?= $page_title ? " - ".$page_title : ""?></title>

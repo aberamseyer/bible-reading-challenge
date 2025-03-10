@@ -1005,7 +1005,7 @@ class Schedule {
           <td data-name><a href='?edit=".$each_schedule->ID."'><small>".html($each_schedule->data('name'))."</small></a></td>
           <td data-start='".$each_schedule->data('start_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('start_date')))."</small></td>
           <td data-end='".$each_schedule->data('end_date')."'><small>".date('F j, Y', strtotime($each_schedule->data('end_date')))."</small></td>
-          <td title='".html($notes)."'><small>".substr($notes, 0, 13).(strlen($notes) > 13 ? ".." : "")."</small></td>
+          <td><small>".tip(html($notes), substr($notes, 0, 13).(strlen($notes) > 13 ? ".." : ""))."</small></td>
           <td>
             <form method='post'>
               <small>
