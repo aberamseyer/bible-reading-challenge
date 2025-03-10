@@ -329,3 +329,20 @@ th, td {
   left: 3px;
   top: -5px;
 }
+
+.link {
+  display: inline-block;
+  transform: rotate(90deg);
+}
+
+/* these filters are very magic numbers based on background colors */
+iframe {
+  border: none;
+  filter: invert(0.867) hue-rotate(180deg);
+  overflow: hidden;
+}
+@media (prefers-color-scheme: light) {
+  iframe {
+    filter: brightness(0.98);
+  }
+}

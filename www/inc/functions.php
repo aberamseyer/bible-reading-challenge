@@ -751,3 +751,27 @@ function load_env() {
 		}
 	}
 }
+
+// e.g., https://text.recoveryversion.bible/58_Hebrews_4.htm#Heb4-3
+function recoveryversion_url($passage) {
+	$no_spaces = str_replace(' ', '', $passage['book']['name']);
+	return 'https://text.recoveryversion.bible/'.
+			$passage['book']['id'].
+			"_".$no_spaces."_".
+			$passage['chapter']['number'].
+			".htm#".
+			substr(
+				str_replace('1', 'F', 
+					str_replace('2', 'S', 
+						str_replace('3', 'T', $no_spaces))), 
+				0, 3).
+			$passage['chapter']['number'].
+			'-'.$passage['range'][0];
+
+}
+
+function recoveryversion_link($passage, $link_text) {
+	return "<a target='_blank' rel='noopener noreferrer' href='".
+		recoveryversion_url($passage)
+		."'>".$link_text."</a>";
+}
