@@ -180,7 +180,7 @@
 			['/admin/customize', 'Customize']
 		];
 		if ($me['id'] == 1) {
-			$arr[] = ['sites', 'Sites'];
+			$arr[] = ['/admin/sites', 'Sites'];
 		}
 
 		return do_nav($arr, true, 'admin-navigation');
