@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const headerForm = document.querySelector('#date-header form')
   const subscribeLabel = headerForm.querySelector('[data-push-label]')
   const subscribeInput = subscribeLabel.querySelector('input')
-
+  
   if (!('serviceWorker' in navigator)) {
     console.warn('Service workers are not supported by this browser')
     changeOptionsState('incompatible')
@@ -218,11 +218,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       push_unsubscribe()
     }
   })
-})
 
-// listens for message from serviceworker to trigger reload
-navigator.serviceWorker.addEventListener('message', event => {
-  if (event.data.action === 'refresh') {
-      window.location.reload()
-  }
+  // listens for message from serviceworker to trigger reload
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data.action === 'refresh') {
+        window.location.reload()
+    }
+  })
 })
