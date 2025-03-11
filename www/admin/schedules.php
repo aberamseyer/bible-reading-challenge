@@ -60,13 +60,12 @@
     else {
       // all schedules summary
       echo "<h4 class='text-center'>All Schedules</h4>
-      <p>
-        Click a Schedule's name to edit its start and end dates
-        <button style='float: right;' type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>
-      </p>";
+      <p>Click a Schedule's name to edit its start and end dates</p>";
 
       echo BibleReadingChallenge\Schedule::schedules_table($site->ID, 0);
-
+      
+      echo "<button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>";
+      
       $add_to_foot .= 
         cached_file('js', '/js/lib/tableSort.js').
         cached_file('js', '/js/schedules.js');

@@ -130,7 +130,9 @@ else {
   // all sites summary
   $sites = $db->select("SELECT * FROM sites ORDER BY enabled DESC, site_name ASC");
   echo "<p><button type='button' onclick='window.location = `?create=1`'>+ Create Site</button></p>";
-  echo "<table>
+  echo "
+  <div class='table-scroll'>
+  <table>
     <thead>
       <tr>
         <th data-sort='name'>
@@ -174,7 +176,8 @@ else {
   
   echo "
     </tbody>
-  </table>";
+  </table>
+  </div>";
   
   $add_to_foot .= 
     cached_file('js', '/js/lib/tableSort.js').

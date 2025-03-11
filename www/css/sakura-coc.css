@@ -25,6 +25,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   padding: 15px 25px;
+  overflow-x: hidden;
 }
 @media(min-width: 1095px) {
   body {

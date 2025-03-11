@@ -209,6 +209,7 @@
 
 	function generate_calendar($year, $month, $start_date, $end_date, $editable = false) {
 		$calendar = '
+		<div class="table-scroll">
 			<table>
 				<thead>
 					<tr>';
@@ -312,7 +313,8 @@
 		$calendar .= '
 				</tr>
 			</tbody>
-		</table>';
+		</table>
+		</div>';
 		
 		return $calendar;
 	}
@@ -544,6 +546,7 @@ function toggle_all_users($initial_count) {
 		#toggle-all-wrap {
 			margin: 7px 0;
 			display: flex;
+			flex-flow: row wrap;
 			align-items: center;
 			justify-content: space-between;
 		}

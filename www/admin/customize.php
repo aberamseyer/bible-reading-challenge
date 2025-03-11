@@ -396,6 +396,7 @@ echo "
       </form>
     </div>
     <h5 class='text-center'>Uploaded photos</h5>
+    <div class='table-scroll'>
     <table>
       <thead>
         <tr>
@@ -433,6 +434,7 @@ foreach($db->select("SELECT * FROM images WHERE site_id = ".$site->ID) as $image
 }
 echo "      </tbody>
     </table>
+    </div>
 
     <h5 class='text-center'>Progress Photo Positioning</h5>";
     if (!$site->data('progress_image_id')) {

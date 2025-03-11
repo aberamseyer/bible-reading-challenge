@@ -980,6 +980,7 @@ class Schedule {
     ob_start();
     $my_schedules = Schedule::schedules_for_user($site_id, $user_id);
     echo "
+    <div class='table-scroll'>
     <table>
       <thead>
         <tr>
@@ -1021,6 +1022,7 @@ class Schedule {
     echo "
         </tbody>
       </table>
+      </div>
       <br>";
 
     return ob_get_clean();

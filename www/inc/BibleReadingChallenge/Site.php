@@ -362,7 +362,7 @@ class Site {
         }
         if ($trans == 'rcv') {
           if ($email) {
-            echo recoveryversion_link($passage, "Reading Link <span class='link'>⎋</span>");
+            echo recoveryversion_link($passage, "Reading Link <span style='display: inline-block; transform: rotate(90deg);'>⎋</span>");
           }
           else {
             $text_lengths = array_map(fn ($rcv) => strlen($rcv), array_column($passage['verses'], $trans));
