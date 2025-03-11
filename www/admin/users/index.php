@@ -294,7 +294,7 @@ else {
     [ $next = date_modify(clone($last_beginning), '+6 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ]
   ];
       
-  echo "<h5>All-week readers ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ]))."</h5>";
+  echo "<h5>All-week readers ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ], 'right'))."</h5>";
   $where = "
     WHERE sd.schedule_id = ".$schedule->ID.                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
     " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
@@ -335,7 +335,7 @@ else {
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
   
   echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";
-  echo "<p>Click a user's name to see more details.<br>You can see recent signups <a href='/admin/users/recent'>here</a>.</p>";
+  echo "<p>Click a user's name to see more details.<br>You can see recent signups <a href='/admin/users/recent'>here &#8608;</a>.</p>";
   echo toggle_all_users($user_count);
 
   // table of users
@@ -357,7 +357,7 @@ else {
             4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule (personal or corporate) or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This relates to the corporate schedule, beginning with \"last $starting_day_of_week\"")."
+            Read this period ".help("This relates to the corporate schedule, beginning with \"last $starting_day_of_week\"", 'left')."
           </th>
         </tr>
         </thead>

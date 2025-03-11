@@ -109,7 +109,7 @@ echo "<div id='date-header'>
       Push notifications
       <input type='checkbox' name='push_subscribe' value='1'>
     </label>".help("Push notifications are sent directly to your device like any other app. On some phones, this is only possible if you add this website to your home screen. ".
-        "If this says 'Push blocked', you have previously denied notification permissions and will need to change this in your browser settings")."
+        "If this says 'Push blocked', you have previously denied notification permissions and will need to change this in your browser settings", 'left')."
     <input type='hidden' name='today' value='".$today->format('Y-m-d')."'>
     <select name='change_trans' onchange='this.form.submit();'>";
     foreach($site->get_translations_for_site() as $trans_opt)

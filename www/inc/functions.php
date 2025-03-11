@@ -526,8 +526,8 @@ function tip($help_text, $plain_text, $direction='bottom') {
 	return "<span class='cursor hint--large hint--".$direction."' aria-label='".html($help_text)."'>".$plain_text."</span>";
 }
 
-function help($tip) {
-	return tip($tip, "?&#x20DD;");
+function help($tip, $direction='bottom') {
+	return tip($tip, "?&#x20DD;", $direction);
 }
 
 function toggle_all_users($initial_count) {
