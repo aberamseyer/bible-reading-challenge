@@ -103,13 +103,30 @@ class Site {
           $this->env[ trim($key) ] = trim($val);
         }
       }
-      
-      $this->ms = new \Email\MailSenderMailgun(
-        $this->data('domain_www'),
-        $this->env('MAILGUN_SENDING_API_KEY_'.(PROD ? 'PROD' : 'LOCAL')), 
-        $this->data('email_from_address').'@'.$this->data('domain_www'),
-        $this->data('email_from_name')
-      );
+
+      $mailgun_api_key = $this->env('MAILGUN_SENDING_API_KEY_'.(PROD ? 'PROD' : 'LOCAL'));
+      $from_addr = $this->data('email_from_address').'@'.$this->data('domain_www');
+      if ($mailgun_api_key) {
+        $this->ms = new \Email\MailSenderMailgun(
+          $this->data('domain_www'),
+          $mailgun_api_key,
+          $from_addr,
+          $this->data('email_from_name')
+        );
+      }
+      else if ($this->env('SMTP_HOST')) {
+        global $me;
+        $this->ms = new \Email\MailSenderPhpMailer(
+          $from_addr,
+          $this->data('email_from_name'),
+          $this->env('SMTP_HOST'),
+          $this->env('SMTP_USER'),
+          $this->env('SMTP_PASSWORD')
+        );
+      }
+      else {
+        throw new \Exception("Email could not be configured for this site, missing environment variables");
+      }
     }
   }
   
@@ -167,7 +184,7 @@ class Site {
       </html>');
   }
   
-  public function send_register_email($to, $link)
+  public function send_register_email($to, $link, $uuid)
   {
     $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
       "Bible Reading Challenge Registration", 
@@ -175,11 +192,12 @@ class Site {
       '<p style="margin: auto; max-width: 600px; text-align: left;">
             Thank you for registering for our Bible reading challenge!
             To begin, confirm your email address by clicking <a href="%recipient.link%">here</a>.
-        </p>')
+        </p>'),
+      [ $uuid ]
     );
   }
   
-  public function send_forgot_password_email($to, $link)
+  public function send_forgot_password_email($to, $link, $uuid)
   {
     $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
       "Bible Reading Challenge Registration", 
@@ -187,16 +205,18 @@ class Site {
       '<p style="margin: auto; max-width: 600px; text-align: left;">
             A password reset was requested. If you did this, please click <a href="%recipient.link%"> here</a>.
             Otherwise, you can ignore this email.
-        </p>')
+        </p>'),
+      [ $uuid ]
     );
   }
   
-  public function send_daily_verse_email($to, $subject, $content)
+  public function send_daily_verse_email($to, $subject, $content, $uuid)
   {
     $this->ms->send_bulk_email(
       [ $to => [] ],
       $subject, 
-      $this->format_email_body($content)
+      $this->format_email_body($content),
+      [ $uuid ]
     );
   }
   
@@ -450,7 +470,7 @@ class Site {
         $copyright_style = "font-size: 75%;";
       }
       echo "
-        <div style='text-align: center; $copyright_style'><small><i>".$copyright_text[$trans]."</i></small></div>
+        <div style='text-align: center; $copyright_style ".($trans == 'rcv' ? 'display: none;' : '')."'><small><i>".$copyright_text[$trans]."</i></small></div>
         <form action='".SCHEME."://".$this->DOMAIN."/today' method='get' $form_style>
           <input type='hidden' name='schedule_id' value='".$schedule->ID."'>
           <input type='hidden' name='complete_key' value='$complete_key".($email ? '-e' : '' /* bypass wpm check from an email */)."'>

@@ -17,4 +17,6 @@ define('UPLOAD_DIR', DOCUMENT_ROOT."../upload/");
 define('IMG_DIR', DOCUMENT_ROOT."img/");
 define('SCHEDULE_DIR', DOCUMENT_ROOT."/../extras/schedules/");
 
-define('ALL_TRANSLATIONS', ['rcv', 'kjv', 'esv', 'asv', 'niv', 'nlt']);
+define('ALL_TRANSLATIONS', ['esv', 'rcv', 'kjv', 'asv', 'niv', 'nlt']);
+
+load_env();

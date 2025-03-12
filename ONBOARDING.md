@@ -40,9 +40,20 @@ If these instructions were followed, a single certificate was generated that inc
 Again, check `nginx -t` and `systemctl reload nginx`
 
 # Email
+Two options here, Mailgun via API key (free tier is 100 emails/day, 3k/month) or SMTP relay
+
+Mailgun
 1. Create an account with `https://app.mailgun.com`
 2. Go to Sending -> Domains, verify a domain using DNS
 3. In the domain list, choose the 'settings' gear -> Sending API keys, and create a 'sending API key'
+
+SMTP
+1. Create SMTP credentials with AWS SES, Oracle Email Delivery, or any other email provider
+2. Configure them with environment varibles in the site's configuration: `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`
+
+TLS and port 587 will be used
+
+In both cases, add necessary DKIM/SPF DNS records
 
 # Google Sign in
 1. Open Google cloud console, personal project

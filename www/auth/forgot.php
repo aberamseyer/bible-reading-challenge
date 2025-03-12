@@ -22,7 +22,7 @@ if ($_POST['email']) {
     else if ($user_row) {
       $reset_token = uniqid("", true).uniqid("", true);
       $redis->set_forgot_password_token($user_row['id'], $reset_token);
-      $site->send_forgot_password_email($user_row['email'], SCHEME."://".$site->DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token");
+      $site->send_forgot_password_email($user_row['email'], SCHEME."://".$site->DOMAIN."/auth/forgot?reset=$user_row[uuid]&key=$reset_token", $user_row['uuid']);
       $_SESSION['success'] = "Email sent!";
     }
     else {

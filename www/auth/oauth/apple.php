@@ -4,8 +4,6 @@ $insecure = true;
 require __DIR__."/../../inc/init.php";
 global $db, $site, $redis;
 
-load_env();
-
 // Firebase\JWT is just a library for parsing JWT tokens. We're not actually using firebase here.
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;

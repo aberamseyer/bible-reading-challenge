@@ -2,30 +2,16 @@
 
 require_once "env.php";
 
+set_error_handler("error_handler");
+
 // phpinfo();
 // die;
 
-// health check
-try {
-  $site = BibleReadingChallenge\SiteRegistry::get_site();
-  $db = BibleReadingChallenge\Database::get_instance();
-  $redis = BibleReadingChallenge\Redis::get_instance();
-} catch (\Throwable $e) {
-  error_log($e);
-}
-if (!$site || !$db || !$redis || !$site->ID || 
-  ($db->get_db()->lastErrorCode() !== 0) ||
-  $redis->is_offline()
-) {
-  error_log(
-    "Site: ".print_r($site, true).PHP_EOL.
-    "DB: ".print_r($db, true).PHP_EOL.
-    "Redis: ".print_r($redis, true).PHP_EOL
-  );
-  down_for_maintenance();
-}
-// wait until we know redis is good to go to use it to check the version
-define('VERSION', $redis->get_site_version());
+$site = BibleReadingChallenge\SiteRegistry::get_site();
+$db = BibleReadingChallenge\Database::get_instance();
+$redis = BibleReadingChallenge\Redis::get_instance();
+
+health_checks();
 
 // session setup
 require_once "session/DBSessionHandler.php";

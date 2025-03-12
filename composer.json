@@ -3,6 +3,7 @@
         "google/apiclient": "^2.15",
         "predis/predis": "^2.2",
         "minishlink/web-push": "^9.0",
-        "firebase/php-jwt": "^6.10"
+        "firebase/php-jwt": "^6.10",
+        "phpmailer/phpmailer": "^6.9"
     }
 }

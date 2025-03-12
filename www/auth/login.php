@@ -3,8 +3,6 @@
 $insecure = true;
 require __DIR__."/../inc/init.php";
 
-load_env();
-
 if ($me) {
   redirect("/");
 }

@@ -18,26 +18,7 @@ class MailSenderMailgun implements MailSender {
     $this->FROM_NAME = $from_name;
   }
 
-  public function send_dynamic_email(string $to, string $template, array $dynamic_data) {
-		throw new \Exception("Unimplemented MailSenderMailgun->send_dynamic_email");
-  }
-
-  public function daily_email_template() 
-  {
-    throw new \Exception("Unimplemented MailSenderMailgun->daily_email_template");
-  }
-
-  public function register_email_template() 
-  {
-    throw new \Exception("Unimplemented MailSenderMailgun->register_email_template");
-  }
-
-  public function forgot_password_template() 
-  {
-    throw new \Exception("Unimplemented MailSenderMailgun->forgot_password_template");
-  }
-
-  public function send_raw_email(string $to, string $subject, string $raw_html_email)
+  public function send_raw_email(string $to, string $subject, string $raw_html_email, string $uuid)
   {
     curl_post_form(
       $this->API_DOMAIN."/v3/".$this->APP_DOMAIN."/messages",
@@ -59,7 +40,7 @@ class MailSenderMailgun implements MailSender {
    * were all entries have the exact same keys with corresponding values. the keys and values
    * will be subsituted into the raw_html_email
    */
-  public function send_bulk_email(array $to, string $subject, string $raw_html_email)
+  public function send_bulk_email(array $to, string $subject, string $raw_html_email, array $uuids)
   {
     // https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/#batch-sending
     curl_post_form(

@@ -4,6 +4,7 @@
 	
 	require_once __DIR__."/MailSender/MailSender.php";
 	require_once __DIR__."/MailSender/MailSenderMailgun.php";
+	require_once __DIR__."/MailSender/MailSenderPhpMailer.php";
 	require_once __DIR__."/BibleReadingChallenge/Site.php";
 	require_once __DIR__."/BibleReadingChallenge/Database.php";
 	require_once __DIR__."/BibleReadingChallenge/Redis.php";
@@ -138,7 +139,7 @@
 
 		if(curl_errno($curl)) {
 				$error = curl_error($curl);
-				debug($error);
+				error_log($error);
 		}
 		curl_close($curl);
 
@@ -739,21 +740,16 @@ function down_for_maintenance($msg_html="") {
 				</p>
 			</details>
 		</body>
-	<?php
-	die;
+		<?php
 }
 
 function load_env() {
-	// Load environment file configuration for Google Oauth Client
 	foreach (explode("\n", file_get_contents(DOCUMENT_ROOT."../.env")) as $line) {
 		$line = trim($line);
-		if ($line && !preg_match("/^(\/\/|\#).*$/", $line)) { // line doesn't begin with a comment
+		if ($line && !preg_match("/^(\/\/|\#).*$/", $line)) { // line doesn't begin with a comment "//" or "#"
 			list($key, $val) = explode("=", $line);
-			if ($key === 'GOOGLE_CLIENT_ID') {
-				define('GOOGLE_CLIENT_ID', $val);
-			}
-			else if ($key === 'GOOGLE_CLIENT_SECRET') {
-				define('GOOGLE_CLIENT_SECRET', $val);
+			if (!defined($val) && in_array($key, ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'DEPLOYMENT_EMAIL_FROM_ADDRESS', 'DEPLOYMENT_EMAIL_TO_ADDRESS'], true)) {
+				define($key, $val);
 			}
 		}
 	}
@@ -781,4 +777,110 @@ function recoveryversion_link($passage, $link_text) {
 	return "<a target='_blank' rel='noopener noreferrer' href='".
 		recoveryversion_url($passage)
 		."'>".$link_text."</a>";
+}
+
+// https://github.com/PHPMailer/PHPMailer/blob/v6.9.3/examples/sendmail.phps
+function send_system_email($subject, $text) {
+	$mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+	$mail->CharSet = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+	//Set PHPMailer to use the sendmail transport
+	$mail->isSendmail();
+
+	$mail->setFrom(DEPLOYMENT_EMAIL_FROM_ADDRESS);
+	$mail->addAddress(DEPLOYMENT_EMAIL_TO_ADDRESS);
+	
+	$mail->Subject = $subject;
+	
+	$mail->msgHTML("<p>".$text."</p>");
+	$mail->AltBody = $text;
+	
+	return $mail->send();
+}
+
+/**
+ * Send a rate-limited notification
+ * 
+ * @param string $notificationType Identifier for the notification type
+ * @param string $message The message to send
+ * @param int $lockExpiry Time in seconds before allowing another notification (default: 1 hour)
+ * @return bool Whether the notification was sent
+ */
+function send_rate_limited_notification($notificationType, $message, $lockExpiry = 3600) {
+	$lockFile = "/tmp/bible-reading-challenge_notification_".$notificationType.".lock";
+	
+	// Check if the lock file exists and is not expired
+	if (file_exists($lockFile)) {
+		$lastNotificationTime = file_get_contents($lockFile);
+		if (time() - $lastNotificationTime < $lockExpiry) {
+			// Lock is still valid, don't send notification
+			error_log("Notification '{$notificationType}' suppressed (rate limited): " . $message);
+			return false;
+		}
+	}
+
+	// Send the notification
+	try {
+		$result = send_system_email("Bible Reading Challenge Notification: ".$notificationType, $message);
+	} catch (Exception $e) {
+		$result = false;
+		error_log("Exception: ".$e);
+	}
+	
+	// Update the lock file with current timestamp
+	file_put_contents($lockFile, time());
+	
+	return $result;
+}
+
+/**
+* Send error notification (with 1 hour rate limiting)
+*/
+function send_error_notification($msg) {
+	return send_rate_limited_notification('php-error', $msg, 3600);
+}
+
+/**
+* Send git hash error notification (with 1 hour rate limiting)
+*/
+function missing_git_hash_notification($msg) {
+	return send_rate_limited_notification('git-hash', $msg, 3600);
+}
+
+/**
+* Custom error handler that sends notifications for severe errors
+*/
+function error_handler($errno, $errstr, $errfile, $errline) {
+	$errorMessage = "Error [$errno]: $errstr in $errfile on line $errline";
+	error_log($errorMessage);
+	
+	// Only send notification for severe errors
+	if ($errno == E_ERROR || $errno == E_PARSE || $errno == E_CORE_ERROR) {
+		send_error_notification($errorMessage);
+	}
+	
+	return false; // Continue with PHP's internal error handler
+}
+
+function health_checks() {
+	global $site, $redis, $db;
+
+	if (!$site || !$db || !$redis || !$site->ID || 
+			($db->get_db()->lastErrorCode() !== 0) ||
+			$redis->is_offline()
+		) {
+			$err_msg = "Site: ".print_r($site, true).PHP_EOL.
+				"DB: ".print_r($db, true).PHP_EOL.
+				"Redis: ".print_r($redis, true).PHP_EOL;
+		error_log($err_msg);
+		send_error_notification("Something is wrong: \n".$err_msg);
+		down_for_maintenance();
+		die;
+	}
+
+	// wait until we know redis is good to go to use it to check the version
+	define('VERSION', $redis->get_site_version());
+
+	if (VERSION == '') {
+		missing_git_hash_notification("Git hash failed");
+	}
 }

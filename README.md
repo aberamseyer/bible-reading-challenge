@@ -70,12 +70,14 @@ It defaults to port `8085`, customizable with the environment variable `SOCKET_P
 Each site created in the database requires the following values in the 'env' column
 
 ### Emails
-Be sure to set up the email templates in the sendgrid console
-- MAILGUN_SENDING_API_KEY_PROD (used on production domain)
-- MAILGUN_SENDING_API_KEY_LOCAL (used when not on production domain)
+For deployment-wide administration emails (not site-specific emails), configure postfix or whatever [PhpMailer's sendmail](https://github.com/PHPMailer/PHPMailer/blob/v6.9.3/examples/sendmail.phps) is going to interface with. Requires `.env` variables:
+- DEPLOYMENT_EMAIL_FROM_ADDRESS
+- DEPLOYMENT_EMAIL_TO_ADDRESS
+
+I set up mine with OCI Email Delivery following [this guide](https://docs.oracle.com/en-us/iaas/Content/Email/Reference/postfix.htm)
 
 ### Google Sign-in button
-also requires configuring OAuth consent screen in Google Cloud Console. Save this in a `.env` file at the project root
+also requires configuring OAuth consent screen in Google Cloud Console. Save this in an `.env` file at the project root
 - GOOGLE_CLIENT_ID
 - GOOGLE_CLIENT_SECRET (currently unused)
 

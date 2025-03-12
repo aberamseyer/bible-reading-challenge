@@ -53,7 +53,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $webPush->setReuseVAPIDHeaders(true);
 
   foreach($db->select("
-    SELECT id, name, email, trans_pref, last_seen, streak, email_verses
+    SELECT id, name, email, trans_pref, last_seen, streak, email_verses, uuid
     FROM users
     WHERE site_id = ".$site->ID) as $user) {
     // if a user hasn't been active near the period of the schedule, we won't notify them
@@ -86,7 +86,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
-      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html);
+      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $user['uuid']);
       printf("[v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }

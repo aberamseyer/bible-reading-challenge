@@ -2,6 +2,8 @@
 
 namespace BibleReadingChallenge;
 
+use Exception;
+
 class Database {
   private static $instance;
   private \SQLite3 $db;
@@ -82,8 +84,7 @@ class Database {
 			if (CLI) {
 				$msg = strip_tags($msg);
 			}
-			echo $msg;
-			debug($query);
+			throw new \Exception($query);
 		}
 		if ($return == "insert_id")
 			return $this->db->lastInsertRowID();
