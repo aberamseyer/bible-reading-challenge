@@ -387,7 +387,7 @@ class Site {
           else {
             $text_lengths = array_map(fn ($rcv) => strlen($rcv), array_column($passage['verses'], $trans));
             echo "
-            <p>".recoveryversion_link($passage, "Read on text.recoveryversion.bible <span class='link'>⎋</span>")."</p>
+            <p>".recoveryversion_link($passage, "Read on text.recoveryversion.bible <span ".($email ? "style='display: inline-block;transform: rotate(90deg);'" : "class='link'").">⎋</span>")."</p>
             <div class='iframe-container' data-text-lengths='".json_encode($text_lengths)."'>
               <iframe scrolling='no' referrerpolicy='no-referrer' src='".recoveryversion_url($passage)."' width='100%'></iframe>
             </div>";
@@ -401,7 +401,7 @@ class Site {
           }
         }
       }
-      if ($trans == 'rcv') {
+      if ($trans == 'rcv' && !$email) {
         // big hacks to calculate width of text.recoveryversion.bible content so we can hide scroll bars
         // may need to update "styles" object in the future if website styles change
         echo "
