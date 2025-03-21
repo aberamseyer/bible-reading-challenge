@@ -34,7 +34,7 @@
       @media(prefers-color-scheme: light) {
         :root {
           --color-blossom: <?= $site->data('color_primary') ?>;     /* buttons, horizontal lines, links */
-          --color-secondary: <?= $site->data('color_secondary') ?>; /* currently unused */
+          --color-secondary: <?= $site->data('color_secondary') ?>; /* arrows in schedule builder */
           --color-fade: <?= $site->data('color_fade') ?>;           /* hovered buttons */
           
           --color-bg: #f9f9f9;     /* background */

@@ -524,13 +524,17 @@ echo "
     <label>
       Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' $readonly>
     </label>
-    <label>
-    <details>
-      <summary>Site Environment Configuration ".help('API keys for sending emails and enabling Signin with Google. DO NOT share these with anyone else.')." </summary>";
-      echo $abe
-        ? "<textarea name='env' required rows='30'>".html($site->data('env'))."</textarea><button type='submit'>Submit</button>"
-        : "<pre>".html($site->data('env'))."</pre>";
-  echo "  </details>
+    <label>";
+    if ($abe) {
+      echo "<details>
+        <summary>Site Environment Configuration ".help('API keys for sending emails, Sign-in with Google, and Sign-in with Apple. DO NOT share these with anyone else.')." </summary>";
+        echo "<textarea name='env' required rows='30'>".html($site->data('env'))."</textarea><button type='submit'>Submit</button>
+      </details>";
+    }
+    else {
+      echo "Your site also relies on some configuration to enable Google Sign-in, Apple Sign-in, and sending emails. Get in touch with Abe if you need help managing that information.";
+    }
+    echo "
     </label>
   </fieldset>
 </form>";

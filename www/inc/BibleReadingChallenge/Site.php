@@ -430,9 +430,9 @@ class Site {
 
             // Calculate total height including margins, padding, and fudge factor
             let fudge = 5;
-            if (contentWidth < 250)
+            if (contentWidth < 350)
               fudge = 20
-            if (contentWidth < 240)
+            if (contentWidth < 340)
               fudge = 30
               
             const totalHeight = textHeight + otherElementsHeight + fudge*vertSpace;
