@@ -336,13 +336,13 @@ th, td {
 }
 
 /* these filters are very magic numbers based on background colors */
-iframe {
+.iframe-container {
   border: none;
   filter: invert(0.867) saturate(0);
   overflow: hidden;
 }
 @media (prefers-color-scheme: light) {
-  iframe {
+  .iframe-container {
     filter: brightness(0.738) saturate(0) contrast(2);
   }
 }

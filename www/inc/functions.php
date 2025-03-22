@@ -703,7 +703,7 @@ function cached_file($type, $path, $attrs='') {
 }
 
 function back_button($text) {
-	return "<a href='' onclick='history.back()'>&lt;&lt; $text</a>";
+	return "<a href='' onclick='history.back(); return false;'>&lt;&lt; $text</a>";
 }
 
 function site_logo() {
@@ -844,21 +844,6 @@ function send_error_notification($msg) {
 */
 function missing_git_hash_notification($msg) {
 	return send_rate_limited_notification('git-hash', $msg, 3600);
-}
-
-/**
-* Custom error handler that sends notifications for severe errors
-*/
-function error_handler($errno, $errstr, $errfile, $errline) {
-	$errorMessage = "Error [$errno]: $errstr in $errfile on line $errline";
-	error_log($errorMessage);
-	
-	// Only send notification for severe errors
-	if ($errno == E_ERROR || $errno == E_PARSE || $errno == E_CORE_ERROR) {
-		send_error_notification($errorMessage);
-	}
-	
-	return false; // Continue with PHP's internal error handler
 }
 
 function health_checks() {

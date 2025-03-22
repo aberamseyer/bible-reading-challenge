@@ -2,8 +2,6 @@
 
 require_once "env.php";
 
-set_error_handler("error_handler");
-
 // phpinfo();
 // die;
 
@@ -26,7 +24,7 @@ session_start();
 
 $my_id = (int)$_SESSION['my_id'] ?: 0;
 $me = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int) $my_id);
-$staff = $me['staff'];
+$staff = $me && $me['staff'];
 $schedule = $site->get_active_schedule();
 
 if (!$insecure && !$me) {

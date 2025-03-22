@@ -243,7 +243,9 @@ foreach($schedules as $i => $each_schedule) {
     echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
-  echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
+  if ($scheduled_reading)
+    echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
+  
   if ($site->data('allow_personal_schedules')) {
     echo "
       </div><!-- .tab -->";

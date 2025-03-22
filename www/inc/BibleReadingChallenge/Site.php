@@ -274,6 +274,9 @@ class Site {
   public function resolve_img_src($type)
   {
     static $pictures;
+    if (!$pictures)
+      $pictures = [];
+
     if ($pictures[$type]) {
       // return cached value
       return '/img/'.$pictures[$type];
