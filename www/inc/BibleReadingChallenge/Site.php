@@ -170,7 +170,9 @@ class Site {
               <td></td>
               <td align="center" width="600">
                 <div>
-                  <img src="https://'.$this->data('domain_www').'/img/static/logo_'.$this->ID.'_512x512.png" width="200" height="200" style="display: block; max-width: 200px;">
+                  <a href="https://'.$this->data('domain_www').'/today">
+                    <img src="https://'.$this->data('domain_www').'/img/static/logo_'.$this->ID.'_512x512.png" width="200" height="200" style="display: block; max-width: 200px;">
+                  </a>
                 </div>
                 <br>
                 <div style="text-align: left;">

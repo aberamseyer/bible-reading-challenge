@@ -69,16 +69,17 @@ class Redis {
 
 	public function get_site_version(): string
 	{
+		$key = Redis::CONFIG_KEYSPACE.'version';
 		$version = false;
 		if ($this->client()) {
-			$version = $this->client()->get('config/version');
+			$version = $this->client()->get($key);
 		}
 		if (!$version) {
 			$version = trim(`git rev-parse --short HEAD`);
 		}
 		if ($this->client()) {
-			$this->client()->set('config/version', $version);
-			$this->client()->expire('config/version', 60);
+			$this->client()->set($key, $version);
+			$this->client()->expire($key, 60);
 		}
 		return $version;
 	}
