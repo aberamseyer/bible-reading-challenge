@@ -357,7 +357,7 @@ else {
             4-week trend ".help("This is based on Sun-Sat reading, irrespective of what reading schedule (personal or corporate) or week is selected")."
           </th>
           <th data-sort='period'>
-            Read this period ".help("This relates to the corporate schedule, beginning with \"last $starting_day_of_week\"", 'left')."
+            Read this period ".help("This relates to the corporate schedule, beginning with \"last $starting_day_of_week\"")."
           </th>
         </tr>
         </thead>

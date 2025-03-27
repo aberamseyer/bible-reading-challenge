@@ -74,7 +74,7 @@
       echo "<h4 class='text-center'>Your Schedules</h4>
         <p>
           Click a Schedule's name to edit its start and end dates
-          <button style='float: right;' type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>
+          <button style='float: right; margin: 0;' type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>
         </p>".
         BibleReadingChallenge\Schedule::schedules_table($site->ID, $my_id);
     
