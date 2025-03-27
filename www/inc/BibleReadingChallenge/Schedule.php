@@ -60,9 +60,28 @@ class Schedule {
         <small>
           Hover mouse on the left edge of the screen for a book reference and autofill tools<br>
           Verse abbreviations can be used, and any of these options can be combined with a <code>;</code> (e.g., <code>Eph 2:21-22; Jude 1; Galatians 3-4</code>)<br>
-          You have many options to make filling these days easier:
+          <h6>Manually filling</h6>
+          <ul>
+            <li>Type in the boxes to enter verse references. Use the <kbd>Tab</kbd>key with <kbd>Copy</kbd> and <kbd>Paste</kbd> to make this fast</li>
+            <li>Available verse formats:
+              <ul>
+                <li>Full chapters: <code>Matthew 28</code></li>
+                <li>Multiple Chapters: <code>John 1-2</code></li>
+                <li>Partial Chapters: <code>Matthew 1:1-29</code></li>
+                <li>Verses across chapters: <code>John 7:53-8:9</code></li>
+                <li>Exactly one verse: <code>Zech 6:13</code></li>
+              </ul>
+            </li>
+          </ul>
+          <h6>Moving Dates</h6>
+          When a date is selected, two sets of arrows appear:
+          <ul>
+            <li>Clicking the single arrow left or right will \"push\" all dates in that direction, stopping at an empty calendar date</li>
+            <li>Clicking the double arrow left or right will merge that date's reading with the one immediately to its left or right</li>
+          </ul>
+          You have a few options to make filling these days easier:
           <h6>Autofill</h6>
-          To use autofill, begin by selecting a day by clicking it's number.
+          To use autofill, select a day by clicking its number. With a day selected, you have the following options:
           <ul>
             <li>Clear button
               <ul>
@@ -94,25 +113,6 @@ class Schedule {
                     <li>If any other date is selected, daily portions will be filled starting from that day. They are not guaranteed to finish the schedule if not enough days are left on your calendar.</li>
                   </ul>
                 </li>
-              </ul>
-            </li>
-          </ul>
-          <h6>Moving Dates</h6>
-          When a date is selected, two sets of arrows appear:
-          <ul>
-            <li>Clicking the single arrow left or right will \"push\" all dates in that direction, stopping at an empty calendar date</li>
-            <li>Clicking the double arrow left or right will merge that date's reading with the one immediately to its left or right</li>
-          </ul>
-          <h6>Manually</h6>
-          <ul>
-            <li>Type in the boxes to enter verse references. Use the <kbd>Tab</kbd>key with <kbd>Copy</kbd> and <kbd>Paste</kbd> to make this fast</li>
-            <li>Available verse formats:
-              <ul>
-                <li>Full chapters: <code>Matthew 28</code></li>
-                <li>Multiple Chapters: <code>John 1-2</code></li>
-                <li>Partial Chapters: <code>Matthew 1:1-29</code></li>
-                <li>Verses across chapters: <code>John 7:53-8:9</code></li>
-                <li>Exactly one verse: <code>Zech 6:13</code></li>
               </ul>
             </li>
           </ul>

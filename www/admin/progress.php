@@ -66,7 +66,13 @@ if ($total_words_in_schedule) { // graphs are meaningless if there is nothing in
 
 echo "<h5>Individual User Progress</h5>";
 $all_users = $site->all_users($_GET['stale']);
+foreach($all_users as &$user) {
+  $stats = $site->user_stats($user['id']);
+  $user['last_read'] = $stats['last_read_ts'];
+}
+unset($user);
 $timer->mark('all_users');
+
 $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
 echo toggle_all_users($user_count);
 
