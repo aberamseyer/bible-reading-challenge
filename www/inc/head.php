@@ -4,6 +4,7 @@
   <head>
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta charset="utf-8">
+    <link rel="canonical" href="<?= parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?>" />
     <link rel="manifest" href="/manifest" />
     <link rel="icon" type="image/x-icon" href="<?= $site->resolve_img_src('favico') ?>">
     <?= cached_file('css', '/css/normalize.css', 'media="screen"') ?>
