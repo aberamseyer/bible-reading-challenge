@@ -31,17 +31,17 @@ $tz = new DateTimeZone($site->data('time_zone_id'));
 $start_of_day = "07:30:00";
 $today = new DateTime("now", $tz);
 if ($_GET['today'] && strtotime($_GET['today'])) {
-  $override_date = new DateTime($_GET['today'], $tz);
+  $override_date = new DateTime($_GET['today']." ".$start_of_day, $tz);
   $today = allowed_schedule_date($override_date)
   ? $override_date
   : $today;
 }
 
-$schedule_dates = array_filter($schedule->get_dates(0), fn ($schedule_date) => $schedule_date['date'] <= $today->format('Y-m-d'));
+$schedule_dates = array_filter($schedule->get_dates(0), fn ($schedule_date) => strtotime($schedule_date['date']) <= $today->format('U'));
 
 foreach(array_reverse($schedule_dates) as $schedule_date) {
   $entry = $feed->createEntry();
-  $schedule_date_datetime = new DateTime($schedule_date['date']. $start_of_day, $tz);
+  $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $tz);
 
   $entry->setId(strval($schedule_date['id']));
   $entry->setTitle($schedule_date_datetime->format("l, F j"));
@@ -54,7 +54,8 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
 
   $entry->setDescription("Daily reading portion for ".$site->data('short_name'). "'s Bible reading challenge");
   $entry->setContent(
-    "<a href='".$link."'>Read on ".$site->data('short_name')."</a>"
+    "<h4>".$schedule_date['passage']."</h4>
+    <a href='".$link."'>Read on ".$site->data('short_name')."</a>"
   );
 
   $feed->addEntry($entry);
