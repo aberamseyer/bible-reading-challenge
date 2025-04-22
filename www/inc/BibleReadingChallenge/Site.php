@@ -702,7 +702,7 @@ class Site {
   }
   
   /**
-  * @return  array   the allowed translations fora  site
+  * @return  array   the allowed translations for a site
   */
   public function get_translations_for_site()
   {

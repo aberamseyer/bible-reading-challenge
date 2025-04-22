@@ -13,6 +13,7 @@
 // chrome://settings/content/siteDetails?site=http%3A%2F%2Fuoficoc.local%2F&search=notifications
 // https://github.com/Minishlink/web-push-php-example/blob/master/src/send_push_notification.php
 // https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission_static
+// https://web-push-book.gauntface.com
 
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
@@ -46,7 +47,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   ];
   $webPush = new WebPush($auth, [
     'TTL' => 60*60*24 - 1, // 1 day less 1 second
-    'urgency' => 'low',
+    'urgency' => 'normal',
     'topic' => 'daily-email',
     'timeout' => 5,
   ]);
@@ -140,7 +141,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
               'title' => $site->data('short_name')." Daily Bible Reading",
               'options' => [
                 'body' => implode("\n", $body_lines),
-                'icon' => "/img/static/logo_".$site->ID."_512x512.png",
+                'icon' => "https://".$site->DOMAIN."/img/static/logo_".$site->ID."_512x512.png",
                 'data' => [
                   'link' => "https://".$site->DOMAIN."/today?today=".$today->format('Y-m-d'),
                 ],
