@@ -1,7 +1,7 @@
 <?php
 
 require __DIR__."/inc/init.php";
-global $redis, $db, $site, $me, $add_to_foot, $my_id, $schedule;
+global $redis, $db, $site, $me, $add_to_foot, $my_id, $schedule, $add_to_head;
 
 // this key is used by the websocket client to authenticate as the current user
 $websocket_nonce = bin2hex(random_bytes(24));
@@ -94,6 +94,7 @@ foreach($schedules as $each_schedule) {
 }
 
 $page_title = "Read";
+$add_to_head .= "<link rel='alternate' title='Schedule RSS/Atom feed' href='https://".$site->DOMAIN."/feed' type='application/atom+xml'>";
 require DOCUMENT_ROOT."inc/head.php";
 
 
