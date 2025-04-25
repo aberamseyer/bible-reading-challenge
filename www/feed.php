@@ -70,7 +70,7 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
       echo "<h4>".$passage['book']['name']." ".$passage['chapter']['number'].$verse_range."</h4>";
       foreach($passage['verses'] as $verse_row) {
         if ($verse_row[$trans_pref]) {
-          echo "<div><b>".$verse_row['number']."</b>&nbsp;&nbsp;<span>".$verse_row[$trans_pref]."</span></div>";
+          echo "<div><b>".$verse_row['number']."</b> <span>".$verse_row[$trans_pref]."</span></div>";
         }
       }
     }
