@@ -401,8 +401,10 @@ class Site {
         else {
           foreach($passage['verses'] as $verse_row) {
             // render text
-            echo "
-            <div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
+            if ($verse_row[$trans]) {
+              echo "
+              <div class='verse'><span $ref_style>".$verse_row['number']."</span><span $verse_style>".$verse_row[$trans]."</span></div>";
+            }
           }
         }
       }

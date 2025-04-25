@@ -6,7 +6,7 @@ require __DIR__."/inc/init.php";
 // Implementation adopted from example at https://docs.laminas.dev/laminas-feed/writer/
 use Laminas\Feed\Writer\Feed;
 
-global $site, $schedule;
+global $site, $schedule, $db;
 
 $feed_type = $_GET['type'] == "rss" 
   ? "rss" 
@@ -19,6 +19,13 @@ $author = [
   'uri'   => $base_url,
 ];
 
+$user = $_GET['user'] ?: 0;
+$trans_pref = 'esv';
+if ($user) {
+  $trans_pref = $db->col("SELECT trans_pref FROM users WHERE uuid = '".$db->esc($user)."'")
+    ?: 'esv';
+}
+
 $feed = new Feed;
 $feed->setGenerator("Abe's Bible Reading Challenge", VERSION, "https://github.com/aberamseyer/Bible-Reading-Challenge/blob/master/www/feed.php");
 $feed->setTitle($site->data('short_name')."'s Bible Reading Schedule");
@@ -29,15 +36,11 @@ $feed->setDescription("Current Bible reading schedule for ".$site->data('site_na
 
 $tz = new DateTimeZone($site->data('time_zone_id'));
 $start_of_day = "07:30:00";
-$today = new DateTime("now", $tz);
-if ($_GET['today'] && strtotime($_GET['today'])) {
-  $override_date = new DateTime($_GET['today']." ".$start_of_day, $tz);
-  $today = allowed_schedule_date($override_date)
-  ? $override_date
-  : $today;
-}
+$now = new DateTime("now", $tz);
 
-$schedule_dates = array_filter($schedule->get_dates(0), fn ($schedule_date) => strtotime($schedule_date['date']) <= $today->format('U'));
+$schedule_dates = array_filter(
+  $schedule->get_dates(0),
+  fn ($schedule_date) => strtotime($schedule_date['date']." ".$start_of_day) <= $now->format('U'));
 
 foreach(array_reverse($schedule_dates) as $schedule_date) {
   $entry = $feed->createEntry();
@@ -45,7 +48,7 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
 
   $entry->setId(strval($schedule_date['id']));
   $entry->setTitle($schedule_date_datetime->format("l, F j"));
-  $link = $base_url."/today?today=".$schedule_date_datetime->format('Y-m-d');
+  $link = $base_url."/today?today=".$schedule_date['date'];
   $entry->setLink($link);
   $entry->addAuthor($author);
   
@@ -53,10 +56,26 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
   $entry->setDateCreated($schedule_date_datetime);
 
   $entry->setDescription("Daily reading portion for ".$site->data('short_name'). "'s Bible reading challenge");
-  $entry->setContent(
-    "<h4>".$schedule_date['passage']."</h4>
-    <a href='".$link."'>Read on ".$site->data('short_name')."</a>"
-  );
+  $content = "";
+  if ($trans_pref == 'rcv') {
+    $entry->setContent(
+      "<h4>".$schedule_date['passage']."</h4>
+      <a href='".$link."'>Read on ".$site->data('short_name')."</a>"
+    );
+  }
+  else {
+    $scheduled_reading = $schedule->get_schedule_date($schedule_date_datetime);
+    ob_start();
+    foreach($scheduled_reading['passages'] as $passage) {
+      echo "<h4>".$passage['book']['name']." ".$passage['chapter']['number'].$verse_range."</h4>";
+      foreach($passage['verses'] as $verse_row) {
+        if ($verse_row[$trans_pref]) {
+          echo "<div><b>".$verse_row['number']."</b>&nbsp;&nbsp;<span>".$verse_row[$trans_pref]."</span></div>";
+        }
+      }
+    }
+    $entry->setContent(ob_get_clean());
+  }
 
   $feed->addEntry($entry);
 }
@@ -64,4 +83,5 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
 $feed->setDateModified($feed->getEntry(0)->getDateModified());
 
 header("Content-type: application/".$feed_type."+xml");
+header("Cache-Control: max-age=".(60*60*24)); // should be about one new entry every day
 echo $feed->export($feed_type);
