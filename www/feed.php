@@ -80,9 +80,9 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
   $feed->addEntry($entry);
 }
 
-if ($feed->count()) {
-  $feed->setDateModified($feed->getEntry(0)->getDateModified());
-}
+$feed->setDateModified($feed->count() 
+  ? $feed->getEntry(0)->getDateModified()
+  : new DateTime($schedule->data('start_date')));
 
 header("Content-type: application/".$feed_type."+xml");
 header("Cache-Control: max-age=".(60*60*24)); // should be about one new entry every day
