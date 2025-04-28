@@ -529,9 +529,18 @@ class Schedule {
 
   public function duplicate()
   {
+    // bumps the dates of this schedule to be in the future. it makes it easier to create a new schedule based off an old one
+    $now = new \DateTime();
+    $start = new \DateTime($this->data('start_date'));
+    $end = new \DateTime($this->data('end_date'));
+    $years_diff = 0;
+    while ($start <= $now) {
+      $years_diff += 1;
+      $start->modify("+1 year");
+      $end->modify("+1 year");
+    }
     $s_id = Schedule::create(
-      new \DateTime($this->data('start_date')),
-      new \DateTime($this->data('end_date')),
+      $start, $end,
       "Copy of ".$this->data('name'),
       $this->data('site_id'),
       0,
@@ -543,7 +552,9 @@ class Schedule {
       FROM schedule_dates
       WHERE schedule_id = ".$this->ID) as $sd
     ) {
-      $new_sched->create_schedule_date($sd['date'], $sd['passage'], json_decode($sd['passage_chapter_readings'], true), $sd['word_count']);
+      $d = new \DateTime($sd['date']);
+      $d->modify("+$years_diff years");
+      $new_sched->create_schedule_date($d->format('Y-m-d'), $sd['passage'], json_decode($sd['passage_chapter_readings'], true), $sd['word_count']);
     }
     return $s_id;
   }
