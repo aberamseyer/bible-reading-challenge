@@ -5,23 +5,23 @@ namespace BibleReadingChallenge;
 class SiteRegistry
 {
   private static array $sites = [];
-  
+
   private function __construct()
   {
     // Prevent direct instantiation
   }
-  
+
   private function __clone()
   {
     // Prevent cloning
   }
-  
+
   public function __wakeup()
   {
     // Prevent unserialization
     throw new \Exception("Cannot unserialize a singleton.");
   }
-  
+
   public static function get_site($id = 0, $soft=false): Site
   {
     if (!isset(self::$sites[ $id ])) {
@@ -43,15 +43,15 @@ class Site {
   public readonly \DateTimeZone $TZ;
   public readonly string $TZ_OFFSET;
   public readonly string $ID;
-  
+
   private array $data;
   private Database $db;
   private array $env;
-  
+
   private \Email\MailSender $ms;
-  
+
   private Schedule|null $active_schedule;
-  
+
   /**
   * @param $id a specific site to get
   * @param $soft 'soft'-retrieves a site without initializing all of its objects (useful when setting up a site)
@@ -62,7 +62,7 @@ class Site {
       // only allow SiteRegistry to instantiate us
       throw new \InvalidArgumentException('Invalid token');
     }
-    
+
     $this->active_schedule = null;
     $this->db = Database::get_instance();
     // either a passed $id gets a specific site, or we default to the site that matches the server HOST value
@@ -80,13 +80,13 @@ class Site {
       $stmt->bindValue(':domain', $_SERVER['HTTP_HOST']);
     }
     $this->data = $this->db->get_db()->querySingle($stmt->getSQL(true), true);
-    
+
     if (!$this->data) {
       down_for_maintenance("<p>Nothing to see here: $id</p>");
     }
     else {
       $this->ID = $this->data('id');
-      
+
       if (!$soft) {
         $this->DOMAIN = PROD ? $this->data('domain_www') : $this->data('domain_www_test');
         $this->SOCKET_DOMAIN = PROD ? $this->data('domain_socket') : $this->data('domain_socket_test');
@@ -94,7 +94,7 @@ class Site {
         $this->TZ_OFFSET = ''.intval($this->TZ->getOffset(new \DateTime('UTC')) / 3600);
       }
     }
-    
+
     if (!$soft) {
       foreach (explode("\n", $this->data('env')) as $line) {
         $line = trim($line);
@@ -129,17 +129,17 @@ class Site {
       }
     }
   }
-  
+
   public function data(string $key)
   {
     return $this->data[ $key ];
   }
-  
+
   public function env(string $key)
   {
     return $this->env[ $key ];
   }
-  
+
   public function format_email_body($message_content)
   {
     return str_replace('{BODY_HTML}', $message_content, '<!DOCTYPE html>
@@ -185,11 +185,11 @@ class Site {
         </body>
       </html>');
   }
-  
+
   public function send_register_email($to, $link, $uuid)
   {
     $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
-      "Bible Reading Challenge Registration", 
+      "Bible Reading Challenge Registration",
       $this->format_email_body(
       '<p style="margin: auto; max-width: 600px; text-align: left;">
             Thank you for registering for our Bible reading challenge!
@@ -198,11 +198,11 @@ class Site {
       [ $uuid ]
     );
   }
-  
+
   public function send_forgot_password_email($to, $link, $uuid)
   {
     $this->ms->send_bulk_email([ $to => [ 'link' => $link ] ],
-      "Bible Reading Challenge Registration", 
+      "Bible Reading Challenge Registration",
       $this->format_email_body(
       '<p style="margin: auto; max-width: 600px; text-align: left;">
             A password reset was requested. If you did this, please click <a href="%recipient.link%"> here</a>.
@@ -211,17 +211,17 @@ class Site {
       [ $uuid ]
     );
   }
-  
+
   public function send_daily_verse_email($to, $subject, $content, $uuid)
   {
     $this->ms->send_bulk_email(
       [ $to => [] ],
-      $subject, 
+      $subject,
       $this->format_email_body($content),
       [ $uuid ]
     );
   }
-  
+
   public function get_active_schedule($refresh=false)
   {
     if (!$this->active_schedule || $refresh) {
@@ -230,7 +230,7 @@ class Site {
     }
     return $this->active_schedule;
   }
-  
+
   public function all_users($stale = false) {
     $nine_mo = strtotime('-9 months');
     if ($stale) {
@@ -248,14 +248,14 @@ class Site {
       GROUP BY u.id
       ORDER BY LOWER(name) ASC");
   }
-  
+
   public function mountain_for_emojis($emojis, $my_id = 0, $hidden = false)
-  {  
+  {
     ob_start();
     echo "
     <div class='center'>
       <div class='mountain-wrap ".($hidden ? 'hidden' : '')."'>";
-    
+
     foreach($emojis as $i => $datum) {
       $style = '';
       if ($datum['id'] == $my_id) {
@@ -266,13 +266,13 @@ class Site {
           <span class='inner'>$datum[emoji]</span>
         </span>";
     }
-    
+
     echo "  <img alt='progress' src='".$this->resolve_img_src('progress')."' class='mountain'>
         </div>
       </div>";
     return ob_get_clean();
   }
-  
+
   public function resolve_img_src($type)
   {
     static $pictures;
@@ -296,8 +296,8 @@ class Site {
     }
     return '/img/'.$pictures[$type];
   }
-  
-  
+
+
   /**
   * returns a structured array from the details within the passage_chapter_readings column of the schedule_dates table
   * @param $json 	string|array	valid JSON, directly from the database, or a decoded json array
@@ -307,15 +307,15 @@ class Site {
     $arr = is_array($json_or_arr)
       ? $json_or_arr
       : json_decode($json_or_arr, true);
-    
+
     $passages = [];
     foreach($arr as $chp_reading) {
       $chapter = $this->db->row("SELECT * FROM chapters WHERE id = $chp_reading[id]");
       $book = $this->db->row("SELECT * FROM books WHERE id = $chapter[book_id]");
       $verses = $this->db->select("
 				SELECT id, number, word_count, ".implode(',', $this->get_translations_for_site())."
-				FROM verses 
-				WHERE chapter_id = $chapter[id] 
+				FROM verses
+				WHERE chapter_id = $chapter[id]
 					AND number IN(".implode(',', range($chp_reading['s'], $chp_reading['e'])).")
 				ORDER BY number");
       $passages[] = [
@@ -328,7 +328,7 @@ class Site {
     }
     return $passages;
   }
-  
+
   public function notification_info($name, $scheduled_reading)
   {
     // format the user's name by using everything but the last name
@@ -337,19 +337,19 @@ class Site {
     if ($name_arr) {
       $name = implode(' ', $name_arr);
     }
-    
+
     // total up the words in this day's reading
     $total_word_count = array_reduce(
-      $scheduled_reading['passages'], 
+      $scheduled_reading['passages'],
       fn($acc, $cur) => $acc + $cur['word_count']);
     $minutes_to_read = ceil($total_word_count / ($this->data('reading_rate_wpm') ?: 240)); // words per minute, default to 240
-    
+
     return [
       'name' => $name,
       'minutes' => $minutes_to_read
     ];
   }
-    
+
   /*
   * @param scheduled_reading array the return value of get_schedule_date()
   * @param trans string one of the translations
@@ -357,7 +357,7 @@ class Site {
   * @param schedule the schedule from which we are generating a reading
   * @param email bool whether this is going in an email or not
   * @return the html of all the verses we are reading
-  */ 
+  */
   public function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $today, $email=false)
   {
     ob_start();
@@ -372,13 +372,12 @@ class Site {
         $style = "style='text-align: center; font-size: 1.4rem;'";
       }
       foreach($scheduled_reading['passages'] as $passage) {
-        $verse_range = ":".$passage['range'][0]."-".$passage['range'][1];
-        if ($passage['chapter']['verses'] == $passage['range'][1]-$passage['range'][0]+1) {
-          // if the range is the whole chapter, hide the range
-          $verse_range = "";
+        $verse_range = "";
+        if ($passage['chapter']['verses'] != $passage['range'][1]-$passage['range'][0]+1) {
+          $verse_range = ":".$passage['range'][0]."-".$passage['range'][1];
         }
         echo "<h4 class='text-center' $style>".$passage['book']['name']." ".$passage['chapter']['number'].$verse_range."</h4>";
-        
+
         $ref_style = "class='ref'";
         $verse_style = "class='verse-text'";
         if ($email) {
@@ -414,12 +413,12 @@ class Site {
         echo "
         <script type='text/javascript'>
           function calculateIframeHeight(availableWidth, styles) {
-            const { 
-              textLengths, fontSize, lineHeight, 
+            const {
+              textLengths, fontSize, lineHeight,
               margins, padding,
               additionalElements
             } = styles;
-            
+
             // Calculate approximate characters per line
             const avgCharWidth = fontSize * 0.5; // Approximate character width
             const contentWidth = availableWidth - (margins.left + margins.right + padding.left + padding.right);
@@ -431,7 +430,7 @@ class Site {
               const numberOfLines = Math.ceil((currLength + 10) / charsPerLine); // 10 is an estimate for the length of the verse reference
               return acc + (numberOfLines * lineHeight) + vertSpace;
             });
-            
+
             // Add heights of other elements
             const otherElementsHeight = additionalElements.reduce((sum, el) => sum + el.height, 0);
 
@@ -441,9 +440,9 @@ class Site {
               fudge = 20
             if (contentWidth < 340)
               fudge = 30
-              
+
             const totalHeight = textHeight + otherElementsHeight + fudge*vertSpace;
-            
+
             return totalHeight;
           }
 
@@ -452,7 +451,7 @@ class Site {
             containers.forEach(container => {
               const availableWidth = container.clientWidth;
               const iframe = container.querySelector('iframe');
-    
+
               const styles = {
                 textLengths: JSON.parse(container.dataset.textLengths), // Number of characters in each verse
                 fontSize: 22, // in pixels
@@ -461,10 +460,10 @@ class Site {
                 padding: { top: 0, right: 0, bottom: 0, left: 0 },
                 additionalElements: [ ]
               };
-    
+
               iframe.style.height = calculateIframeHeight(availableWidth, styles) + 'px';
             });
-            
+
           }
           document.querySelectorAll('iframe')
             .forEach(el => el.addEventListener('load', adjustIFrames))
@@ -493,7 +492,7 @@ class Site {
     }
     else {
       echo "<p>Nothing to read today!</p>";
-      
+
       // look for the next time to read in the schedule.
       $next_reading = $schedule->get_next_reading($today);
       if ($next_reading) {
@@ -504,18 +503,18 @@ class Site {
     echo "</article>";
     return ob_get_clean();
   }
-  
+
   public function on_target_days_for_user(int $user_id)
   {
     return $this->db->col("
-    SELECT 
+    SELECT
       COUNT(*)
     FROM read_dates rd
     JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
     WHERE rd.user_id = $user_id AND sd.schedule_id = ".$this->get_active_schedule()->ID."
       AND sd.date = DATE(rd.timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')");
   }
-  
+
   public function on_target_percent_for_user($user_id)
   {
     $schedule_days_until_now = $this->db->col("
@@ -527,7 +526,7 @@ class Site {
       ? $this->on_target_days_for_user($user_id) / $schedule_days_until_now * 100
       : 0;
   }
-  
+
   public function deviation_for_user($user_id)
   {
     $weekly_counts = $this->weekly_counts($user_id)['counts'];
@@ -542,21 +541,21 @@ class Site {
       $variance += pow($val - $mean, 2);
     }
     $variance /= $n;
-    
+
     return round(sqrt($variance), 3);
   }
-  
+
   public function weekly_progress_canvas($user_id, $size=400)
   {
     $counts = $this->weekly_counts($user_id);
     $data = json_encode(array_combine($counts['day_start'], $counts['counts']));
     return "<canvas data-graph='$data' class='weekly-counts-canvas' width='$size'></canvas>";
   }
-  
+
   /**
   * the number of days read each week, across personal and corporate schedules,
   * from days_in_schedule in the past up to today
-  * @return  array  
+  * @return  array
   * [
   *    week => array of week numbers (within the year),
   *    counts => array of corresponding number of days read in the week,
@@ -567,11 +566,11 @@ class Site {
   {
     $start = new \DateTime($this->get_active_schedule()->data('start_date'));
     $end = new \DateTime($this->get_active_schedule()->data('end_date'));
-    
+
     $interval = $start->diff($end);
     $days_between = abs(intval($interval->format('%a')));
     $WEEKS = ceil($days_between / 7);
-    
+
     $counts = $this->weekly_reading_data($user_id, $WEEKS);
     return [
       'week' => array_column($counts, 'week'),
@@ -579,7 +578,7 @@ class Site {
       'day_start' => array_column($counts, 'day_start')
     ];
   }
-  
+
   /**
   * how many days we've read in the last four weeks
   */
@@ -589,7 +588,7 @@ class Site {
     $data = json_encode(array_column($counts, 'count', 'day_start'));
     return "<canvas data-graph='$data' width='200' style='margin: auto;'></canvas>";
   }
-  
+
   function weekly_reading_data($user_id, $WEEKS)
   {
     // this statistic is not cached in redis because it changes every day
@@ -598,10 +597,10 @@ class Site {
       FROM (
         -- generates last $WEEKS weeks to join what we read to
         WITH RECURSIVE week_sequence AS (
-          SELECT 
+          SELECT
             DATE('now', '".$this->TZ_OFFSET." hours', '-7 days', 'weekday 0') AS cdate
           UNION ALL
-          SELECT DATE(cdate, '-7 days') 
+          SELECT DATE(cdate, '-7 days')
           FROM week_sequence
           LIMIT $WEEKS
         )
@@ -618,11 +617,11 @@ class Site {
         WHERE rd.user_id = $user_id
         GROUP BY week
       ) rd ON rd.week = sd.week
-      WHERE sd.week >= STRFTIME('%Y-%U', DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0', '-".(7*($WEEKS+1))." days')) 
+      WHERE sd.week >= STRFTIME('%Y-%U', DATE('now', '".$this->TZ_OFFSET." hours', 'weekday 0', '-".(7*($WEEKS+1))." days'))
       ORDER BY sd.week ASC
       LIMIT $WEEKS");
   }
-  
+
   /**
   * a graph that shows the percentage of the challenge complete by the day
   * pass the value of progress($user_id) as the first parameter
@@ -631,19 +630,19 @@ class Site {
   {
     return "<canvas data-graph='".json_encode($progress)."' class='progress-canvas' width='$size'></canvas>";
   }
-  
+
   /**
   * @return  array indexed 1-100 (not 0) with the dates on which each threshhold was passed for the active schedule
   */
   public function progress($user_id)
   {
     $total_words_in_schedule = $this->get_active_schedule()->total_words_in_schedule();
-    
+
     $threshholds = [];
     for($i = 1; $i <= 100; $i++) {
       $threshholds[ $i ] = floor($total_words_in_schedule / 100 * $i);
     }
-    
+
     $progress = [];
     $read_dates = $this->db->select("
     SELECT date, SUM(word_count) OVER (ORDER BY date) cummulative_word_count
@@ -655,7 +654,7 @@ class Site {
       GROUP BY sdv.chapter_id
       ORDER BY timestamp
     )");
-    
+
     foreach($read_dates as $rd) {
       foreach ($threshholds as $thresh => $words) {
         if ($rd['cummulative_word_count'] >= (int)$words && !$progress[ $thresh ]) {
@@ -671,7 +670,7 @@ class Site {
     }
     return $progress;
   }
-  
+
   public function create_user($email, $name, $password=false, $emoji=false, $verified=false, $uuid=false)
   {
     $uuid = $uuid ?: uniqid();
@@ -689,8 +688,8 @@ class Site {
       'emoji' => $emoji ?: $this->data('default_emoji')
     ]);
     Schedule::create(
-      new \DateTime(date('Y-m-d', strtotime('January 1'))), 
-      new \DateTime(date('Y-m-d', strtotime('December 31'))), 
+      new \DateTime(date('Y-m-d', strtotime('January 1'))),
+      new \DateTime(date('Y-m-d', strtotime('December 31'))),
       "$name's Default Schedule",
       $this->ID,
       1,
@@ -702,7 +701,7 @@ class Site {
       'uuid' => $uuid
     ];
   }
-  
+
   /**
   * @return  array   the allowed translations for a site
   */
@@ -714,7 +713,7 @@ class Site {
     }
     return $translations;
   }
-  
+
   /**
   * @return  bool  validates a translation is within those allowed for the site
   */
@@ -722,7 +721,7 @@ class Site {
   {
     return in_array($trans, $this->get_translations_for_site(), true);
   }
-  
+
   /**
   * the number of words read for either a specific user across all schedules, within a specific schedule OR the entire club (Site)
   */
@@ -743,10 +742,10 @@ class Site {
       : "";
       $words_read = $this->db->col(sprintf($word_qry, " rd.user_id = ".$user['id'].$schedule_where));
     }
-    
+
     return (int)$words_read;
   }
-  
+
   public function site_stats($refresh=false)
   {
     $redis = Redis::get_instance();
@@ -755,7 +754,7 @@ class Site {
     if ($refresh) {
       $stats = false;
     }
-    
+
     if (!$stats) {
       $timer = new PerfTimer();
       $all_club_chapters_read = (int) $this->db->col(
@@ -773,18 +772,18 @@ class Site {
       $timer->mark('all_club_chapters_read');
       $all_club_words_read = (int) $this->words_read();
       $timer->mark('words_read');
-        
+
       $stats = [
         'all_club_chapters_read' => $all_club_chapters_read,
         'all_club_words_read' => $all_club_words_read,
       ];
-        
+
       $redis->set_site_stats($this->ID, $stats);
     }
-      
+
     return $stats;
   }
-    
+
   /**
   * returns an array filled with different statistics for the user, cached
   */
@@ -795,11 +794,11 @@ class Site {
     if ($refresh) {
       $stats = false;
     }
-    
+
     if (!$stats) {
       $timer = new PerfTimer();
       $active_schedule = $this->get_active_schedule($refresh);
-      
+
       $user = $this->db->row("SELECT * FROM users WHERE id = $user_id");
       $timer->mark('user');
       $badges = badges_for_user($user_id);
@@ -832,10 +831,10 @@ class Site {
       $on_target_perc = (float) $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target_percent');
       $days_behind =
-      $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$active_schedule->ID." AND date <= '".date('Y-m-d')."'") - 
+      $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = ".$active_schedule->ID." AND date <= '".date('Y-m-d')."'") -
       $this->db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = ".$active_schedule->ID." AND rd.user_id = $user_id");
       $timer->mark('days_behind');
-      
+
       $stats = [
         'badges' => json_encode($badges),
         'challenge_percent' => 0,
@@ -849,7 +848,7 @@ class Site {
         'progress_graph_data' => json_encode($progress_graph_data),
         'words_ive_read' => $words_ive_read,
       ];
-      
+
       $total_words_in_schedule = (int) $active_schedule->total_words_in_schedule();
       if ($total_words_in_schedule) {
         // challenge percent can only happen when a schedule has words
@@ -857,7 +856,7 @@ class Site {
         $stats['challenge_percent'] = $words_read / $total_words_in_schedule * 100;
         $timer->mark('challenge_percent');
       }
-      
+
       $redis->set_user_stats($user_id, $stats);
       $stats['badges'] = $badges;
       $stats['progress_graph_data'] = $progress_graph_data;
@@ -867,10 +866,10 @@ class Site {
       $stats['badges'] = json_decode($stats['badges'], true);
       $stats['progress_graph_data'] = json_decode($stats['progress_graph_data'], true);
     }
-      
+
     return $stats;
   }
-    
+
   /**
   * deletes stats for either a single user id (if passed) or the entire site's users
   * Note: there is no "invalidate_site_stats" function, because a site's stats will never be
@@ -892,17 +891,17 @@ class Site {
       }
     }
   }
-    
+
   function logo_pngs($input_file, $output_path, $sizes)
   {
     set_include_path(get_include_path().":".getenv('PATH'));
-    
+
     foreach ($sizes as $size) {
       $output_file = "$output_path/logo_{$this->ID}_".$size."x".$size.".png";
-      
+
       $color_command = "magick ".escapeshellarg($input_file)." -gravity northwest -crop 1x1+0+0 +repage -format \"%[pixel:u.p{0,0}]\" info: 2>&1";
       $color = shell_exec($color_command);
-      
+
       $convert_command = "magick ".escapeshellarg($input_file)." -background \"$color\" -gravity center -resize {$size}x{$size} -extent {$size}x{$size} ".escapeshellarg($output_file)." 2>&1";
       shell_exec($convert_command);
     }

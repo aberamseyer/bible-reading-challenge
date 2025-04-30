@@ -8,8 +8,8 @@ use Laminas\Feed\Writer\Feed;
 
 global $site, $schedule, $db;
 
-$feed_type = $_GET['type'] == "rss" 
-  ? "rss" 
+$feed_type = $_GET['type'] == "rss"
+  ? "rss"
   : "atom";
 
 $base_url = "http".($_SERVER['HTTPS'] ? "s" : "")."://".$site->DOMAIN;
@@ -51,7 +51,7 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
   $link = $base_url."/today?today=".$schedule_date['date'];
   $entry->setLink($link);
   $entry->addAuthor($author);
-  
+
   $entry->setDateModified($schedule_date_datetime);
   $entry->setDateCreated($schedule_date_datetime);
 
@@ -67,6 +67,10 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
     $scheduled_reading = $schedule->get_schedule_date($schedule_date_datetime);
     ob_start();
     foreach($scheduled_reading['passages'] as $passage) {
+      $verse_range = "";
+      if ($passage['chapter']['verses'] != $passage['range'][1]-$passage['range'][0]+1) {
+        $verse_range = ":".$passage['range'][0]."-".$passage['range'][1];
+      }
       echo "<h4>".$passage['book']['name']." ".$passage['chapter']['number'].$verse_range."</h4>";
       foreach($passage['verses'] as $verse_row) {
         if ($verse_row[$trans_pref]) {
@@ -80,7 +84,7 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
   $feed->addEntry($entry);
 }
 
-$feed->setDateModified($feed->count() 
+$feed->setDateModified($feed->count()
   ? $feed->getEntry(0)->getDateModified()
   : new DateTime($schedule->data('start_date')));
 
