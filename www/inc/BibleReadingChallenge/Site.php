@@ -407,69 +407,6 @@ class Site {
           }
         }
       }
-      if ($trans == 'rcv' && !$email) {
-        // big hacks to calculate width of text.recoveryversion.bible content so we can hide scroll bars
-        // may need to update "styles" object in the future if website styles change
-        echo "
-        <script type='text/javascript'>
-          function calculateIframeHeight(availableWidth, styles) {
-            const {
-              textLengths, fontSize, lineHeight,
-              margins, padding,
-              additionalElements
-            } = styles;
-
-            // Calculate approximate characters per line
-            const avgCharWidth = fontSize * 0.5; // Approximate character width
-            const contentWidth = availableWidth - (margins.left + margins.right + padding.left + padding.right);
-            const charsPerLine = Math.floor(contentWidth / avgCharWidth);
-            const vertSpace = padding.top + padding.bottom + margins.top + margins.bottom;
-
-            // Calculate text height for each verse
-            const textHeight = textLengths.reduce((acc, currLength) => {
-              const numberOfLines = Math.ceil((currLength + 10) / charsPerLine); // 10 is an estimate for the length of the verse reference
-              return acc + (numberOfLines * lineHeight) + vertSpace;
-            });
-
-            // Add heights of other elements
-            const otherElementsHeight = additionalElements.reduce((sum, el) => sum + el.height, 0);
-
-            // Calculate total height including margins, padding, and fudge factor
-            let fudge = 5;
-            if (contentWidth < 350)
-              fudge = 20
-            if (contentWidth < 340)
-              fudge = 30
-
-            const totalHeight = textHeight + otherElementsHeight + fudge*vertSpace;
-
-            return totalHeight;
-          }
-
-          function adjustIFrames() {
-            const containers = document.querySelectorAll('.iframe-container');
-            containers.forEach(container => {
-              const availableWidth = container.clientWidth;
-              const iframe = container.querySelector('iframe');
-
-              const styles = {
-                textLengths: JSON.parse(container.dataset.textLengths), // Number of characters in each verse
-                fontSize: 22, // in pixels
-                lineHeight: 24, // in pixels
-                margins: { top: 2.75, right: 11, bottom: 16.5, left: 11 },
-                padding: { top: 0, right: 0, bottom: 0, left: 0 },
-                additionalElements: [ ]
-              };
-
-              iframe.style.height = calculateIframeHeight(availableWidth, styles) + 'px';
-            });
-
-          }
-          document.querySelectorAll('iframe')
-            .forEach(el => el.addEventListener('load', adjustIFrames))
-          window.addEventListener('resize', adjustIFrames)
-        </script>";
-      }
       $btn_style = "";
       $form_style = "id='done' class='center'";
       if ($email) {

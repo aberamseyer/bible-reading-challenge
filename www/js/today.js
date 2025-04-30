@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const headerForm = document.querySelector('#date-header form')
   const subscribeLabel = headerForm.querySelector('[data-push-label]')
   const subscribeInput = subscribeLabel.querySelector('input')
-  
+
   if (!('serviceWorker' in navigator)) {
     console.warn('Service workers are not supported by this browser')
     changeOptionsState('incompatible')
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const serviceWorkerRegistration = await navigator.serviceWorker.ready
       const subscription = await serviceWorkerRegistration.pushManager.getSubscription()
       changeOptionsState('disabled')
-  
+
       if (!subscription) {
         // We aren't subscribed to push, so leave UI in state to allow the user to enable push
         return
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // we're already subscribed
         subscribeInput.checked = true
       }
-  
+
       // Keep your server in sync with the latest endpoint
       await push_sendSubscriptionToServer(subscription, 'PUT')
       changeOptionsState('enabled')
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         changeOptionsState('disabled')
         return
       }
-  
+
       // We have a subscription, unsubscribe
       // Remove push subscription from server
       await push_sendSubscriptionToServer(subscription, 'DELETE')
@@ -226,3 +226,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   })
 })
+
+// iframe resizing and stuff for recovery version translation
+function calculateIframeHeight(availableWidth, styles) {
+  const {
+    textLengths, fontSize, lineHeight,
+    margins, padding,
+    additionalElements
+  } = styles;
+
+  // Calculate approximate characters per line
+  const avgCharWidth = fontSize * 0.5; // Approximate character width
+  const contentWidth = availableWidth - (margins.left + margins.right + padding.left + padding.right);
+  const charsPerLine = Math.floor(contentWidth / avgCharWidth);
+  const vertSpace = padding.top + padding.bottom + margins.top + margins.bottom;
+
+  // Calculate text height for each verse
+  const textHeight = textLengths.reduce((acc, currLength) => {
+    const numberOfLines = Math.ceil((currLength + 10) / charsPerLine); // 10 is an estimate for the length of the verse reference
+    return acc + (numberOfLines * lineHeight) + vertSpace;
+  });
+
+  // Add heights of other elements
+  const otherElementsHeight = additionalElements.reduce((sum, el) => sum + el.height, 0);
+
+  // Calculate total height including margins, padding, and fudge factor
+  let fudge = 5;
+  if (contentWidth < 350)
+    fudge = 20;
+  if (contentWidth < 340)
+    fudge = 30;
+
+  const totalHeight = textHeight + otherElementsHeight + fudge*vertSpace;
+
+  return totalHeight;
+}
+
+function adjustIFrame(iframe) {
+  const container = iframe.closest('.iframe-container');
+  const availableWidth = container.clientWidth;
+
+  const styles = {
+    textLengths: JSON.parse(container.dataset.textLengths), // Number of characters in each verse
+    fontSize: 22, // in pixels
+    lineHeight: 24, // in pixels
+    margins: { top: 2.75, right: 11, bottom: 16.5, left: 11 },
+    padding: { top: 0, right: 0, bottom: 0, left: 0 },
+    additionalElements: [ ]
+  };
+
+  iframe.style.height = calculateIframeHeight(availableWidth, styles) + 'px';
+}
+function adjustIFrames() {
+  document.querySelectorAll('iframe').forEach(el => adjustIFrame(el))
+}
+document.querySelectorAll('iframe')
+  .forEach(el => el.addEventListener('load', e => adjustIFrame(e.target)))
+window.addEventListener('resize', adjustIFrames)
+
+
+const tabs = document.querySelector('.tabs');
+if (tabs) {
+  tabs.addEventListener('change', e => {
+    localStorage.setItem('activeTabId', e.target.id)
+    adjustIFrames()
+  })
+
+  // set active tab on page load
+  const activeTabId = localStorage.getItem('activeTabId')
+  const activeTabEl = document.getElementById(activeTabId)
+  if (activeTabId && activeTabEl) {
+    document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
+    activeTabEl.checked = true
+  }
+}

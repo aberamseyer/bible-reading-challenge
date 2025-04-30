@@ -1,7 +1,7 @@
 <?php
 
 	require_once __DIR__."/../../vendor/autoload.php";
-	
+
 	require_once __DIR__."/MailSender/MailSender.php";
 	require_once __DIR__."/MailSender/MailSenderMailgun.php";
 	require_once __DIR__."/MailSender/MailSenderPhpMailer.php";
@@ -94,17 +94,17 @@
 				header('Access-Control-Allow-Credentials: true');
 				header('Access-Control-Max-Age: 86400');    // cache for 1 day
 		}
-		
+
 		// Access-Control headers are received during OPTIONS requests
 		if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-			
+
 				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
 						// may also be using PUT, PATCH, HEAD etc
 						header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-				
+
 				if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
 						header("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
-		
+
 				die;
 		}
 	}
@@ -116,8 +116,8 @@
 		$curl = curl_init($url);
 		curl_setopt($curl, CURLOPT_POST, true);
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $json? json_encode($arr, JSON_UNESCAPED_SLASHES) : $arr);
-		curl_setopt($curl, CURLOPT_HTTPHEADER, [ 
-			'Content-type:  '.($json ? 'application/json' : 'multipart/form-data'), 
+		curl_setopt($curl, CURLOPT_HTTPHEADER, [
+			'Content-type:  '.($json ? 'application/json' : 'multipart/form-data'),
 			...$headers
 		]);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -222,17 +222,17 @@
 				</tr>
 			</thead>
 			<tbody>';
-		
+
 		// first day of the month
 		$current_day = date_create_from_format("Y-F-d", "$year-$month-01");
 		$current_day->setTime(0, 0, 0, 0);
-		
+
 		// # of days in the month
 		$days_in_month = $current_day->format('t');
-		
+
 		// day of the week for the first day of the month
 		$current_day_of_week = $current_day->format('w');
-		
+
 		// first week
 		$calendar .= '
 			<tr>';
@@ -240,7 +240,7 @@
 			$calendar .= "
 				<td></td>";
 		}
-		
+
 		// Iterate through each day of the month
 		$today = new DateTime();
 		for ($day = 1; $day <= $days_in_month; $day++) {
@@ -250,7 +250,7 @@
 					</tr>
 					<tr>';
 			}
-			
+
 			// each individual day on the calendar
 			$class = '';
 			$availble_day = true;
@@ -299,24 +299,24 @@
 					<small class='label'></small>";
 			}
 			$calendar .= "</td>";
-			
+
 			// Move to the next day and update the day of the week
 			$current_day->modify("+1 day");
 			$current_day_of_week = $current_day->format('w');
 		}
-		
+
 		// Fill in the blank cells after the last day of the month
 		for ($i = $current_day_of_week; $i > 0 && $i < 7; $i++) {
 			$calendar .= "
 				<td></td>";
 		}
-		
+
 		$calendar .= '
 				</tr>
 			</tbody>
 		</table>
 		</div>';
-		
+
 		return $calendar;
 	}
 
@@ -332,16 +332,16 @@
 		for($i = 0; $i < count($replacement_strings); $i++) {
 			$reference_formatted = preg_replace(
 				$replacer_strings[$i],
-				$replacement_strings[$i], 
-				$reference, 
-				1, 
+				$replacement_strings[$i],
+				$reference,
+				1,
 				$count
 			);
 			if ($count) {
 				break;
 			}
 		}
-		
+
 		return preg_match(BOOKS_RE, $reference_formatted, $matches)
 			? $matches
 			: false;
@@ -465,7 +465,7 @@
 						];
 					}
 				}
-				else { 
+				else {
 					// Format: Genesis 2 (single entire chapter)
 					$passages[] = [
 						'book' => $book_row,
@@ -478,7 +478,7 @@
 		return $passages;
 	}
 
-	/** 
+	/**
 	 * calculate the number of words in a passage reading based on the chapter id, start verse, and end verse
 	 */
 	function passage_readings_word_count($passage_readings) {
@@ -558,15 +558,15 @@ function toggle_all_users($initial_count) {
 		document.getElementById('filter-table').addEventListener('keyup', e => {
 			const rows = document.querySelectorAll('table tbody tr')
 			if (e.target.value) {
-				rows.forEach(row => 
-					row.classList.toggle('filtered', 
+				rows.forEach(row =>
+					row.classList.toggle('filtered',
 						!(~row.querySelector('td:first-child').textContent.toLowerCase().indexOf(e.target.value))))
 			}
 			else {
 				rows.forEach(row => row.classList.remove('filtered'))
 			}
 		})
-		
+
 		// hidden/shown stale users
 		const count = document.getElementById('all-count')
 		const countRows = Array.from(document.querySelectorAll('table tbody tr'))
@@ -579,7 +579,7 @@ function toggle_all_users($initial_count) {
 				countRows.forEach(row =>
 					row.classList.toggle('hidden',
 						row.querySelector('[data-last-read]').getAttribute('data-last-read') === '2200-01-01'))
-				
+
 				count.textContent = countRows.filter(x => !x.classList.contains('hidden')).length
 			}
 		})
@@ -670,10 +670,10 @@ function rgb_to_hex($rgb) {
 	$r = clamp($r, 0, 255);
 	$g = clamp($g, 0, 255);
 	$b = clamp($b, 0, 255);
-	
+
 	// Convert RGB to hex
 	$hex = sprintf("#%02x%02x%02x", $r, $g, $b);
-	
+
 	return $hex;
 }
 
@@ -686,7 +686,7 @@ function clamp($value, $min, $max) {
 }
 
 function chartjs_js() {
-	return 
+	return
 		cached_file('js', '/js/lib/chart.min.js').
 		cached_file('js', '/js/lib/chartjs-adapter-date-fns.min.js').
 		cached_file('js', '/js/lib/chart.inc.js');
@@ -764,14 +764,14 @@ function recoveryversion_url($passage) {
 	][$no_spaces] ?: $no_spaces;
 
 	return 'https://text.recoveryversion.bible/'.
-			$passage['book']['id'].
+			str_pad($passage['book']['id'], 2, "0", STR_PAD_LEFT).
 			"_".$no_spaces."_".
 			$passage['chapter']['number'].
 			".htm#".
 			substr(
-				str_replace('1', 'F', 
-					str_replace('2', 'S', 
-						str_replace('3', 'T', $abbreviated))), 
+				str_replace('1', 'F',
+					str_replace('2', 'S',
+						str_replace('3', 'T', $abbreviated))),
 				0, 3).
 			$passage['chapter']['number'].
 			'-'.$passage['range'][0];
@@ -792,18 +792,18 @@ function send_system_email($subject, $text) {
 
 	$mail->setFrom(DEPLOYMENT_EMAIL_FROM_ADDRESS);
 	$mail->addAddress(DEPLOYMENT_EMAIL_TO_ADDRESS);
-	
+
 	$mail->Subject = $subject;
-	
+
 	$mail->msgHTML("<p>".$text."</p>");
 	$mail->AltBody = $text;
-	
+
 	return $mail->send();
 }
 
 /**
  * Send a rate-limited notification
- * 
+ *
  * @param string $notificationType Identifier for the notification type
  * @param string $message The message to send
  * @param int $lockExpiry Time in seconds before allowing another notification (default: 1 hour)
@@ -811,7 +811,7 @@ function send_system_email($subject, $text) {
  */
 function send_rate_limited_notification($notificationType, $message, $lockExpiry = 3600) {
 	$lockFile = "/tmp/bible-reading-challenge_notification_".$notificationType.".lock";
-	
+
 	// Check if the lock file exists and is not expired
 	if (file_exists($lockFile)) {
 		$lastNotificationTime = file_get_contents($lockFile);
@@ -829,10 +829,10 @@ function send_rate_limited_notification($notificationType, $message, $lockExpiry
 		$result = false;
 		error_log("Exception: ".$e);
 	}
-	
+
 	// Update the lock file with current timestamp
 	file_put_contents($lockFile, time());
-	
+
 	return $result;
 }
 
@@ -853,7 +853,7 @@ function missing_git_hash_notification($msg) {
 function health_checks() {
 	global $site, $redis, $db;
 
-	if (!$site || !$db || !$redis || !$site->ID || 
+	if (!$site || !$db || !$redis || !$site->ID ||
 			($db->get_db()->lastErrorCode() !== 0) ||
 			$redis->is_offline()
 		) {

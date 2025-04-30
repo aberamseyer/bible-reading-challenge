@@ -246,7 +246,7 @@ foreach($schedules as $i => $each_schedule) {
 
   if ($scheduled_reading)
     echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
-  
+
   if ($site->data('allow_personal_schedules')) {
     echo "
       </div><!-- .tab -->";
@@ -254,21 +254,6 @@ foreach($schedules as $i => $each_schedule) {
 }
 if ($site->data('allow_personal_schedules')) {
   echo "</div><!-- .tabs -->";
-
-  // set active tab on page load
-  $add_to_foot .= "
-    <script type='text/javascript'>
-      document.querySelector('.tabs').addEventListener('change', e => {
-        localStorage.setItem('activeTabId', e.target.id)
-      })
-      const activeTabId = localStorage.getItem('activeTabId')
-      const activeTabEl = document.getElementById(activeTabId)
-      if (activeTabId && activeTabEl) {
-        document.querySelectorAll('[name=tabs]').forEach(x => x.checked = false)
-        activeTabEl.checked = true
-      }
-    </script>";
-
 }
 // service worker registration for notifications
 $add_to_foot .= "
