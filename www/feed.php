@@ -12,6 +12,11 @@ $feed_type = $_GET['type'] == "rss"
   ? "rss"
   : "atom";
 
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
+  http_response_code(405);
+  die;
+}
+
 $base_url = "http".($_SERVER['HTTPS'] ? "s" : "")."://".$site->DOMAIN;
 $author = [
   'name'  => $site->data('site_name'),
@@ -38,11 +43,29 @@ $tz = new DateTimeZone($site->data('time_zone_id'));
 $start_of_day = "07:30:00";
 $now = new DateTime("now", $tz);
 
-$schedule_dates = array_filter(
-  $schedule->get_dates(0),
-  fn ($schedule_date) => strtotime($schedule_date['date']." ".$start_of_day) <= $now->format('U'));
+$schedule_dates = 
+  array_reverse(
+    array_filter(
+      $schedule->get_dates(0),
+        fn ($schedule_date) => 
+          strtotime($schedule_date['date']." ".$start_of_day) <= $now->format('U')));
 
-foreach(array_reverse($schedule_dates) as $schedule_date) {
+$feed->setDateModified($schedule_dates
+  ? new DateTime($schedule_dates[0]['date']." ".$start_of_day, $tz)
+  : new DateTime($schedule->data('start_date')));
+
+if ($_SERVER['HTTP_IF_MODIFIED_SINCE']) {
+  $if_modified_since = @new DateTime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+  if (!$if_modified_since) die; // get out of here
+
+  $if_modified_since->setTimezone($tz);
+  if ($if_modified_since >= $feed->getDateModified()) {
+    http_response_code(304); // not modified
+    die;
+  }
+}
+
+foreach($schedule_dates as $schedule_date) {
   $entry = $feed->createEntry();
   $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $tz);
 
@@ -84,10 +107,7 @@ foreach(array_reverse($schedule_dates) as $schedule_date) {
   $feed->addEntry($entry);
 }
 
-$feed->setDateModified($feed->count()
-  ? $feed->getEntry(0)->getDateModified()
-  : new DateTime($schedule->data('start_date')));
-
+header("Last-Modified: ".gmdate("D, d M Y H:i:s T", $feed->getDateModified()->format('U')));
 header("Content-type: application/".$feed_type."+xml");
 header("Cache-Control: max-age=".(60*60*24)); // should be about one new entry every day
 echo $feed->export($feed_type);
