@@ -3,6 +3,8 @@
 
 require __DIR__."/../inc/init.php";
 
+global $staff;
+
 if (!$staff) {
   redirect('/');
 }

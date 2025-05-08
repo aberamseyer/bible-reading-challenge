@@ -28,7 +28,7 @@ if ($_POST['email'] && $_POST['password'] && $_POST['csrf'] == $csrf) {
       }
       else {
         $_SESSION['success'] = "Welcome back!";
-        log_user_in($user_row['id']);        
+        log_user_in($user_row['id']);
       }
     }
   }
@@ -55,7 +55,7 @@ require DOCUMENT_ROOT."inc/head.php";
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
+        data-client_id="<?= getenv("GOOGLE_CLIENT_ID") ?>"
         data-context="signin"
         data-ux_mode="popup"
         data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth/google"
@@ -72,7 +72,7 @@ require DOCUMENT_ROOT."inc/head.php";
       <?php
         if ($site->env('APPLE_SIGNIN_KEY_ID')) {
           echo "
-          <div 
+          <div
             class='center'
             style='margin-top: 7px;'
             id='appleid-signin'

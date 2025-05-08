@@ -5,6 +5,8 @@ require_once "env.php";
 // phpinfo();
 // die;
 
+global $insecure;
+
 $site = BibleReadingChallenge\SiteRegistry::get_site();
 $db = BibleReadingChallenge\Database::get_instance();
 $redis = BibleReadingChallenge\Redis::get_instance();

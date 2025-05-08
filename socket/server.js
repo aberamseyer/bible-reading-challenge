@@ -4,14 +4,14 @@ const process = require('process')
 const sqlite3 = require('sqlite3')
 const redis = require('redis');
 
-const PORT = process.env.SOCKET_PORT || 8085
-
 // initialize connections to databases and server
 Promise.all([
   new Promise(res => {
     const redisClient = redis.createClient({
-      host: '127.0.0.1',
-      port: '6379',
+      socket: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+      }
     })
     redisClient
       .on('error', err => console.error(`Redis threw:`, err))
@@ -22,15 +22,16 @@ Promise.all([
       .connect()
   }),
   new Promise(res => {
-    const db = new sqlite3.Database(`${__dirname}/../brc.db`, sqlite3.OPEN_READONLY)
+    const db = new sqlite3.Database(`${__dirname}/brc.db`, sqlite3.OPEN_READONLY)
     db
-      .on('error', err => console.err(`SQLite3 threw:`, err))
+      .on('error', err => console.error(`SQLite3 threw:`, err))
       .on('open', () => {
         console.log('SQLite initialized')
         res(db)
       })
   }),
   new Promise(res => {
+    const PORT = process.env.SOCKET_PORT
     const server = new WebSocket.Server({ port: PORT })
     server
       .on('error', err => console.error(`Server threw:`, err))
@@ -43,7 +44,7 @@ Promise.all([
 
   // holds all the active socket connections
   const people = new Map()
-  
+
   function removeUser(connectionId) {
     const p = people.get(connectionId)
     if (p) {
@@ -54,7 +55,7 @@ Promise.all([
         }, null, p.site_id)
     }
   }
-  
+
   // broadcasts to all websockets (optionally, except one) of an event to a specific site
   function broadcast (obj, exceptId, siteId) {
     for(let [userId, person] of people) {
@@ -65,7 +66,7 @@ Promise.all([
       }
     }
   }
-  
+
   // server listening for websocket connection
   server.on('connection', ws => {
     const connectionId = crypto.randomBytes(16).toString("hex")
@@ -76,7 +77,7 @@ Promise.all([
       console.log(`${(new Date()).toLocaleString()} Client disconnected: ${connectionId}`);
       removeUser(connectionId)
     }, { once: true })
-    
+
     function setupListeners(connectionId, userRow, refreshNonce) {
       const newUser = {
         id: connectionId,
@@ -87,7 +88,7 @@ Promise.all([
         name: userRow.name
       }
       people.set(connectionId, newUser)
-  
+
       // initialize client with what we know
       ws.send(JSON.stringify({
         type: 'init-client',
@@ -95,14 +96,14 @@ Promise.all([
         people: [ ...people.values() ]
           .filter(p => p.id !== connectionId) // everyone but ourself
           .filter(p => p.site_id === newUser.site_id) // only people in our same system
-          .map(p => ({ 
+          .map(p => ({
             id: p.id,
             position: p.position,
             emoji: p.emoji,
             name: p.name
           }))
         }))
-  
+
       broadcast({
           type: 'add-user',
           id: connectionId,
@@ -110,13 +111,13 @@ Promise.all([
           emoji: userRow.emoji,
           name: userRow.name
         }, connectionId, userRow.site_id)
-      
+
       // Handle incoming messages from clients
       ws.addEventListener('message', event => {
         refreshNonce()
         const data = JSON.parse(event.data)
         let user
-    
+
         switch (data.type) {
           case 'ping':
             // keep-alive
@@ -155,7 +156,7 @@ Promise.all([
         }
       });
     }
-  
+
     // websocket listening for messages
     ws.addEventListener('message', async event => {
       const [ init, nonce ] = event.data.split('|')
@@ -181,7 +182,7 @@ Promise.all([
       }
     }, { once: true })
   })
-  
+
   setInterval(() => {
     for (let [ userId, person ] of people) {
       if ([WebSocket.CLOSED, WebSocket.CLOSING ].includes(person.ws.readyState)) {
@@ -190,4 +191,3 @@ Promise.all([
     }
   }, 5000)
 })
-

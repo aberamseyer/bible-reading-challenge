@@ -1,0 +1,21 @@
+#!/bin/sh
+
+VERSION_FILE="./extras/version.txt"
+
+# Ensure the directory exists
+mkdir -p "$(dirname "$VERSION_FILE")"
+
+# Get the short hash of the upcoming commit (HEAD)
+# A more robust way to get the hash of the *tree* that will be committed:
+TREE_HASH=$(git write-tree)
+COMMIT_HASH=$(git rev-parse --short "$TREE_HASH") # Get short hash of the tree
+
+echo "$COMMIT_HASH" > "$VERSION_FILE"
+
+# Add the version file to the commit if it's not already staged
+# This ensures the updated version file is part of the commit itself.
+git add "$VERSION_FILE"
+
+echo "Updated $VERSION_FILE with commit hash: $COMMIT_HASH"
+
+exit 0

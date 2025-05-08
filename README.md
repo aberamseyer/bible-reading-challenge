@@ -7,82 +7,82 @@ See also [here](https://abe.ramseyer.dev/work/bible-reading-challenge/)
 
 The live deployment of my personal site for this [here](https://brc.ramseyer.dev). Feel free to join and read with me!
 
-# Dependencies
+---
 
-## Language
-Written with php `8.2.20` and apache `2.4.61`
-- REQUIRES php `8.2` because of [this bug](https://github.com/php/php-src/pull/8292) and Mailgun's API for bulk sending
+## Local Development Setup
 
-## Configuration
-Set the system time zone and php time zone (`date.timezone` in `php.ini`) to the same thing.
+1.  **Clone the Repository:**
+2.  **Set up Git Pre-commit Hook (for versioning):**
+    This application uses a Git pre-commit hook to automatically write the current commit hash to the file `./extras/version.txt` file. This file is then read by the application at runtime.
 
-In `php.ini`, set the following:
-```
-max_input_vars = 3000;
-upload_max_filesize = 10M;
-```
+    To set this up, create a symlink or copy the hook script from `.githooks/pre-commit` to `.git/hooks/pre-commit`:
+    ```bash
+    ln -s -f ../../.githooks/pre-commit .git/hooks/pre-commit
+    ```
 
-This is sufficient for editing a schedule that is up to 4 years long and typical picture uploads.
+3.  **Create and Configure `.env` File:**
+    Copy the example environment file and customize it with your settings:
+    ```bash
+    cp .env.example .env
+    ```
+    Edit `.env` and fill in your details, especially:
+    *   `GOOGLE_CLIENT_ID`
+    *   `DEPLOYMENT_EMAIL_FROM_ADDRESS`
+    *   `DEPLOYMENT_EMAIL_TO_ADDRESS`
 
-Install [composer](https://getcomposer.org/) dependencies in root of project with `composer install`
+4.  **Prepare the SQLite Database:**
+    *   Create an empty SQLite database file named `brc.db` in the project root:
+        ```bash
+        sqlite3 brc.db < migrations/schema.sql
+        ```
+    *   Initialize it with the Bible data:
+        ```bash
+        sqlite3 brc.db < migrations/bible-import.sql
+        ```
+    *   Enable WAL (Write-Ahead Logging) mode for better concurrency:
+        ```bash
+        sqlite3 brc.db "PRAGMA journal_mode=WAL;"
+        ```
 
-In apache and nginx configuration, be sure file uploads are also set to be at least 10MB.
+5.  **Build and Run the Application with Docker Compose:**
+    ```bash
+    docker-compose up --build -d
+    ```
 
-## Database
+6.  **Access the Application:**
+    *   Web Application: `http://localhost:8080` (or the `NGINX_HOST_PORT` you configured in `.env`).
+    *   WebSocket Server: Listens on port `8085` (or `SOCKET_HOST_PORT` / `SOCKET_PORT` configured).
 
-#### SQLite
-Requires MINIMUM version 3.46 (support for `GROUP_CONCAT(..ORDER BY..)`, `->>` syntax, and `strftime('%U')` modifier)
+## Services Managed by Docker Compose
 
-Create an SQLite database file named "brc.db" in root of project from schema.sql
+*   **`php`:** Includes necessary extensions, Composer dependencies, and reads from the shared application code.
+*   **`nginx`:** Serves the PHP application via PHP-FPM.
+*   **`redis`:** Used for session management and caching (e.g., site version). Data is persisted in a Docker volume.
+*   **`socket`:** WebSocket server for real-time updates.
+*   **`cron`:** A dedicated container running cron jobs defined in `.docker/cron/crontab`. It uses the same PHP environment as the main `php` service.
 
-Initialize it with the data from `migrations/bible-import.sql`
+## Additional Details
 
-Enable WAL mode: `sqlite3 brc.db "PRAGMA journal_mode=WAL;"`
-
-An example backup script example can be found in `extras/db-backup.sh`
-
-#### Redis
-Redis is used for session management.
-
-Run a Redis (or compatible) server, default ports.
-```sh
-# Server
-docker run -v /home/bible-reading-challenge/:/data --restart unless-stopped -d -it -p 6379:6379 redis:7-alpine
-# locally
-docker run -it --rm -v ./:/data -p 6379:6379 redis:7-alpine
-```
-
-##### Stats
+### Stats
 to refresh stats use `redis-cli --scan --pattern "bible-reading-challenge:user-stats/*" | xargs -L 1 redis-cli del`
 
 ### Schema
 to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > migrations/schema.sql`
 
-## Realtime updates
-This website supports readers' seeing each other on the page reading together
 
-### Setup
-From the `socket` directory, run `npm i` and then keep it alive with `forever start server.js`
+### API Keys & Environment Variables
 
-It defaults to port `8085`, customizable with the environment variable `SOCKET_PORT`
+*   All API keys and environment-specific configurations should be placed in the `.env` file at the project root.
+*   **Site-Specific `env` Data:** The mechanism for storing site-specific `env` values in the database `sites.env` column remains relevant for multi-tenant deployments.
+*   **Deployment-wide Emails:**
+    *   Variables `DEPLOYMENT_EMAIL_FROM_ADDRESS` and `DEPLOYMENT_EMAIL_TO_ADDRESS` in `.env` are used.
 
-## API Keys
-Each site created in the database requires the following values in the 'env' column
+    *   For deployment-wide administration emails (not site-specific emails), configure postfix or whatever [PhpMailer's sendmail](https://github.com/PHPMailer/PHPMailer/blob/v6.9.3/examples/sendmail.phps) is going to interface with.
+    *   I set up mine with OCI Email Delivery following [this guide](https://docs.oracle.com/en-us/iaas/Content/Email/Reference/postfix.htm)
 
-### Emails
-For deployment-wide administration emails (not site-specific emails), configure postfix or whatever [PhpMailer's sendmail](https://github.com/PHPMailer/PHPMailer/blob/v6.9.3/examples/sendmail.phps) is going to interface with. Requires `.env` variables:
-- DEPLOYMENT_EMAIL_FROM_ADDRESS
-- DEPLOYMENT_EMAIL_TO_ADDRESS
-
-I set up mine with OCI Email Delivery following [this guide](https://docs.oracle.com/en-us/iaas/Content/Email/Reference/postfix.htm)
 
 ### Google Sign-in button
-also requires configuring OAuth consent screen in Google Cloud Console. Save this in an `.env` file at the project root
-- GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET (currently unused)
-
-## Crons
-files in the `cron` directory should be installed according to the comments at the top of each file
+also requires configuring OAuth consent screen in Google Cloud Console.
 
 ## Migrations
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
@@ -93,3 +93,34 @@ From the root of the project, run `extras/dump-schema.sh` to save the current da
 
 ## Logo Generation
 For different logo sizes to be generated for PWA installation, the `magick` command must be avilable somewhere in the `PATH` environment. See `logo_pngs()` in `Site.php` where `set_include_path()` is called
+
+### Cron Jobs
+*   Cron jobs are defined in `.docker/cron/crontab`.
+*   They are executed by the `cron` service, which shares the same PHP environment and application code as the main `php` service.
+*   Logs from cron jobs are directed to the Docker container's output and can be viewed with `docker-compose logs brc_cron`.
+
+## Managing the Application
+
+*   **View Logs:**
+    ```bash
+    docker-compose logs -f <service_name>  # e.g., php, nginx, cron, redis, socket
+    docker-compose logs -f # View logs for all services
+    ```
+*   **Stop Application:**
+    ```bash
+    docker-compose down
+    ```
+*   **Stop and Remove Volumes (e.g., to clear Redis data):**
+    ```bash
+    docker-compose down -v
+    ```
+*   **Access a Running Container (e.g., to run a command inside the PHP container):**
+    ```bash
+    docker-compose exec php bash
+    ```
+*   **Rebuild Images:**
+    ```bash
+    docker-compose build
+    # or
+    docker-compose up --build -d
+    ```

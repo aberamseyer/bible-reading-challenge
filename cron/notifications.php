@@ -3,8 +3,6 @@
 //
 // Sends notifications to users with the daily reading portion
 //
-// crontab entry: 31 * * * * php /home/bible-reading-challenge/cron/notifications.php
-//
 
 
 // Useful push notification notes:
