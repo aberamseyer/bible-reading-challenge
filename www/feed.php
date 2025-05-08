@@ -70,7 +70,7 @@ foreach($schedule_dates as $schedule_date) {
   $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $tz);
 
   $entry->setId(strval($schedule_date['id']));
-  $entry->setTitle($schedule_date_datetime->format("l, F j").": $schedule_date[passage]");
+  $entry->setTitle($schedule_date['passage']);
   $link = $base_url."/today?today=".$schedule_date['date'];
   $entry->setLink($link);
   $entry->addAuthor($author);
