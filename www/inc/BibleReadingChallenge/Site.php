@@ -214,12 +214,15 @@ class Site {
 
   public function send_daily_verse_email($to, $subject, $content, $uuid)
   {
-    $this->ms->send_bulk_email(
-      [ $to => [] ],
-      $subject,
-      $this->format_email_body($content),
-      [ $uuid ]
-    );
+
+    if (getenv('APP_ENV') === 'production') {
+      $this->ms->send_bulk_email(
+        [ $to => [] ],
+        $subject,
+        $this->format_email_body($content),
+        [ $uuid ]
+      );
+    }
   }
 
   public function get_active_schedule($refresh=false)
