@@ -1,14 +1,22 @@
 <?php
 
+$insecure = !array_key_exists('done', $_REQUEST) || !$_REQUEST['done']; // this page can be loaded insecurely, but if someone clicks "Done", it must be secure. $my_id is used throughout this page to detect if the user is logged in
+$use_template = true;
 require __DIR__."/inc/init.php";
 global $redis, $db, $site, $me, $add_to_foot, $my_id, $schedule, $add_to_head;
 
 // this key is used by the websocket client to authenticate as the current user
-$websocket_nonce = bin2hex(random_bytes(24));
-$redis->set_websocket_nonce($me['id'], $websocket_nonce);
+if ($my_id) {
+  $websocket_nonce = bin2hex(random_bytes(24));
+  $redis->set_websocket_nonce($my_id, $websocket_nonce);
+}
+else {
+  $_SESSION['info'] = "You're browsing the schedule anonymously. <a href='/auth/login'>Log in &gt;&gt;</a> or <a href='/auth/register'>create an account &gt;&gt;</a> to save your progress!";
+}
 
 // set translation, update it if the select box changed
-if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST)) {
+if ($my_id &&
+  ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST))) {
   $new_trans = $_REQUEST['change_trans'];
   if (!$site->check_translation($new_trans)) {
     $new_trans = $site->get_translations_for_site()[0];
@@ -22,7 +30,7 @@ if ($_REQUEST['change_trans'] || array_key_exists('change_email_me', $_REQUEST))
     'email_verses' => $me['email_verses']
   ], "id = ".$my_id);
 }
-$trans = $me['trans_pref'];
+$trans = $me['trans_pref'] ?: $site->get_translations_for_site()[0];
 
 // figure out what today is (if overridden)
 $today = new DateTime();
@@ -35,8 +43,8 @@ if ($_GET['today'] && strtotime($_GET['today'])) {
 
 // get list of schedules (corporate and personal)
 $schedules = [ &$schedule ];
-if ($site->data('allow_personal_schedules')) {
-  $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $me['id']);
+if ($my_id && $site->data('allow_personal_schedules')) {
+  $personal_schedule = new BibleReadingChallenge\Schedule($site->ID, true, $my_id);
   $schedules[] = &$personal_schedule;
 }
 foreach($schedules as $each_schedule) {
@@ -55,7 +63,7 @@ foreach($schedules as $each_schedule) {
     }
   }
   // "Done!" clicked
-  if ($_REQUEST['done'] && !$each_schedule->day_completed($my_id, $scheduled_reading['id'])) {
+  if ($my_id && $_REQUEST['done'] && !$each_schedule->day_completed($my_id, $scheduled_reading['id'])) {
     $valid = true;
     if ($_REQUEST['complete_key']) {
       // we need a way to bypass the wpm check from an email.
@@ -99,8 +107,11 @@ require DOCUMENT_ROOT."inc/head.php";
 
 
 // header with translation selector and email pref
+$disabled = (!$my_id ? "" : "");
 echo "<div id='date-header'>
-  <h5>".$today->format("l, F j")."</h5>
+  <h5>".$today->format("l, F j")."</h5>";
+if ($my_id) {
+  echo "
   <form style='width: 22rem; display: flex; justify-content: space-between; align-items: flex-end;' method='post'>
     <label>
       Email me
@@ -117,10 +128,12 @@ echo "<div id='date-header'>
       echo "
         <option value='$trans_opt' ".($trans_opt == $trans ? "selected" : "").">".strtoupper($trans_opt)."</option>";
   echo "</select>
-    </form>
-  </div>";
+    </form>";
+}
+echo "
+</div> <!-- #date-header -->";
 
-if ($me['streak']) {
+if ($my_id && $me['streak']) {
   $streak = (int)$me['streak'];
   echo "
     <div>";
@@ -169,49 +182,48 @@ foreach($schedules as $i => $each_schedule) {
     }
     echo "</small></p>";
   }
-  if ($scheduled_reading) {
-    if ($i === 0) {
-      $add_to_foot .= "<style>
-        article {
-          position: relative;
-        }
-        .mug {
-          display: inline-block;
-          position: absolute;
-          width: 2rem;
-          height: 2rem;
-          left: 2px;
-          top: 0;
-          line-height: 1rem;
-          font-size: 1.5rem;
-          transition: .7s all;
-          box-shadow: 1px 1px  2.4px var(--color-text);
-          border-radius: 50%;
-          padding: 3px;
-          text-align: center;
-          background: var(--color-fade);
-        }
-        .mug small {
-          font-size: 0.7rem;
-          display: block;
-          text-align: center;
-          margin-top: 2px;
-          color: var(--color-bg);
-        }
-        .mug .caret-up {
-          position: absolute;
-          left: 0.9rem;
-          top: -1.5rem;
-          color: var(--color-fade);
-          font-size: 1.1rem;
-        }
-      </style>
-      <script>
-        const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
-        const WEBSOCKET_NONCE = '$websocket_nonce'
-      </script>".
-      cached_file('js', '/js/client.js');
-    }
+
+  if ($my_id && $scheduled_reading && $i == 0) {
+    $add_to_foot .= "<style>
+      article {
+        position: relative;
+      }
+      .mug {
+        display: inline-block;
+        position: absolute;
+        width: 2rem;
+        height: 2rem;
+        left: 2px;
+        top: 0;
+        line-height: 1rem;
+        font-size: 1.5rem;
+        transition: .7s all;
+        box-shadow: 1px 1px  2.4px var(--color-text);
+        border-radius: 50%;
+        padding: 3px;
+        text-align: center;
+        background: var(--color-fade);
+      }
+      .mug small {
+        font-size: 0.7rem;
+        display: block;
+        text-align: center;
+        margin-top: 2px;
+        color: var(--color-bg);
+      }
+      .mug .caret-up {
+        position: absolute;
+        left: 0.9rem;
+        top: -1.5rem;
+        color: var(--color-fade);
+        font-size: 1.1rem;
+      }
+    </style>
+    <script>
+      const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
+      const WEBSOCKET_NONCE = '$websocket_nonce'
+    </script>".
+    cached_file('js', '/js/client.js');
   }
 
   if (!$personal && $each_schedule->completed($my_id)) {
@@ -239,13 +251,12 @@ foreach($schedules as $i => $each_schedule) {
         ".($each_schedule->get_just_completed($my_id) ? "party()" : "")."
       </script>";
   }
-  if ($today_completed) {
+  if ($my_id && $today_completed) {
     $next_reading_link = $each_schedule->first_unread_day($my_id, $today);
     echo "<blockquote><img alt='check' class='icon' src='/img/static/circle-check.svg'> You've completed the reading for today!$next_reading_link</blockquote>";
   }
 
-  if ($scheduled_reading)
-    echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
+  echo $site->html_for_scheduled_reading($scheduled_reading, $trans, $scheduled_reading['complete_key'], $each_schedule, $today);
 
   if ($site->data('allow_personal_schedules')) {
     echo "

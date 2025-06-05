@@ -1,4 +1,4 @@
-<?php global $site; ?>
+<?php global $site, $add_to_head, $page_title, $me, $insecure, $show_title, $use_template; ?>
 <!doctype html>
 <html lang="en-US">
   <head>
@@ -14,7 +14,7 @@
     <?= $add_to_head ?>
     <title><?= html($site->data('short_name')) ?><?= $page_title ? " - ".$page_title : ""?></title>
     <style>
-      <?php 
+      <?php
       $coords = json_decode($site->data('progress_image_coordinates'), true);
       ?>
       @media(prefers-color-scheme: dark) {
@@ -22,10 +22,10 @@
           --color-blossom: #ffffff;
           --color-secondary: <?= $site->data('color_secondary') ?>;
           --color-fade: #c9c9c9;
-          
+
           --color-bg: #222222;
           --color-bg-alt: #4a4a4a;
-          
+
           --color-text: #c9c9c9;
           --color-success: rgb(73, 138, 73);
           --color-warning: rgb(143, 132, 48);
@@ -37,10 +37,10 @@
           --color-blossom: <?= $site->data('color_primary') ?>;     /* buttons, horizontal lines, links */
           --color-secondary: <?= $site->data('color_secondary') ?>; /* arrows in schedule builder */
           --color-fade: <?= $site->data('color_fade') ?>;           /* hovered buttons */
-          
+
           --color-bg: #f9f9f9;     /* background */
           --color-bg-alt: #eeeeee; /* background for info banners at the top, translation selector, etc */
-          
+
           --color-text: #4a4a4a;               /* text color */
           --color-success: rgb(153, 205, 153); /* currently selected schedule, completed days */
           --color-warning: rgb(251, 239, 139); /* warnings */
@@ -69,7 +69,7 @@
     </script>
   </head>
   <body>
-    <?php if ($me && !$insecure): ?>
+    <?php if (($me && !$insecure) || $use_template): ?>
     <div class='navigation-wrap'>
       <?= site_logo() ?>
       <?= navigation() ?>
@@ -80,12 +80,15 @@
       <h1 id='title'><?= $page_title ?></h1>
     <?php endif; ?>
     <?php
-      if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['email']) {
+      if ($_SESSION['error'] || $_SESSION['success'] || $_SESSION['email'] || $_SESSION['info']) {
         echo "
           <blockquote id='message'>";
 
         if ($_SESSION['error']) {
           echo "<img alt='x' class='icon' src='/img/static/circle-x.svg'>&nbsp;<small>".$_SESSION['error']."</small>";
+        }
+        else if ($_SESSION['info']) {
+          echo "<img alt='x' class='icon' src='/img/static/circle-i.svg'>&nbsp;<small>".$_SESSION['info']."</small>";
         }
         else if ($_SESSION['success']) {
           echo "<img alt='check' class='icon' src='/img/static/circle-check.svg'>&nbsp;<small>".$_SESSION['success']."</small>";
@@ -93,8 +96,8 @@
         else if ($_SESSION['email']) {
           echo "<img alt='email' class='icon' src='/img/static/email.svg'>&nbsp;<small>".$_SESSION['email']."</small>";
         }
-        
-        $_SESSION['error'] = $_SESSION['success'] = $_SESSION['email'] = '';
+
+        $_SESSION['error'] = $_SESSION['success'] = $_SESSION['email'] = $_SESSION['info'] = '';
         echo "
           </blockquote>";
       }
