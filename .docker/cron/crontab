@@ -1,12 +1,12 @@
 # .docker/cron/crontab
 
-# Run notifications script at 31 minutes past every hour as www-data user
-31 * * * * www-data php /var/www/html/cron/notifications.php >> /var/log/cron.fifo 2>&1
+# Run notifications script at 31 minutes past every hour
+31 * * * * php /var/www/html/cron/notifications.php >> /var/log/cron.fifo 2>&1
 
-# Run update-streaks script at 50 minutes past every hour as www-data user
-50 * * * * www-data php /var/www/html/cron/update-streaks.php >> /var/log/cron.fifo 2>&1
+# Run update-streaks script at 50 minutes past every hour
+50 * * * * php /var/www/html/cron/update-streaks.php >> /var/log/cron.fifo 2>&1
 
-# Run update-last-seen script daily at 3:47 AM as www-data user
-47 3 * * * www-data php /var/www/html/cron/update-last-seen.php >> /var/log/cron.fifo 2>&1
+# Run update-last-seen script daily at 3:47 AM
+47 3 * * * php /var/www/html/cron/update-last-seen.php >> /var/log/cron.fifo 2>&1
 
 # This file must end with a newline character for cron to process it correctly.
