@@ -43,7 +43,7 @@ class Schedule {
     return $this->data[ $key ];
   }
 
-  public function html_instructions()
+  public function html_instructions(): string
   {
     $start_date = new \DateTime($this->data['start_date']);
     $end_date = new \DateTime($this->data['end_date']);
@@ -100,6 +100,14 @@ class Schedule {
                     E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 2-4</code>. Click the second day to select it, and choose 'Fill' to populate the calendar.</li>
               </ol>
             </li>
+            <li>Upload csv:
+              <ol>
+                <li>Select a date.</li>
+                <li>Choose \"Upload csv\"</li>
+                <li>Attach a csv file with one date and passage on each line, formatted like this: <code>\"2025-07-18\",\"Gen 50; Ex 1-3\"</code> (A helpful editor to create schedules and export csvs can be found <a href='https://biblereadingplangenerator.com/?total=365&format=calendar&order=traditional&daysofweek=1,2,3,4,5,6,7&books=OT,NT&lang=en&logic=words&checkbox=1&colors=0&dailypsalm=0&dailyproverb=0&otntoverlap=0&reverse=0&stats=0&dailystats=0&nodates=0&includeurls=0' target='_blank' rel='noopener noreferrer'>here <span style='display: inline-block; transform: rotate(90deg);'>⎋</span></a>).</li>
+                <li>Click \"Fill\". Selected days-of-week will be respected, and existing data in the calendar will be overwritten.</li>
+              </ol>
+            </li>
             <li>Fill with a 1-year plan:
               <ul>
                 <li>Select a date</li>
@@ -119,10 +127,9 @@ class Schedule {
         </small>
       </details>
       <small>When you're happy with the state of the calendar, <mark>DONT FORGET to click \"Save readings\"</mark> at the bottom!</small>";
-
   }
 
-  public function html_calendar_with_editor()
+  public function html_calendar_with_editor(): string
   {
     global $add_to_foot;
     ob_start();
@@ -147,9 +154,11 @@ class Schedule {
       <div>
         <label for='fill-mode'>Fill Mode</label>
         <select id='fill-mode'>
-          <option value='automatic' selected>Fill from 1-yr plan</option>
-          <option value='chapters'>Fill chapters to end</option>
+          <option value='chapters' selected>Fill chapters to end</option>
+          <option value='import'>Upload csv</option>
+          <option value='automatic'>Fill from 1-yr plan</option>
         </select>
+        <input id='selected-file' type='file' accept='text/plain, text/csv'>
         <select id='schedule-sel'>
         ";
     foreach(scandir(SCHEDULE_DIR) as $file) {
@@ -207,7 +216,7 @@ class Schedule {
     return ob_get_clean();
   }
 
-  public function fill_dates($fill_dates, $differences, $start_books, $start_chapters, $fill_mode, $fill_with, $active_days)
+  public function fill_dates($fill_dates, $differences, $start_books, $start_chapters, $fill_mode, $fill_with, $active_days, $file): array
   {
     // generate a schedule to fill in on the client side
     try {
@@ -219,7 +228,7 @@ class Schedule {
         // we +1 day bc the client sends us the day the user selected (one day before we start generating)
         $start_date->modify('+1 day');
       }
-      $end_date = new \DateTime($this->data['end_date']);
+      $end_date = new \DateTime($this->data['end_date'].' 23:59:59');
       $period = new \DatePeriod(
         $start_date,
         new \DateInterval('P1D'),
@@ -301,9 +310,8 @@ class Schedule {
             $result[ $date ][] = $passage;
           }
         }
-
       }
-      else { // $fill_mode === 'automatic'
+      else if ($fill_mode === 'automatic') {
         $fp = false;
         foreach(scandir(SCHEDULE_DIR) as $file) {
           $absolute_path = SCHEDULE_DIR.$file;
@@ -378,6 +386,40 @@ class Schedule {
           }
           fclose($fp);
         }
+      }
+      else if ($fill_mode === 'import') {
+        if (!$_FILES || !$_FILES['import'] || $_FILES['import']['error'] !== 0) {
+          return [ ];
+        }
+        $mimetype = mime_content_type($_FILES['import']['tmp_name']);
+        if (!in_array($mimetype, ['text/csv', 'text/plain'], true)) {
+          return [ ];
+        }
+
+        if (($fp = fopen($_FILES['import']['tmp_name'], 'r')) === false) {
+          return [ ];
+        }
+        $i = 0;
+        while (($data = fgetcsv($fp, null, ',', '"', '\\')) !== false) {
+          if (count($data) !== 2) {
+            return [ ];
+          }
+          $date_str = $data[0];
+          $passage_str = $data[1];
+          $dt = date_create_from_format('Y-m-d H:i:s', $date_str.' 12:00:00');
+          if ($i++ === 0 && !$dt) { // dump header line if present
+            continue;
+          }
+          else {
+            if ($dt < $start_date || $dt > $end_date || !in_array($dt->format('N'), $active_days, true))
+              continue;
+            if (!is_array($result [ $dt->format('Y-m-d') ])) {
+              $result [ $dt->format('Y-m-d') ] = [];
+            }
+            $result [ $dt->format('Y-m-d') ][] = $passage_str;
+          }
+        }
+        fclose($fp);
       }
 
       return $result;
@@ -860,7 +902,7 @@ class Schedule {
     }
     else if ($_REQUEST['fill_dates'] && $_REQUEST['start_book'] && $_REQUEST['start_chp'] && $_REQUEST['d'] && $_REQUEST['fill_mode'] && $_REQUEST['fill_with'] && $_REQUEST['days']) {
       print_json(
-        $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['fill_mode'], $_REQUEST['fill_with'], $_REQUEST['days'])
+        $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['fill_mode'], $_REQUEST['fill_with'], $_REQUEST['days'], $_FILES['import'])
       );
     }
     else if ($_POST['edit']) {

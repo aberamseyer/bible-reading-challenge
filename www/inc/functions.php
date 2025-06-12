@@ -350,7 +350,6 @@
 
 	/**
 	 * This parses a passage using a simplified syntax that appears in the schedule calendar
-	 * Full book name must be included
 	 * Verses must either be ommitted (entire chapter) or include ranges (same start and end verse is ok)
 	 * $passage string e.g., 'Gen 1:3-4; Song of Songs 1:5-8; Leviticus 3; Jude 1:8-12; Genesis 3-4'
 	 * 								THIS DOES NOT SUPPORT full verse syntax: Jude 1-4; 2 Cor 1:4, 5-6; 4:8
@@ -375,6 +374,9 @@
 			$chapter = (int)$matches[2];
 			$book_row = $db->row("SELECT * FROM books WHERE name = '".$db->esc($book)."'");
 			$chp_row = $db->row("SELECT * FROM chapters WHERE book_id = ".intval($book_row['id'])." AND number = $chapter");
+			if (!$chp_row && in_array($book_row['name'], SINGLE_BOOKS)) { // csv exports for these books from https://biblereadingplangenerator.com don't have chapter numbers
+			  $chp_row = $db->row("SELECT * FROM chapters WHERE book_id = ".intval($book_row['id'])." AND number = 1");
+			}
 			if ($book_row && $chp_row) {
 				if ($matches[4] && $matches[5] && $matches[6]) {
 					// Format: Genesis 12:3-15:10

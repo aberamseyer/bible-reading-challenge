@@ -1,5 +1,6 @@
 <?php
   require __DIR__."/../inc/init.php";
+  global $me, $site, $add_to_head, $add_to_foot, $my_id;
 
   if (!$site->data('allow_personal_schedules')) {
     redirect('/my-schedule/corporate');
@@ -18,7 +19,6 @@
   }
   else if ($editing_schedule && $_REQUEST['calendar_id']) {
     // calendar date editing page
-    
     $editing_schedule->handle_edit_sched_days_post($my_id);
 
     $page_title = "Edit Calendar";
@@ -43,8 +43,8 @@
     $editing_schedule->handle_edit_sched_days_post($my_id);
     $page_title = "Manage My Schedule";
     $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
-    require DOCUMENT_ROOT."inc/head.php";  
-  
+    require DOCUMENT_ROOT."inc/head.php";
+
     echo do_nav([
       ['/my-schedule/corporate', 'Corporate'],
       ['/my-schedule/personal', 'Personal'],
@@ -59,10 +59,10 @@
       echo "<p>".back_button("Back to schedules")."</p>";
 
       echo BibleReadingChallenge\Schedule::edit_schedule_form(
-          $editing_schedule->ID, 
-          $editing_schedule->data('name'), 
-          $editing_schedule->data('start_date'), 
-          $editing_schedule->data('end_date'), 
+          $editing_schedule->ID,
+          $editing_schedule->data('name'),
+          $editing_schedule->data('start_date'),
+          $editing_schedule->data('end_date'),
           (int)$editing_schedule->data('active'),
         $editing_schedule->data('notes'));
     }
@@ -70,23 +70,23 @@
       // all schedules summary
       echo "<h1>Personal Schedule</h1>".
         $editing_schedule->personal_schedule_instructions($my_id);
-    
+
       echo "<h4 class='text-center'>Your Schedules</h4>
         <p>
           Click a Schedule's name to edit its start and end dates
           <button style='float: right; margin: 0;' type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>
         </p>".
         BibleReadingChallenge\Schedule::schedules_table($site->ID, $my_id);
-    
+
       echo "<h4 class='text-center'>Active Schedule</h4>".
         $editing_schedule->html_calendar();
 
-      $add_to_foot .= 
+      $add_to_foot .=
         BibleReadingChallenge\Schedule::fill_read_dates_js().
         cached_file('js', '/js/lib/tableSort.js').
         cached_file('js', '/js/schedules.js');
     }
   }
 
-    
+
   require DOCUMENT_ROOT."inc/foot.php";

@@ -1,6 +1,6 @@
 <?php
-
   require __DIR__."/../inc/init.php";
+  global $add_to_head, $add_to_foot, $staff, $site;
 
   if (!$staff) {
     redirect('/');
@@ -50,10 +50,10 @@
       echo "<p>".back_button("Back to schedules")."</p>";
 
       echo BibleReadingChallenge\Schedule::edit_schedule_form(
-          $editing_schedule->ID, 
-          $editing_schedule->data('name'), 
-          $editing_schedule->data('start_date'), 
-          $editing_schedule->data('end_date'), 
+          $editing_schedule->ID,
+          $editing_schedule->data('name'),
+          $editing_schedule->data('start_date'),
+          $editing_schedule->data('end_date'),
           (int)$editing_schedule->data('active'),
           $editing_schedule->data('notes'));
     }
@@ -63,10 +63,10 @@
       <p>Click a Schedule's name to edit its start and end dates</p>";
 
       echo BibleReadingChallenge\Schedule::schedules_table($site->ID, 0);
-      
+
       echo "<button type='button' onclick='window.location = `?new_schedule=1`'>+ Create Schedule</button>";
-      
-      $add_to_foot .= 
+
+      $add_to_foot .=
         cached_file('js', '/js/lib/tableSort.js').
         cached_file('js', '/js/schedules.js');
     }
