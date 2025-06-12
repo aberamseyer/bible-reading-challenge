@@ -220,7 +220,7 @@ foreach($schedules as $i => $each_schedule) {
       }
     </style>
     <script>
-      const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->SOCKET_DOMAIN."'
+      const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->DOMAIN."/socket'
       const WEBSOCKET_NONCE = '$websocket_nonce'
     </script>".
     cached_file('js', '/js/client.js');

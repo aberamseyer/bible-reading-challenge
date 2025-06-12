@@ -28,7 +28,7 @@ if ($_FILES && $_FILES['upload']) {
   if (!$ext || !$valid_mime) {
     $_SESSION['error'] = "Please upload a regular image file";
   }
-  else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '".$db->esc($md5)."' AND site_id = ".$site->ID)) { 
+  else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '".$db->esc($md5)."' AND site_id = ".$site->ID)) {
     $_SESSION['error'] = "A file like that seems to already exist by the name '".html($existing_match)."'";
   }
   else if ($_FILES['upload']['error'] != UPLOAD_ERR_OK) {
@@ -75,7 +75,7 @@ if ($_POST['set_logo'] || $_POST['set_login'] || $_POST['set_progress'] || $_POS
   }
   else if ($_POST['delete_photo']) {
     $using_row = $db->row("
-      SELECT id FROM sites WHERE 
+      SELECT id FROM sites WHERE
         logo_image_id = $img_id OR login_image_id = $img_id
         OR progress_image_id = $img_id OR favico_image_id = $img_id");
     if ($using_row) {
@@ -165,8 +165,8 @@ if ($_POST['color_primary'] && $_POST['color_secondary']) {
 }
 
 // Site Configuration handler
-if ($_POST['site_name'] || $_POST['short_name'] || $_POST['email_from_address'] || $_POST['email_from_name'] || 
-    $_POST['contact_name'] || $_POST['contact_email'] || $_POST['contact_phone'] || $_POST['default_emoji'] || 
+if ($_POST['site_name'] || $_POST['short_name'] || $_POST['email_from_address'] || $_POST['email_from_name'] ||
+    $_POST['contact_name'] || $_POST['contact_email'] || $_POST['contact_phone'] || $_POST['default_emoji'] ||
     $_POST['reading_timer_wpm'] || $_POST['start_of_week'] || $_POST['time_zone_id'] || $_POST['trans_pref']) {
   $site_name = $_POST['site_name'];
   $short_name = $_POST['short_name'];
@@ -251,12 +251,10 @@ if ($_POST['site_name'] || $_POST['short_name'] || $_POST['email_from_address'] 
   redirect();
 }
 
-if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain_socket'] || $_POST['domain_socket_test'] || $_POST['env']))  {
+if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['env']))  {
   $db->update('sites', [
     'domain_www' => $_POST['domain_www'],
     'domain_www_test' => $_POST['domain_www_test'],
-    'domain_socket' => $_POST['domain_socket'],
-    'domain_socket_test' => $_POST['domain_socket_test'],
     'env' => $_POST['env']
   ], 'id = '.$site->ID);
   $_SESSION['success'] = "Domain configuration updated";
@@ -266,7 +264,7 @@ if ($abe && ($_POST['domain_www'] || $_POST['domain_www_test'] || $_POST['domain
 $page_title = "Customize Site";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require DOCUMENT_ROOT."inc/head.php";
-  
+
 echo admin_navigation();
 
 if ($edit_site_id) {
@@ -326,7 +324,7 @@ echo "
     </label>
     <div class='form-group'>
       <label>
-        Reading Timer Words Per Minute (wpm) rate ".help('Readers will be unable to submit a reading from the website unless they have been on the page long enough to read all the words at the following rate in wpm. Disable this by setting this to 0.')." 
+        Reading Timer Words Per Minute (wpm) rate ".help('Readers will be unable to submit a reading from the website unless they have been on the page long enough to read all the words at the following rate in wpm. Disable this by setting this to 0.')."
         <div class='form-help'>
           0: Disabled <br>
           170: Audiobook spoken reading pace <br>
@@ -511,18 +509,6 @@ echo "
     </div>
     <label>
       Site Test Domain ".help('The url in the address bar you could go to see test changes')." <input type='text' name='domain_www_test' value='".html($site->data('domain_www_test'))."' $readonly>
-    </label>
-    <div class='form-group'>
-      <label>
-        Socket Server Domain ".help('The url the socket server connects to')."
-        <div class='form-help'>
-          Ensure you have a DNS Record (A, or CNAME for a subdomain) with this value pointing to <code>5.161.204.56</code>
-        </div>
-      </label>
-      <input type='text' name='domain_socket' value='".html($site->data('domain_socket'))."' $readonly>
-    </div>
-    <label>
-      Socket Server Test Domain ".help('The test url the socket server connects to')." <input type='text' name='domain_socket_test' value='".html($site->data('domain_socket_test'))."' $readonly>
     </label>
     <label>";
     if ($abe) {

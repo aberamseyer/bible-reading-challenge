@@ -89,7 +89,6 @@ class Site {
 
       if (!$soft) {
         $this->DOMAIN = PROD ? $this->data('domain_www') : $this->data('domain_www_test');
-        $this->SOCKET_DOMAIN = PROD ? $this->data('domain_socket') : $this->data('domain_socket_test');
         $this->TZ = new \DateTimeZone($this->data('time_zone_id') ?: 'UTC');
         $this->TZ_OFFSET = ''.intval($this->TZ->getOffset(new \DateTime('UTC')) / 3600);
       }
