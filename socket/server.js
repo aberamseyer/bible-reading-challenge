@@ -4,6 +4,36 @@ const process = require("process");
 const sqlite3 = require("sqlite3");
 const redis = require("redis");
 
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (cookieHeader) {
+    cookieHeader.split(";").forEach((cookie) => {
+      const [name, value] = cookie.trim().split("=");
+      cookies[name] = value;
+    });
+  }
+  return cookies;
+}
+
+function deserializePhpSession(sessionString) {
+  return Object.fromEntries(
+    sessionString
+      .split(";")
+      .filter((x) => x)
+      .map((item) => {
+        const [key, valuePair] = item.split("|");
+        const data = valuePair.split(":");
+        let value;
+        if (data[0] == "s") {
+          value = data.at(-1).replaceAll('"', "");
+        } else if (data[0] == "i") {
+          value = parseInt(data.at(-1));
+        }
+        return [key, value];
+      }),
+  );
+}
+
 // initialize connections to databases and server
 Promise.all([
   new Promise((res) => {
@@ -69,7 +99,9 @@ Promise.all([
   }
 
   // server listening for websocket connection
-  server.on("connection", (ws) => {
+  server.on("connection", (ws, request) => {
+    const cookies = parseCookies(request.headers.cookie);
+
     const connectionId = crypto.randomBytes(16).toString("hex");
     console.log(`${new Date().toLocaleString()} Client connected: ${connectionId}`);
 
@@ -83,7 +115,7 @@ Promise.all([
       { once: true },
     );
 
-    function setupListeners(connectionId, userRow, refreshNonce) {
+    function setupListeners(connectionId, userRow) {
       const newUser = {
         id: connectionId,
         site_id: userRow.site_id,
@@ -125,7 +157,6 @@ Promise.all([
 
       // Handle incoming messages from clients
       ws.addEventListener("message", (event) => {
-        refreshNonce();
         const data = JSON.parse(event.data);
         let user;
 
@@ -178,21 +209,21 @@ Promise.all([
     ws.addEventListener(
       "message",
       async (event) => {
-        const [init, nonce] = event.data.split("|");
-        if (init === "init" && nonce) {
-          const user_id = await redisClient.get(`bible-reading-challenge:websocket-nonce/${nonce}`);
+        const initStr = event.data;
+        if (initStr === "init") {
+          const sessionDataStr = await redisClient.hGet(
+            `bible-reading-challenge:sessions/${cookies[`brc-sessid`]}` /* must match whatever is set in the call to session_name() in init.php */,
+            "data",
+          );
+          const sessionData = deserializePhpSession(sessionDataStr);
           db.get(
             `SELECT id, site_id, name, emoji FROM users WHERE id = ?`,
-            [user_id],
+            [sessionData["my_id"]],
             (err, row) => {
               if (row) {
-                const refreshNonce = () => {
-                  redisClient.expire(`bible-reading-challenge:websocket-nonce/${nonce}`, 20);
-                };
-                refreshNonce();
-                setupListeners(connectionId, row, refreshNonce);
+                setupListeners(connectionId, row);
               } else {
-                console.log(`Bad nonce: ${nonce}`);
+                console.log(`Bad session cookie: ${cookies[`brc-sessid`]}`);
                 ws.terminate();
               }
             },

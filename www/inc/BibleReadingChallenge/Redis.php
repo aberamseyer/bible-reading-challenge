@@ -15,7 +15,6 @@ class Redis {
 	CONST USER_STATS_KEYSPACE = 'user-stats/';
 	CONST SITE_STATS_KEYSPACE = 'site-stats/';
   const LAST_SEEN_KEYSPACE = 'last-seen/';
-	const WEBSOCKET_NONCE_KEYSPACE = 'websocket-nonce/';
 	CONST VERIFY_EMAIL_KEYSPACE = 'email-verify/';
 	const FORGOT_PASSWORD_KEYSPACE = 'forgot-password/';
 
@@ -98,18 +97,6 @@ class Redis {
 	public function get_last_seen(string $id): string|null
 	{
 		return $this->client->get(Redis::LAST_SEEN_KEYSPACE.$id);
-	}
-
-	/**
-	 * sets a nonce on 'today' page load for the websocket client to use as an auth token for the current user
-	 */
-	public function set_websocket_nonce(string $id, string $nonce): bool
-	{
-		$key = Redis::WEBSOCKET_NONCE_KEYSPACE.$nonce;
-		$this->client->set($key, $id);
-		$this->client->expire($key, 10);
-
-		return true;
 	}
 
 	public function set_verify_email_key(string $user_id, $key): \Predis\Response\Status

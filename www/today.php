@@ -5,12 +5,7 @@ $use_template = true;
 require __DIR__."/inc/init.php";
 global $redis, $db, $site, $me, $add_to_foot, $my_id, $schedule, $add_to_head;
 
-// this key is used by the websocket client to authenticate as the current user
-if ($my_id) {
-  $websocket_nonce = bin2hex(random_bytes(24));
-  $redis->set_websocket_nonce($my_id, $websocket_nonce);
-}
-else {
+if (!$my_id) {
   $_SESSION['info'] = "You're browsing the schedule anonymously. <a href='/auth/login'>Log in &gt;&gt;</a> or <a href='/auth/register'>create an account &gt;&gt;</a> to save your progress!";
 }
 
@@ -221,7 +216,6 @@ foreach($schedules as $i => $each_schedule) {
     </style>
     <script>
       const WS_URL = 'ws".(PROD ? 's' : '')."://".$site->DOMAIN."/socket'
-      const WEBSOCKET_NONCE = '$websocket_nonce'
     </script>".
     cached_file('js', '/js/client.js');
   }
