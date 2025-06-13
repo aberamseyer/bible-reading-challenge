@@ -25,5 +25,6 @@ if ($fp = fopen($img_path, 'r')) {
   header("Content-Length: ".filesize($img_path));
   header("Content-Type: ".$mime);
   fpassthru($fp);
+  fclose($fp);
   die;
 }

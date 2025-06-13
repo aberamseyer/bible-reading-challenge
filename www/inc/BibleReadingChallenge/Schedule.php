@@ -91,21 +91,21 @@ class Schedule {
               </ul>
             </li>
             <li>Day-of-week checkboxes apply to all fill modes. Any un-selected days will not be included when filling dates.</li>
+            <li>Upload csv:
+              <ol>
+                <li>Select a date.</li>
+                <li>Choose \"Upload csv\"</li>
+                <li>Attach a csv file with one date and passage on each line, formatted like this: <code>\"2025-07-18\",\"Gen 50; Ex 1-3\"</code> (A helpful editor to create schedules and export a csv can be found <a href='https://biblereadingplangenerator.com/?total=365&format=calendar&order=traditional&daysofweek=1,2,3,4,5,6,7&books=OT,NT&lang=en&logic=words&checkbox=1&colors=0&dailypsalm=0&dailyproverb=0&otntoverlap=0&reverse=0&stats=0&dailystats=0&nodates=0&includeurls=0' target='_blank' rel='noopener noreferrer'>here <span style='display: inline-block; transform: rotate(90deg);'>⎋</span></a>).</li>
+                <li>Click \"Fill\". Selected days-of-week will be respected, and existing data in the calendar will be overwritten.</li>
+              </ol>
+            </li>
             <li>Fill by chapter:
               <ol>
                 <li>Fill in two consecutive days</li>
                 <li>Select the second date</li>
                 <li>Choose \"Fill chapters to end\"</li>
                 <li>Chapters per day will be calculated by the difference between the two days across passages segments.<br>
-                    E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 2-4</code>. Click the second day to select it, and choose 'Fill' to populate the calendar.</li>
-              </ol>
-            </li>
-            <li>Upload csv:
-              <ol>
-                <li>Select a date.</li>
-                <li>Choose \"Upload csv\"</li>
-                <li>Attach a csv file with one date and passage on each line, formatted like this: <code>\"2025-07-18\",\"Gen 50; Ex 1-3\"</code> (A helpful editor to create schedules and export csvs can be found <a href='https://biblereadingplangenerator.com/?total=365&format=calendar&order=traditional&daysofweek=1,2,3,4,5,6,7&books=OT,NT&lang=en&logic=words&checkbox=1&colors=0&dailypsalm=0&dailyproverb=0&otntoverlap=0&reverse=0&stats=0&dailystats=0&nodates=0&includeurls=0' target='_blank' rel='noopener noreferrer'>here <span style='display: inline-block; transform: rotate(90deg);'>⎋</span></a>).</li>
-                <li>Click \"Fill\". Selected days-of-week will be respected, and existing data in the calendar will be overwritten.</li>
+                    E.g., To read 3 OT chapters and 2 NT chapters each day, fill in two consecutive days with: <code>Genesis 1-3; Matthew 1-2</code> and <code>Genesis 4-6; Matthew 3-4</code>. Click the second day to select it, and choose 'Fill' to populate the calendar.</li>
               </ol>
             </li>
             <li>Fill with a 1-year plan:
@@ -154,8 +154,8 @@ class Schedule {
       <div>
         <label for='fill-mode'>Fill Mode</label>
         <select id='fill-mode'>
-          <option value='chapters' selected>Fill chapters to end</option>
-          <option value='import'>Upload csv</option>
+          <option value='import' selected>Upload csv</option>
+          <option value='chapters'>Fill chapters to end</option>
           <option value='automatic'>Fill from 1-yr plan</option>
         </select>
         <input id='selected-file' type='file' accept='text/plain, text/csv'>
@@ -668,7 +668,10 @@ class Schedule {
 			echo "</div>";
 		}
 		if ($editable) {
-			echo "<br><button type='submit' name='edit' value='1'>Save readings</button></form>";
+			echo "<br>
+			<button type='submit' name='edit' value='1'>Save readings</button>
+			<button type='submit' name='export' value='1'>Export</button>
+		</form>";
 		}
 		return ob_get_clean();
 	}
@@ -905,6 +908,10 @@ class Schedule {
         $this->fill_dates($_REQUEST['fill_dates'], $_REQUEST['d'], $_REQUEST['start_book'], $_REQUEST['start_chp'], $_REQUEST['fill_mode'], $_REQUEST['fill_with'], $_REQUEST['days'], $_FILES['import'])
       );
     }
+    else if ($_POST['export']) {
+      $this->export();
+      return;
+    }
     else if ($_POST['edit']) {
       $this->edit($_POST['days']);
 
@@ -977,6 +984,32 @@ class Schedule {
       }
     }
     redirect();
+  }
+
+  public function export()
+  {
+    $dates = $this->db->select("
+      SELECT date, passage
+      FROM schedule_dates
+      WHERE schedule_id = ".$this->ID."
+      ORDER BY date ASC");
+
+    $fp = tmpfile();
+    foreach($dates as $line) {
+      fputcsv($fp, $line, ",", '"', "\\", "\n");
+    }
+    $filesize = ftell($fp);
+    rewind($fp);
+
+    header("Content-Type: text/csv");
+    header("Content-Disposition: attachment; filename=\"".$this->data('name').".csv\"");
+    header("Content-Length: ".$filesize);
+    header("Cache-Control: no-cache");
+    header("Pragma: no-cache");
+
+    fpassthru($fp);
+    fclose($fp);
+    die;
   }
 
   public function personal_schedule_instructions($for_user_id)
