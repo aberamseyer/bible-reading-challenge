@@ -5,6 +5,8 @@ require_once "env.php";
 // phpinfo();
 // die;
 
+global $insecure;
+
 $site = BibleReadingChallenge\SiteRegistry::get_site();
 $db = BibleReadingChallenge\Database::get_instance();
 $redis = BibleReadingChallenge\Redis::get_instance();
@@ -35,6 +37,8 @@ else if ($my_id) {
   $redis->update_last_seen($my_id, time());
 }
 
+define('SINGLE_BOOKS', [ 'Obadiah', 'Philemon', '2 John', '3 John', 'Jude']);
+
 define('BOOK_NAMES_AND_ABBREV', array_column(
   $db->select("
     SELECT b.id, b.name, b.name key
@@ -53,4 +57,4 @@ define('BOOK_NAMES_AND_ABBREV', array_column(
 define('BOOKS_RE', '/\b('.
   implode('|',
     array_map('preg_quote', array_keys(BOOK_NAMES_AND_ABBREV))
-  ).')\b (\d+)(?:[\-\–](\d+)|:(\d+)[\-\–](\d+):(\d+)|:(\d+)[\-\–](\d+)|:(\d+))?/im');
+  ).')\b(?: (\d+)(?:[\-\–](\d+)|:(\d+)[\-\–](\d+):(\d+)|:(\d+)[\-\–](\d+)|:(\d+))?)?/im');

@@ -29,7 +29,7 @@ class MailSenderMailgun implements MailSender {
         'subject' => $subject,
         'html' => $raw_html_email,
       ]
-    ); 
+    );
   }
 
   /**
@@ -53,6 +53,6 @@ class MailSenderMailgun implements MailSender {
         'html' => $raw_html_email,
         'recipient-variables' => json_encode($to, JSON_UNESCAPED_SLASHES)
       ]
-    ); 
+    );
   }
 }

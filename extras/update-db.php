@@ -1,5 +1,5 @@
 <?php
-if (strpos(__DIR__, '/home/bible-reading-challenge') !== false) {
+if (getenv('APP_ENV') === 'production') {
   die('dont do this on production please.').PHP_EOL;
 }
 

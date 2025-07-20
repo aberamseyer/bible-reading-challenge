@@ -89,7 +89,6 @@ class Site {
 
       if (!$soft) {
         $this->DOMAIN = PROD ? $this->data('domain_www') : $this->data('domain_www_test');
-        $this->SOCKET_DOMAIN = PROD ? $this->data('domain_socket') : $this->data('domain_socket_test');
         $this->TZ = new \DateTimeZone($this->data('time_zone_id') ?: 'UTC');
         $this->TZ_OFFSET = ''.intval($this->TZ->getOffset(new \DateTime('UTC')) / 3600);
       }
@@ -214,12 +213,15 @@ class Site {
 
   public function send_daily_verse_email($to, $subject, $content, $uuid)
   {
-    $this->ms->send_bulk_email(
-      [ $to => [] ],
-      $subject,
-      $this->format_email_body($content),
-      [ $uuid ]
-    );
+
+    if (getenv('APP_ENV') === 'production') {
+      $this->ms->send_bulk_email(
+        [ $to => [] ],
+        $subject,
+        $this->format_email_body($content),
+        [ $uuid ]
+      );
+    }
   }
 
   public function get_active_schedule($refresh=false)

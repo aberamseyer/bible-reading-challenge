@@ -4,9 +4,9 @@ namespace BibleReadingChallenge;
 
 class Redis {
 	private static $instance;
-  
+
 	private \Predis\Client $client;
-	
+
 	const SITE_NAMESPACE = 'bible-reading-challenge:';
 	const SESSION_KEYSPACE = 'sessions/';	// session storage, keyed with session ids
 	const CONFIG_KEYSPACE = 'config/';		// 	the site config
@@ -15,7 +15,6 @@ class Redis {
 	CONST USER_STATS_KEYSPACE = 'user-stats/';
 	CONST SITE_STATS_KEYSPACE = 'site-stats/';
   const LAST_SEEN_KEYSPACE = 'last-seen/';
-	const WEBSOCKET_NONCE_KEYSPACE = 'websocket-nonce/';
 	CONST VERIFY_EMAIL_KEYSPACE = 'email-verify/';
 	const FORGOT_PASSWORD_KEYSPACE = 'forgot-password/';
 
@@ -25,8 +24,8 @@ class Redis {
   {
 		try {
 			$this->client = new \Predis\Client([
-				'host' => '127.0.0.1',
-				'port' => '6379',
+				'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+				'port' => getenv('REDIS_PORT') ?: '6379',
 				'timeout' => 1,
 				'read_write_timeout' => 0,
 				'persistent' => true
@@ -37,19 +36,19 @@ class Redis {
 			error_log("redis offline");
 		}
   }
-  
-  private function __clone()
+
+  private function __clone(): void
   {
       // Do nothing
   }
 
-  public function __wakeup()
+  public function __wakeup(): void
   {
       // Do nothing
 			throw new \Exception("Cannot unserialize a singleton.");
   }
 
-  public static function get_instance()
+  public static function get_instance(): Redis
   {
     if (self::$instance === null) {
       self::$instance = new self();
@@ -75,7 +74,7 @@ class Redis {
 			$version = $this->client()->get($key);
 		}
 		if (!$version) {
-			$version = trim(`git rev-parse --short HEAD`);
+			$version = trim(file_get_contents(DOCUMENT_ROOT."../extras/version.txt"));
 		}
 		if ($this->client()) {
 			$this->client()->set($key, $version);
@@ -87,7 +86,7 @@ class Redis {
 	/**
 	 * used by php to cache a user's appearance
 	 */
-	public function update_last_seen($id, $time): \Predis\Response\Status
+	public function update_last_seen(string $id, int $time): \Predis\Response\Status
 	{
 		return $this->client->set(Redis::LAST_SEEN_KEYSPACE.$id, $time);
 	}
@@ -95,49 +94,37 @@ class Redis {
 	/**
 	 * used by a daily cron to update each user's last_seen time
 	 */
-	public function get_last_seen($id): string|null
+	public function get_last_seen(string $id): string|null
 	{
 		return $this->client->get(Redis::LAST_SEEN_KEYSPACE.$id);
 	}
 
-	/**
-	 * sets a nonce on 'today' page load for the websocket client to use as an auth token for the current user
-	 */
-	public function set_websocket_nonce($id, $nonce)
-	{
-		$key = Redis::WEBSOCKET_NONCE_KEYSPACE.$nonce;
-		$this->client->set($key, $id);
-		$this->client->expire($key, 10);
-
-		return true;
-	}
-
-	public function set_verify_email_key($user_id, $key)
+	public function set_verify_email_key(string $user_id, $key): \Predis\Response\Status
 	{
 		return $this->client->set(Redis::VERIFY_EMAIL_KEYSPACE.$user_id, $key);
 	}
 
-	public function get_verify_email_key($user_id)
+	public function get_verify_email_key(string $user_id): \Predis\Response\Status
 	{
 		return $this->client->get(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
 	}
 
-	public function delete_verify_email_key($user_id)
+	public function delete_verify_email_key(string $user_id): \Predis\Response\Status
 	{
 		return $this->client->del(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
 	}
 
-	public function set_forgot_password_token($user_id, $key)
+	public function set_forgot_password_token(string $user_id, int $key): \Predis\Response\Status
 	{
 		return $this->client->set(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id, $key);
 	}
 
-	public function get_forgot_password_token($user_id)
+	public function get_forgot_password_token(string $user_id): \Predis\Response\Status
 	{
 		return $this->client->get(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id) ?: false;
 	}
 
-	public function delete_forgot_password_token($user_id)
+	public function delete_forgot_password_token(string $user_id): \Predis\Response\Status
 	{
 		return $this->client->del(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id);
 	}
@@ -179,35 +166,33 @@ class Redis {
 	}
 
 	// ------- statistics functions -------
-  public function set_user_stats($user_id, $stats)
+  public function set_user_stats(string $user_id, array $stats)
   {
     return $this->client->hmset(Redis::USER_STATS_KEYSPACE.$user_id, $stats);
   }
 
-	public function get_user_stats($user_id)
+	public function get_user_stats(string $user_id)
 	{
 		return $this->client->hgetall(Redis::USER_STATS_KEYSPACE.$user_id) ?: [];
 	}
 
-  public function set_site_stats($site_id, $stats)
+  public function set_site_stats(string $site_id, array $stats)
   {
     return $this->client->hmset(Redis::SITE_STATS_KEYSPACE.$site_id, $stats);
   }
 
-	public function get_site_stats($site_id)
+	public function get_site_stats(string $site_id)
 	{
 		return $this->client->hgetall(Redis::SITE_STATS_KEYSPACE.$site_id) ?: [];
 	}
 
-	public function delete_user_stats($user_id)
+	public function delete_user_stats(string $user_id)
 	{
-		$retval = $this->client->del(Redis::USER_STATS_KEYSPACE.$user_id);
-		return $retval;
+		return $this->client->del(Redis::USER_STATS_KEYSPACE.$user_id);
 	}
 
-	public function delete_site_stats($site_id)
+	public function delete_site_stats(string $site_id)
 	{
-		$retval = $this->client->del(Redis::SITE_STATS_KEYSPACE.$site_id);
-		return $retval;
+		return $this->client->del(Redis::SITE_STATS_KEYSPACE.$site_id);
 	}
 }

@@ -4,7 +4,7 @@ namespace BibleReadingChallenge;
 
 class RedisSessionHandler implements \SessionHandlerInterface
 {
-    private Redis $redis;
+    private \BibleReadingChallenge\Redis $redis;
     private const DATE_FORMAT = 'Y-m-d H:i:s';
     private const KEY_NAMESPACE = 'sessions/';
 
@@ -12,7 +12,7 @@ class RedisSessionHandler implements \SessionHandlerInterface
     {
       $this->redis = $redis;
     }
-    
+
     public function open($savePath, $sessionName): bool
     {
       return true;

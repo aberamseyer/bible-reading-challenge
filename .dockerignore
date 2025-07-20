@@ -1,0 +1,17 @@
+.dockerignore
+.env
+.git
+.idea
+socket/node_modules
+vendor/
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+npm-debug.log*
+# Ignoring the directory containing Dockerfiles and configurations
+.docker/
+# macOS specific
+.DS_Store
+# Windows specific
+Thumbs.db

@@ -41,7 +41,7 @@ function setup() {
       let myId;
       const people = new Map();
 
-      ws.send(`init|${WEBSOCKET_NONCE}`);
+      ws.send(`init`);
 
       ws.addEventListener("message", (event) => {
         const data = JSON.parse(event.data);

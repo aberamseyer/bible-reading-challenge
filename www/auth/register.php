@@ -20,9 +20,9 @@ if ($_REQUEST['confirm']) {
       "email_verified" => 1
     ], "id = ".$user_row['id']);
     $redis->delete_verify_email_key($user_row['id']);
-    
+
     $_SESSION['success'] = "Email verified, welcome!";
-    
+
     log_user_in($user_row['id']);
     redirect("/today");
   }
@@ -79,7 +79,7 @@ require DOCUMENT_ROOT."inc/head.php";
       </form>
       <hr>
       <div id="g_id_onload"
-        data-client_id="<?= GOOGLE_CLIENT_ID ?>"
+        data-client_id="<?= getenv("GOOGLE_CLIENT_ID") ?>"
         data-context="signup"
         data-ux_mode="popup"
         data-login_uri="https://<?= $site->DOMAIN ?>/auth/oauth/google"
@@ -96,7 +96,7 @@ require DOCUMENT_ROOT."inc/head.php";
       <?php
         if ($site->env('APPLE_SIGNIN_KEY_ID')) {
           echo "
-          <div 
+          <div
             class='center'
             style='margin-top: 7px;'
             id='appleid-signin'

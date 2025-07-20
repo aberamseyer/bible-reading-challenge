@@ -1,6 +1,6 @@
 <?php
 
-define('PROD', __DIR__ === '/home/bible-reading-challenge/www/inc');
+define('PROD', getenv('APP_ENV') === 'production');
 
 error_reporting(PROD ? 0 : E_ALL^E_NOTICE^E_WARNING);
 
@@ -18,5 +18,3 @@ define('IMG_DIR', DOCUMENT_ROOT."img/");
 define('SCHEDULE_DIR', DOCUMENT_ROOT."/../extras/schedules/");
 
 define('ALL_TRANSLATIONS', ['esv', 'rcv', 'kjv', 'asv', 'niv', 'nlt']);
-
-load_env();
