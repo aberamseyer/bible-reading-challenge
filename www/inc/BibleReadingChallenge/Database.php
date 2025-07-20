@@ -84,7 +84,7 @@ class Database {
 			if (CLI) {
 				$msg = strip_tags($msg);
 			}
-			throw new \Exception($query);
+			throw new \Exception($query.PHP_EOL.$msg);
 		}
 		if ($return == "insert_id")
 			return $this->db->lastInsertRowID();

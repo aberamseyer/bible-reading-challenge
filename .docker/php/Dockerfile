@@ -21,15 +21,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 
 RUN docker-php-ext-install -j$(nproc) \
-    bcmath \
-    ctype \
-    dom \
-    exif \
-    gd \
-    intl \
-    pdo_sqlite \
-    sockets \
-    zip
+  bcmath \
+  ctype \
+  dom \
+  exif \
+  gd \
+  intl \
+  pdo_sqlite \
+  sockets \
+  zip
 
 RUN pecl install redis && docker-php-ext-enable redis
 
@@ -77,10 +77,10 @@ COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions
 
 # Configure PHP settings (same as before)
 RUN echo "date.timezone=\${TZ}" > /usr/local/etc/php/conf.d/app-timezone.ini && \
-    echo "upload_max_filesize=\${PHP_UPLOAD_MAX_FILESIZE}" >> /usr/local/etc/php/conf.d/app-uploads.ini && \
-    echo "post_max_size=\${PHP_POST_MAX_SIZE}" >> /usr/local/etc/php/conf.d/app-uploads.ini && \
-    echo "max_input_vars=\${PHP_MAX_INPUT_VARS}" >> /usr/local/etc/php/conf.d/app-vars.ini && \
-    echo "memory_limit=\${PHP_MEMORY_LIMIT}" >> /usr/local/etc/php/conf.d/app-memory.ini
+  echo "upload_max_filesize=\${PHP_UPLOAD_MAX_FILESIZE}" >> /usr/local/etc/php/conf.d/app-uploads.ini && \
+  echo "post_max_size=\${PHP_POST_MAX_SIZE}" >> /usr/local/etc/php/conf.d/app-uploads.ini && \
+  echo "max_input_vars=\${PHP_MAX_INPUT_VARS}" >> /usr/local/etc/php/conf.d/app-vars.ini && \
+  echo "memory_limit=\${PHP_MEMORY_LIMIT}" >> /usr/local/etc/php/conf.d/app-memory.ini
 
 # Copy Composer's vendor directory from builder
 COPY --from=builder /var/www/html/vendor /var/www/html/vendor
@@ -91,9 +91,10 @@ COPY --from=builder /var/www/html /var/www/html
 # Create FIFO for cron logs
 RUN mkfifo /var/log/cron.fifo && chmod 666 /var/log/cron.fifo
 
-# Ensure the app directory is owned by www-data
-RUN chown -R www-data:www-data /var/www/html && \
-    chown www-data:www-data /var/log/cron.fifo
+# permission-fixing script
+COPY .docker/php/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php-fpm"]
