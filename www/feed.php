@@ -39,26 +39,25 @@ $feed->setFeedLink($base_url."/feed?type=".$feed_type, $feed_type);
 $feed->addAuthor($author);
 $feed->setDescription("Current Bible reading schedule for ".$site->data('site_name'));
 
-$tz = new DateTimeZone($site->data('time_zone_id'));
 $start_of_day = "07:30:00";
-$now = new DateTime("now", $tz);
+$now = new DateTime("now", $site->TZ);
 
 $schedule_dates = 
   array_reverse(
     array_filter(
       $schedule->get_dates(0),
         fn ($schedule_date) => 
-          strtotime($schedule_date['date']." ".$start_of_day) <= $now->format('U')));
+          new DateTime($schedule_date['date']." ".$start_of_day, $site->TZ) <= $now));
 
 $feed->setDateModified($schedule_dates
-  ? new DateTime($schedule_dates[0]['date']." ".$start_of_day, $tz)
-  : new DateTime($schedule->data('start_date')));
+  ? new DateTime($schedule_dates[0]['date']." ".$start_of_day, $site->TZ)
+  : new DateTime($schedule->data('start_date'), $site->TZ));
 
 if ($_SERVER['HTTP_IF_MODIFIED_SINCE']) {
   $if_modified_since = @new DateTime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
   if (!$if_modified_since) die; // get out of here
 
-  $if_modified_since->setTimezone($tz);
+  $if_modified_since->setTimezone($site->TZ);
   if ($if_modified_since >= $feed->getDateModified()) {
     http_response_code(304); // not modified
     die;
@@ -67,7 +66,7 @@ if ($_SERVER['HTTP_IF_MODIFIED_SINCE']) {
 
 foreach($schedule_dates as $schedule_date) {
   $entry = $feed->createEntry();
-  $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $tz);
+  $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $site->TZ);
 
   $entry->setId(strval($schedule_date['id']));
   $entry->setTitle($schedule_date['passage']);

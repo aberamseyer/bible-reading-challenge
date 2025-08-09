@@ -28,9 +28,9 @@ if ($my_id &&
 $trans = $me['trans_pref'] ?: $site->get_translations_for_site()[0];
 
 // figure out what today is (if overridden)
-$today = new DateTime();
+$today = new DateTime("now", $site->TZ);
 if ($_GET['today'] && strtotime($_GET['today'])) {
-  $override_date = new DateTime($_GET['today']);
+  $override_date = new DateTime($_GET['today'], $site->TZ);
   $today = allowed_schedule_date($override_date)
     ? $override_date
     : $today;

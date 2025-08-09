@@ -205,8 +205,8 @@
 	}
 
 	function allowed_schedule_date(DateTime $date) {
-		global $staff;
-		return $staff || (new DateTime()) > $date;
+		global $staff, $site;
+		return $staff || new DateTime("now", $site->TZ) > $date;
 	}
 
 	function generate_calendar($year, $month, $start_date, $end_date, $editable = false) {
@@ -243,7 +243,7 @@
 		}
 
 		// Iterate through each day of the month
-		$today = new DateTime();
+		$today = new DateTime("now", $site->TZ);
 		for ($day = 1; $day <= $days_in_month; $day++) {
 			// Start a new row if it's Sunday
 			if ($current_day_of_week == 0) {

@@ -22,15 +22,15 @@ $db = BibleReadingChallenge\Database::get_instance();
 
 foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
-  $today = new DateTime('now', $site->TZ);
+  $today = new DateTime("now", $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
   if ($today->format('G') != 7) {
     continue;
   }
 
-  // get scheedule details
+  // get schedule details
   $corp_schedule = $site->get_active_schedule();
-  $recently = new DateTime($corp_schedule->data('start_date'));
+  $recently = new DateTime($corp_schedule->data('start_date'), $site->TZ);
   $recently->modify('-6 months');
 
   $corp_scheduled_reading = $corp_schedule->get_schedule_date($today);
@@ -57,7 +57,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     WHERE site_id = ".$site->ID) as $user) {
     // if a user hasn't been active near the period of the schedule, we won't notify them
     $last_seen_date = $user['last_seen']
-      ? new DateTime('@'.$user['last_seen'])
+      ? new DateTime('@'.$user['last_seen'], $site->TZ)
       : 0;
     if ($last_seen_date < $recently) {
       continue;

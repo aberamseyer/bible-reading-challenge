@@ -953,6 +953,8 @@ class Schedule {
     else {
       $start = new \DateTime($_POST['start_date']);
       $end = new \DateTime($_POST['end_date']);
+      $existing_start = new \DateTime($this->data('start_date'));
+      $existing_end = new \DateTime($this->data('end_date'));
       if (!$start || !$end) {
         $_SESSION['error'] = "Invalid dates";
       }
