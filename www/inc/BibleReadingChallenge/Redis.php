@@ -86,7 +86,7 @@ class Redis {
 	/**
 	 * used by php to cache a user's appearance
 	 */
-	public function update_last_seen(string $id, int $time): \Predis\Response\Status
+	public function update_last_seen(string $id, int $time)
 	{
 		return $this->client->set(Redis::LAST_SEEN_KEYSPACE.$id, $time);
 	}
@@ -99,32 +99,32 @@ class Redis {
 		return $this->client->get(Redis::LAST_SEEN_KEYSPACE.$id);
 	}
 
-	public function set_verify_email_key(string $user_id, $key): \Predis\Response\Status
+	public function set_verify_email_key(string $user_id, $key)
 	{
 		return $this->client->set(Redis::VERIFY_EMAIL_KEYSPACE.$user_id, $key);
 	}
 
-	public function get_verify_email_key(string $user_id): \Predis\Response\Status
+	public function get_verify_email_key(string $user_id)
 	{
 		return $this->client->get(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
 	}
 
-	public function delete_verify_email_key(string $user_id): \Predis\Response\Status
+	public function delete_verify_email_key(string $user_id)
 	{
 		return $this->client->del(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
 	}
 
-	public function set_forgot_password_token(string $user_id, int $key): \Predis\Response\Status
+	public function set_forgot_password_token(string $user_id, int $key)
 	{
 		return $this->client->set(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id, $key);
 	}
 
-	public function get_forgot_password_token(string $user_id): \Predis\Response\Status
+	public function get_forgot_password_token(string $user_id)
 	{
 		return $this->client->get(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id) ?: false;
 	}
 
-	public function delete_forgot_password_token(string $user_id): \Predis\Response\Status
+	public function delete_forgot_password_token(string $user_id)
 	{
 		return $this->client->del(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id);
 	}

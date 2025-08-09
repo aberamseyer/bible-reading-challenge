@@ -2,14 +2,11 @@
 
 require_once "env.php";
 
-// phpinfo();
-// die;
-
 global $insecure;
 
-$site = BibleReadingChallenge\SiteRegistry::get_site();
 $db = BibleReadingChallenge\Database::get_instance();
 $redis = BibleReadingChallenge\Redis::get_instance();
+$site = BibleReadingChallenge\SiteRegistry::get_site();
 
 health_checks();
 
@@ -28,6 +25,12 @@ $my_id = (int)$_SESSION['my_id'] ?: 0;
 $me = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int) $my_id);
 $staff = $me && $me['staff'];
 $schedule = $site->get_active_schedule();
+
+if ($my_id === 1) {
+  error_reporting(E_ALL^E_NOTICE^E_WARNING);
+    // phpinfo();
+    // die($site->data("time_zone_id"));
+}
 
 if (!$insecure && !$me) {
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];
