@@ -969,14 +969,21 @@ class Schedule {
         else if (!$_POST['name']) {
           $_SESSION['error'] = "Schedule must have a name.";
         }
-        else if (
-          ($this->data('start_date') != $start->format('Y-m-d') || $this->data('end_date') != $end->format('Y-m-d'))
-          && $this->db->col("
-                SELECT COUNT(*)
-                FROM read_dates rd
-                JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
-                WHERE sd.schedule_id = ".$this->ID)) {
-          $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start and end dates.";
+        else if ($start != $existing_start && $this->db->col("
+          SELECT COUNT(*)
+          FROM read_dates rd
+          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+          WHERE sd.schedule_id = ".$this->ID)
+        ) {
+          $_SESSION['error'] = "This schedule has already been started by some readers. You can no longer change the start date.";
+        }
+        else if ($end != $existing_end && $this->db->col("
+          SELECT COUNT(*)
+          FROM read_dates rd
+          JOIN schedule_dates sd ON sd.id = rd.schedule_date_id
+          WHERE sd.date >= '".$end->format('Y-m-d')."' AND sd.schedule_id = ".$this->ID)
+        ) {
+          $_SESSION['error'] = "Some readers have already read passed that day. You can not set the end date before then.";
         }
         else {
           $this->update($start, $end, $_POST['name'], $_POST['notes']);
