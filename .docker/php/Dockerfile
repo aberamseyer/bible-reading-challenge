@@ -92,7 +92,19 @@ COPY --from=builder /var/www/html /var/www/html
 RUN mkfifo /var/log/cron.fifo && chmod 666 /var/log/cron.fifo
 
 # permission-fixing script
-COPY .docker/php/entrypoint.sh /entrypoint.sh
+# Turn on error logging
+RUN echo "log_errors=On" >> /usr/local/etc/php/conf.d/app-errors.ini && \
+  echo "error_log=/var/log/php_errors.log" >> /usr/local/etc/php/conf.d/app-errors.ini && \
+  echo "error_reporting=E_ALL" >> /usr/local/etc/php/conf.d/app-errors.ini && \
+  touch /var/log/php_errors.log && \
+  chown www-data:www-data /var/log/php_errors.log
+
+# Ensure the app directory is owned by www-data
+RUN chown -R www-data:www-data /var/www/html && \
+  chown www-data:www-data /var/log/cron.fifo
+
+# permission-fixing script
+COPY ./.docker/php/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 9000

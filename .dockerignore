@@ -9,8 +9,6 @@ vendor/
 *.db-shm
 *.log
 npm-debug.log*
-# Ignoring the directory containing Dockerfiles and configurations
-.docker/
 # macOS specific
 .DS_Store
 # Windows specific

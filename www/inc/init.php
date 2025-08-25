@@ -22,25 +22,22 @@ session_start();
 // GLOBAL VARIABLES
 
 $my_id = (int)$_SESSION['my_id'] ?: 0;
-$me = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int) $my_id);
+if ($my_id == 1) {
+  error_reporting(E_ALL ^ E_WARNING ^ E_NOTICE);
+}
+
+$me = $db->row("SELECT * FROM users WHERE site_id = " . $site->ID . " AND id = " . (int) $my_id);
 $staff = $me && $me['staff'];
 $schedule = $site->get_active_schedule();
 
-if ($my_id === 1) {
-  error_reporting(E_ALL^E_NOTICE^E_WARNING);
-    // phpinfo();
-    // die($site->data("time_zone_id"));
-}
-
 if (!$insecure && !$me) {
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];
-	redirect('/auth/login');
-}
-else if ($my_id) {
+  redirect('/auth/login');
+} else if ($my_id) {
   $redis->update_last_seen($my_id, time());
 }
 
-define('SINGLE_BOOKS', [ 'Obadiah', 'Philemon', '2 John', '3 John', 'Jude']);
+define('SINGLE_BOOKS', ['Obadiah', 'Philemon', '2 John', '3 John', 'Jude']);
 
 define('BOOK_NAMES_AND_ABBREV', array_column(
   $db->select("
@@ -48,7 +45,10 @@ define('BOOK_NAMES_AND_ABBREV', array_column(
     FROM books b
     UNION ALL
     SELECT b.id, b.name, je.value key
-    FROM books b, JSON_EACH(b.abbreviations) je"), null, 'key'));
+    FROM books b, JSON_EACH(b.abbreviations) je"),
+  null,
+  'key'
+));
 /*
  * 4 cases for this to match a string:
  *    groups 1 && 2 && 4 && 5 && 6: Genesis 12:3-13:7 (verse range across chapters)
@@ -57,7 +57,8 @@ define('BOOK_NAMES_AND_ABBREV', array_column(
  *    groups 1 && 2 && 9:           Genesis 12:3 (exactly one verse)
  *    group  1 && 2:                Genesis 2 (exactly one entire chapter)
  */
-define('BOOKS_RE', '/\b('.
-  implode('|',
+define('BOOKS_RE', '/\b(' .
+  implode(
+    '|',
     array_map('preg_quote', array_keys(BOOK_NAMES_AND_ABBREV))
-  ).')\b(?: (\d+)(?:[\-\–](\d+)|:(\d+)[\-\–](\d+):(\d+)|:(\d+)[\-\–](\d+)|:(\d+))?)?/im');
+  ) . ')\b(?: (\d+)(?:[\-\–](\d+)|:(\d+)[\-\–](\d+):(\d+)|:(\d+)[\-\–](\d+)|:(\d+))?)?/im');
