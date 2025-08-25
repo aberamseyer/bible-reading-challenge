@@ -21,15 +21,7 @@ if ($abe) {
 
 // Uploaded pictures handler
 if ($_FILES && $_FILES['upload']) {
-  $ext = '.' . pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
-  $mime = mime_content_type($_FILES['upload']['tmp_name']);
-  $valid_mime = strpos($mime, 'image/') === 0 || ($mime == 'text/plain' && $ext == '.svg'); // svg files appear as text/plain sometimes
-  $md5 = md5_file($_FILES['upload']['tmp_name']);
-  if (!$ext || !$valid_mime) {
-    $_SESSION['error'] = "Please upload a regular image file";
-  } else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '" . $db->esc($md5) . "' AND site_id = " . $site->ID)) {
-    $_SESSION['error'] = "A file like that seems to already exist by the name '" . html($existing_match) . "'";
-  } else if ($_FILES['upload']['error'] != UPLOAD_ERR_OK) {
+  if ($_FILES['upload']['error'] != UPLOAD_ERR_OK) {
     $msg = [
       0 => 'There is no error, the file uploaded with success',
       1 => 'The uploaded file exceeds the maximum: ' . ini_get('upload_max_filesize'),
@@ -41,6 +33,17 @@ if ($_FILES && $_FILES['upload']) {
       8 => 'A PHP extension stopped the file upload.',
     ][$_FILES['upload']['error']];
     $_SESSION['error'] = "Error uploading file: $msg";
+    redirect();
+  }
+  
+  $ext = '.' . pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION);
+  $mime = mime_content_type($_FILES['upload']['tmp_name']);
+  $valid_mime = strpos($mime, 'image/') === 0 || ($mime == 'text/plain' && $ext == '.svg'); // svg files appear as text/plain sometimes
+  $md5 = md5_file($_FILES['upload']['tmp_name']);
+  if (!$ext || !$valid_mime) {
+    $_SESSION['error'] = "Please upload a regular image file";
+  } else if ($existing_match = $db->col("SELECT uploaded_name FROM images WHERE md5 = '" . $db->esc($md5) . "' AND site_id = " . $site->ID)) {
+    $_SESSION['error'] = "A file like that seems to already exist by the name '" . html($existing_match) . "'";
   } else {
     $realpath = tempnam(UPLOAD_DIR, "upload-");
     unlink($realpath); // delete bc we're going to move the file there ourself later

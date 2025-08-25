@@ -95,6 +95,9 @@ to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > m
 
 also requires configuring OAuth consent screen in Google Cloud Console.
 
+### Permissions
+make sure `upload/` and `www/img/` are writable by others, probably just `777`
+
 ## Migrations
 
 Any scripts in the `migration` directory are meant to be run-once for a particular purpose (e.g., initiating streaks mid-challenge). See comments in each file.
