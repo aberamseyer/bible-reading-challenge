@@ -114,7 +114,7 @@ class Redis {
 		return $this->client->del(Redis::VERIFY_EMAIL_KEYSPACE.$user_id);
 	}
 
-	public function set_forgot_password_token(string $user_id, int $key)
+	public function set_forgot_password_token(string $user_id, string $key)
 	{
 		return $this->client->set(Redis::FORGOT_PASSWORD_KEYSPACE.$user_id, $key);
 	}
