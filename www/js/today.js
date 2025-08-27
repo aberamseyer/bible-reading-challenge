@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
   }
 
-  subscribeInput.addEventListener('change', function() {
+  subscribeInput.addEventListener('change', function () {
     if (this.checked) { // this.checked is the new state
       push_subscribe()
     }
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // listens for message from serviceworker to trigger reload
   navigator.serviceWorker.addEventListener('message', event => {
     if (event.data.action === 'refresh') {
-        window.location.reload()
+      window.location.reload()
     }
   })
 })
@@ -257,7 +257,7 @@ function calculateIframeHeight(availableWidth, styles) {
   if (contentWidth < 340)
     fudge = 30;
 
-  const totalHeight = textHeight + otherElementsHeight + fudge*vertSpace;
+  const totalHeight = textHeight + otherElementsHeight + fudge * vertSpace;
 
   return totalHeight;
 }
@@ -269,10 +269,10 @@ function adjustIFrame(iframe) {
   const styles = {
     textLengths: JSON.parse(container.dataset.textLengths), // Number of characters in each verse
     fontSize: 22, // in pixels
-    lineHeight: 24, // in pixels
-    margins: { top: 2.75, right: 11, bottom: 16.5, left: 11 },
+    lineHeight: 19.2, // in pixels
+    margins: { top: 22, right: 0, bottom: 22, left: 0 },
     padding: { top: 0, right: 0, bottom: 0, left: 0 },
-    additionalElements: [ ]
+    additionalElements: []
   };
 
   iframe.style.height = calculateIframeHeight(availableWidth, styles) + 'px';
