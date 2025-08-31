@@ -910,7 +910,7 @@ function health_checks()
 	) {
 		$err_msg = "Site: " . print_r($site, true) . PHP_EOL .
 			"DB: " . print_r($db, true) . PHP_EOL .
-			"Redis: " . print_r($redis, true) . PHP_EOL
+			"Redis: " . print_r($redis, true) . PHP_EOL .
 			"Img dir permissions failed?: " . $img_dir_not_writable . PHP_EOL;
 		error_log($err_msg);
 		send_error_notification("Something is wrong: \n" . $err_msg);
