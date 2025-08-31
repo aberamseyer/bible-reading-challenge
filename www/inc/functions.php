@@ -914,3 +914,23 @@ function health_checks()
 		missing_git_hash_notification("Git hash failed");
 	}
 }
+
+
+function update_email_stats($email_id, $field) {
+  global $db;
+	if (in_array($field, ['clicked_done_timestamp', 'opened_timestamp'], true)) {
+	  $db->update('verse_email_stats', [
+		  $field => date('Y-m-d H:i:s')
+		], "email_id = '".$db->esc($email_id)."'");
+	}
+}
+
+function insert_email_stats($email_id, $user_id, $schedule_date_id) {
+  global $db;
+  return $db->insert('verse_email_stats', [
+	  'email_id' => $db->esc($email_id),
+		'user_id' => (int)$user_id,
+		'schedule_date_id' => (int)$schedule_date_id,
+		'sent_timestamp' => date('Y-m-d H:i:s')
+	]);
+}

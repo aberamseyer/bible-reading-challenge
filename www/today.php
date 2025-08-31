@@ -83,6 +83,9 @@ foreach($schedules as $each_schedule) {
 
     // handle "Done" click
     if ($valid) {
+      if ($_REQUEST['email_id']) {
+        $db->update_email_stats($_REQUEST['email_id'], 'clicked_done_timestamp');
+      }
       $db->insert("read_dates", [
         'user_id' => $my_id,
         'schedule_date_id' => $scheduled_reading['id'],

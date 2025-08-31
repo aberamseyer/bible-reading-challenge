@@ -360,11 +360,12 @@ class Site
   * @param email bool whether this is going in an email or not
   * @return the html of all the verses we are reading
   */
-  public function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $today, $email = false)
+  public function html_for_scheduled_reading($scheduled_reading, $trans, $complete_key, $schedule, $today, $email = false, $email_id = false)
   {
     ob_start();
     $article_style = "";
     if ($email) {
+      echo '<img src="https://' . $this->DOMAIN . '/email-stats?email_id=' . $email_id . '" width="1" height="1">';
       $article_style = "style='line-height: 1.618; font-size: 1.1rem;'";
     }
     echo "<article $article_style>";
