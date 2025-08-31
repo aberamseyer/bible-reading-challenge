@@ -10,12 +10,6 @@ $site = BibleReadingChallenge\SiteRegistry::get_site();
 
 health_checks();
 
-foreach ([UPLOAD_DIR, IMG_DIR, IMG_DIR . "static/"] as $dir) {
-  if (!is_writable($dir)) {
-    down_for_maintenance("The following directory is not writable: <code>$dir</code>");
-  }
-}
-
 // session setup
 require_once "session/DBSessionHandler.php";
 require_once "session/RedisSessionHandler.php";

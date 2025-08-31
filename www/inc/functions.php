@@ -777,6 +777,8 @@ function down_for_maintenance($msg_html = "")
 			</p>
 		</details>
 	</body>
+
+	</html>
 <?php
 }
 
@@ -893,16 +895,26 @@ function health_checks()
 {
 	global $site, $redis, $db;
 
+	$img_dir_not_writable = false;
+	foreach ([UPLOAD_DIR, IMG_DIR] as $dir) {
+    if (!is_writable($dir)) {
+      $img_dir_not_writable = $dir;
+    }
+  }
+
 	if (
 		!$site || !$db || !$redis || !$site->ID ||
 		($db->get_db()->lastErrorCode() !== 0) ||
-		$redis->is_offline()
+		$redis->is_offline() ||
+		$img_dir_not_writable
 	) {
 		$err_msg = "Site: " . print_r($site, true) . PHP_EOL .
 			"DB: " . print_r($db, true) . PHP_EOL .
-			"Redis: " . print_r($redis, true) . PHP_EOL;
+			"Redis: " . print_r($redis, true) . PHP_EOL
+			"Img dir permissions failed?: " . $img_dir_not_writable . PHP_EOL;
 		error_log($err_msg);
 		send_error_notification("Something is wrong: \n" . $err_msg);
+
 		down_for_maintenance();
 		die;
 	}
