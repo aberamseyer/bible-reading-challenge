@@ -27,6 +27,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   if ($today->format('G') != 7) {
     continue;
   }
+  echo date('Y-m-d H:i:s')." Starting notifications for site ID: $site_id";
 
   // get schedule details
   $corp_schedule = $site->get_active_schedule();
@@ -88,7 +89,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
       $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $user['uuid']);
       insert_email_stats($email_id, $user['id'], $corp_scheduled_reading['id']);
-      printf("[v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
+      printf(date('Y-m-d H:i:s')." [v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }
 
@@ -151,7 +152,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
             ], JSON_UNESCAPED_SLASHES)
           );
           $endpoint_host = parse_url($sub_row['endpoint'], PHP_URL_HOST);
-          printf("[v] Queued notification for user:%s, sub_id:%s on site: %s for endpoint:%s\n", $user['name'], $sub_row['id'], $site->ID, $endpoint_host);
+          printf(date('Y-m-d H:i:s')." [v] Queued notification for user:%s, sub_id:%s on site: %s for endpoint:%s\n", $user['name'], $sub_row['id'], $site->ID, $endpoint_host);
         }
       }
     }
@@ -170,7 +171,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     ], JSON_UNESCAPED_SLASHES);
 
     if ($report->isSuccess()) {
-      echo "[v] Message sent successfully for subscription {$endpoint}.\n";
+      echo date('Y-m-d H:i:s')." [v] Message sent successfully for subscription {$endpoint}.\n";
       if ($sub_id) {
         $db->update('push_subscriptions', [
           'last_sent' => time()
@@ -178,7 +179,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       }
     }
     else {
-      echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
+      echo date('Y-m-d H:i:s')." [x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
 
       if ($sub_id) {
         error_log("Failed to deliver sub_id:".$sub_id.":".$encoded_report);

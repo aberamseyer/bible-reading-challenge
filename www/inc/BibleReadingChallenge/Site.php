@@ -423,6 +423,7 @@ class Site
         <div style='text-align: center; $copyright_style " . ($trans == 'rcv' ? 'display: none;' : '') . "'><small><i>" . $copyright_text[$trans] . "</i></small></div>
         <form action='" . SCHEME . "://" . $this->DOMAIN . "/today' method='get' $form_style>
           <input type='hidden' name='schedule_id' value='" . $schedule->ID . "'>
+          <input type='hidden' name='email_id' value='" . $email_id . "'>
           <input type='hidden' name='complete_key' value='$complete_key" . ($email ? '-e' : '' /* bypass wpm check from an email */) . "'>
           <input type='hidden' name='today' value='$scheduled_reading[date]'>
           <button type='submit' name='done' value='1' $btn_style>Done!</button>

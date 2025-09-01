@@ -939,7 +939,7 @@ function update_email_stats($email_id, $field) {
 
 function insert_email_stats($email_id, $user_id, $schedule_date_id) {
   global $db;
-  return $db->insert('verse_email_stats', [
+  $db->insert('verse_email_stats', [
 	  'email_id' => $db->esc($email_id),
 		'user_id' => (int)$user_id,
 		'schedule_date_id' => (int)$schedule_date_id,
