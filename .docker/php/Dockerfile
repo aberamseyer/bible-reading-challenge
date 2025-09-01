@@ -1,4 +1,4 @@
-FROM php:8.4.5-fpm-alpine AS builder
+FROM php:8.4.5-fpm-alpine AS base
 
 WORKDIR /var/www/html
 
@@ -33,9 +33,14 @@ RUN docker-php-ext-install -j$(nproc) \
 
 RUN pecl install redis && docker-php-ext-enable redis
 
+# Install Xdebug (conditionally enabled via environment)
+RUN pecl install xdebug && docker-php-ext-enable xdebug
+
 # Copy composer files
 COPY composer.json composer.lock ./
 
+# Production builder stage
+FROM base AS builder
 RUN composer install --no-interaction --no-plugins --no-scripts --no-dev --prefer-dist
 
 # Copy application code - AFTER composer install for better layer caching
@@ -43,6 +48,28 @@ COPY . .
 
 # Generate optimized autoloader
 RUN composer dump-autoload --optimize
+
+# Copy and set up entrypoint script for builder stage
+COPY ./.docker/php/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
+
+# Development stage
+FROM base AS development
+RUN composer install --no-interaction --no-plugins --no-scripts --prefer-dist
+COPY . .
+RUN composer dump-autoload
+
+# Copy and set up entrypoint script for development stage
+COPY ./.docker/php/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 9000
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
 
 # Stage 2: Final Image
 FROM php:8.4.5-fpm-alpine
@@ -82,6 +109,9 @@ RUN echo "date.timezone=\${TZ}" > /usr/local/etc/php/conf.d/app-timezone.ini && 
   echo "max_input_vars=\${PHP_MAX_INPUT_VARS}" >> /usr/local/etc/php/conf.d/app-vars.ini && \
   echo "memory_limit=\${PHP_MEMORY_LIMIT}" >> /usr/local/etc/php/conf.d/app-memory.ini
 
+# Create Xdebug configuration file (will be populated by entrypoint script)
+RUN touch /usr/local/etc/php/conf.d/xdebug.ini
+
 # Copy Composer's vendor directory from builder
 COPY --from=builder /var/www/html/vendor /var/www/html/vendor
 
@@ -103,7 +133,7 @@ RUN echo "log_errors=On" >> /usr/local/etc/php/conf.d/app-errors.ini && \
 RUN chown -R www-data:www-data /var/www/html && \
   chown www-data:www-data /var/log/cron.fifo
 
-# permission-fixing script
+# Copy entrypoint script to final stage
 COPY ./.docker/php/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
