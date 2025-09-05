@@ -27,7 +27,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   if ($today->format('G') != 7) {
     continue;
   }
-  echo date('Y-m-d H:i:s')." Starting notifications for site ID: $site_id";
+  echo date('Y-m-d H:i:s')." Starting notifications for site ID: $site_id".PHP_EOL;
 
   // get schedule details
   $corp_schedule = $site->get_active_schedule();

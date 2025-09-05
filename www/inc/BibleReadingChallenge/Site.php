@@ -213,7 +213,6 @@ class Site
 
   public function send_daily_verse_email($to, $subject, $content, $uuid)
   {
-
     if (getenv('APP_ENV') === 'production') {
       $this->ms->send_bulk_email(
         [$to => []],
