@@ -67,8 +67,10 @@ services:
       - "${SOCKET_HOST_PORT:-8085}:${SOCKET_PORT:-8085}"
     volumes:
       - ./socket:/usr/src/app # Mount socket server code
-      - ./brc.db:/usr/src/app/brc.db:ro # Mount SQLite DB read-only for server
       - /usr/src/app/node_modules # Anonymous volume to "protect" node_modules from image
+      - ./brc.db:/usr/src/app/brc.db:ro # Mount SQLite DB read-only for server
+      - ./brc.db-shm:/usr/src/app/brc.db-shm:ro
+      - ./brc.db-wal:/usr/src/app/brc.db-wal:ro
     env_file: ".env"
     depends_on:
       - redis
