@@ -20,13 +20,14 @@ require __DIR__."/../www/inc/env.php";
 
 $db = BibleReadingChallenge\Database::get_instance();
 
-foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
+foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 ORDER BY id ASC") as $site_id) {
   $site = BibleReadingChallenge\SiteRegistry::get_site($site_id);
   $today = new DateTime("now", $site->TZ);
   // this cron runs every hour, we only want to send emails for the sites who's local time is 7:45 AM
   if ($today->format('G') != 7) {
     continue;
   }
+  echo date('Y-m-d H:i:s')." Starting notifications for site ID: $site_id".PHP_EOL;
 
   // get schedule details
   $corp_schedule = $site->get_active_schedule();
@@ -54,7 +55,8 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
   foreach($db->select("
     SELECT id, name, email, trans_pref, last_seen, streak, email_verses, uuid
     FROM users
-    WHERE site_id = ".$site->ID) as $user) {
+    WHERE site_id = ".$site->ID."
+    ORDER BY id ASC") as $user) {
     // if a user hasn't been active near the period of the schedule, we won't notify them
     $last_seen_date = $user['last_seen']
       ? new DateTime('@'.$user['last_seen'], $site->TZ)
@@ -82,11 +84,11 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
 
       $html .= "<p>Good morning $notification_info[name], here is the scheduled reading for today:</p>";
       /* chapter contents */
-      $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true);
+      $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true, $email_id);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
-      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $user['uuid']);
-      printf("[v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
+      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $corp_scheduled_reading['id']);
+      printf(date('Y-m-d H:i:s')." [v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }
 
@@ -149,7 +151,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
             ], JSON_UNESCAPED_SLASHES)
           );
           $endpoint_host = parse_url($sub_row['endpoint'], PHP_URL_HOST);
-          printf("[v] Queued notification for user:%s, sub_id:%s on site: %s for endpoint:%s\n", $user['name'], $sub_row['id'], $site->ID, $endpoint_host);
+          printf(date('Y-m-d H:i:s')." [v] Queued notification for user:%s, sub_id:%s on site: %s for endpoint:%s\n", $user['name'], $sub_row['id'], $site->ID, $endpoint_host);
         }
       }
     }
@@ -168,7 +170,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
     ], JSON_UNESCAPED_SLASHES);
 
     if ($report->isSuccess()) {
-      echo "[v] Message sent successfully for subscription {$endpoint}.\n";
+      echo date('Y-m-d H:i:s')." [v] Message sent successfully for subscription {$endpoint}.\n";
       if ($sub_id) {
         $db->update('push_subscriptions', [
           'last_sent' => time()
@@ -176,7 +178,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1") as $site_id) {
       }
     }
     else {
-      echo "[x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
+      echo date('Y-m-d H:i:s')." [x] Message failed to sent for subscription {$endpoint}: {$report->getReason()}\n";
 
       if ($sub_id) {
         error_log("Failed to deliver sub_id:".$sub_id.":".$encoded_report);

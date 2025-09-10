@@ -155,3 +155,68 @@ function initFourWeekTrendChart(element, labels, values) {
     }
   })
 }
+
+function initializeHourlyFreqChart(element, labels, values) {
+  const gradient = element.getContext('2d').createLinearGradient(0, 0, 200, 0)
+  gradient.addColorStop(0, COLORS.secondary)
+  gradient.addColorStop(1, COLORS.primary)
+  new Chart(element, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        fill: true,
+        tension: 0.6,
+        borderColor: COLORS.secondary,
+        backgroundColor: convertToTransparent(COLORS.secondary, 0.8),
+        pointStyle: false
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: false,
+      plugins: {
+        legend: false,
+        tooltip: false,
+      },
+      scales: {     
+        r: {
+          animate: false,
+          pointLabels: {
+            callback: (label, index) => index % 3 === 0 ? label : ''
+          },
+          ticks: {
+            display: false,
+            count: 5
+          },
+          angleLines: {
+            display: false
+          },
+          grid: {
+            color: '#c9c9c9',
+            circular: true,
+            lineWidth: 1
+          }
+        }
+      }
+    }
+  });
+}
+
+function initializeEmailStatsChart(element, labels, values) {
+  new Chart(element, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        fill: true,
+        tension: 0.6,
+        borderColor: COLORS.primary,
+        backgroundColor: convertToTransparent(COLORS.primary, 0.8),
+        pointStyle: false
+      }]
+    },
+  });
+}

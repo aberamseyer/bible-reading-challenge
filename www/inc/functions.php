@@ -719,8 +719,8 @@ function clamp($value, $min, $max)
 function chartjs_js()
 {
 	return
-		cached_file('js', '/js/lib/chart.min.js') .
-		cached_file('js', '/js/lib/chartjs-adapter-date-fns.min.js') .
+		"<script src='https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js'></script>
+		 <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js'></script>".
 		cached_file('js', '/js/lib/chart.inc.js');
 }
 
@@ -777,6 +777,8 @@ function down_for_maintenance($msg_html = "")
 			</p>
 		</details>
 	</body>
+
+	</html>
 <?php
 }
 
@@ -893,16 +895,26 @@ function health_checks()
 {
 	global $site, $redis, $db;
 
+	$not_writable = false;
+	foreach ([UPLOAD_DIR, IMG_DIR, DB_FILE] as $dir) {
+    if (!is_writable($dir)) {
+      $not_writable = $dir;
+    }
+  }
+
 	if (
 		!$site || !$db || !$redis || !$site->ID ||
 		($db->get_db()->lastErrorCode() !== 0) ||
-		$redis->is_offline()
+		$redis->is_offline() ||
+		$not_writable
 	) {
 		$err_msg = "Site: " . print_r($site, true) . PHP_EOL .
 			"DB: " . print_r($db, true) . PHP_EOL .
-			"Redis: " . print_r($redis, true) . PHP_EOL;
+			"Redis: " . print_r($redis, true) . PHP_EOL .
+			"Read/Write permissions failed: " . $not_writable . PHP_EOL;
 		error_log($err_msg);
 		send_error_notification("Something is wrong: \n" . $err_msg);
+
 		down_for_maintenance();
 		die;
 	}

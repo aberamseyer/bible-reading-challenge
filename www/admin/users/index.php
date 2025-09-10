@@ -10,7 +10,7 @@ if (!$staff) {
 if ($_REQUEST['get_dates'] && $_REQUEST['user_id']) {
   print_json($schedule->get_dates((int)$_REQUEST['user_id']));
 }
-    
+
 // edit/delete user
 if ($_POST['user_id']) {
   $to_change = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND id = ".(int)$_POST['user_id']);
@@ -84,10 +84,12 @@ if ($_POST['merge_from_account']) {
     }
 
     $db->query(
-      "UPDATE schedules SET user_id = $merge_to_account[id] 
+      "UPDATE schedules SET user_id = $merge_to_account[id]
       WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM read_dates WHERE user_id = $merge_from_account[id]");
     $db->query("DELETE FROM users WHERE id = $merge_from_account[id]");
+    $db->query("UPDATE verse_email_stats SET user_id = $merge_to_account[id]
+      WHERE user_id = $merge_from_account[id]");
 
     $_SESSION['success'] = "Deleted account: ".html($merge_from_account['email'])." and updated ".count($difference)." unread day".xs(count($difference))." to ".html($merge_to_account['email']);
     redirect('/admin/users?user_id='.$merge_to_account['id']);
@@ -99,7 +101,7 @@ $page_title = "Manage Users";
 $add_to_head .= cached_file('css', '/css/admin.css', 'media="screen"');
 require DOCUMENT_ROOT."inc/head.php";
   echo admin_navigation();
-  
+
 $user_id = (int)$_GET['user_id'];
 if ($user_id &&
   ($stats = $site->user_stats($user_id)) &&
@@ -157,7 +159,7 @@ if ($user_id &&
   </form>";
   echo "<h5>Progress</h5>";
   echo $schedule->html_calendar();
-  $add_to_foot .= 
+  $add_to_foot .=
     chartjs_js().
     cached_file('js', '/js/user.js')."
   <script>
@@ -221,7 +223,7 @@ else {
     8 => 'Monday'
   ];
   $starting_day_of_week = $WEEK_ARR[ (int)$site->data('start_of_week') ];
-  
+
   $user_start_date = $user_end_date = null;
   if ($_GET['week_range']) {
     list($start, $end) = explode('|', $_GET['week_range']);
@@ -230,7 +232,7 @@ else {
   }
 
   $last_beginning = $user_start_date ?: new DateTime("last $starting_day_of_week", $site->TZ);
-  
+
   $schedule_start_date = new DateTime($schedule->data('start_date'), $site->TZ);
   $schedule_end_date = new DateTime($schedule->data('end_date'), $site->TZ);
 
@@ -293,7 +295,7 @@ else {
     [ $next = date_modify(clone($last_beginning), '+5 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ],
     [ $next = date_modify(clone($last_beginning), '+6 days'), substr($WEEK_ARR[ (int)$next->format('N') ], 0, 1) ]
   ];
-      
+
   echo "<h5>All-week readers ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ], 'right'))."</h5>";
   $where = "
     WHERE sd.schedule_id = ".$schedule->ID.                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
@@ -311,7 +313,7 @@ else {
     GROUP BY rd.user_id
     HAVING COUNT(rd.id) = $schedule_days_this_week
     ORDER BY SUM(rd.timestamp) ASC");
-      
+
   if ($fully_equipped) {
     echo "
     <ol style='columns: 2'>";
@@ -319,7 +321,7 @@ else {
       echo "<li>".html($name)."</li>";
     }
     echo "
-    </ol>"; 
+    </ol>";
   }
   else {
     echo "<p><small>No one has read every day this period.</small></p>";
@@ -333,7 +335,7 @@ else {
   unset($user);
 
   $user_count = count(array_filter($all_users, fn($user) => $user['last_read']));
-  
+
   echo "<h5>".($_GET['stale'] ? 'Stale' : 'All')." users</h5>";
   echo "<p>Click a user's name to see more details.<br>You can see recent signups <a href='/admin/users/recent'>here &#8608;</a>.</p>";
   echo toggle_all_users($user_count);
@@ -344,7 +346,7 @@ else {
     <table>
       <thead>
         <tr>
-          <th data-sort='name'>     
+          <th data-sort='name'>
             User
           </th>
           <th data-sort='last-read'>
@@ -389,7 +391,7 @@ else {
       echo "
         </td>
       </tr>";
-      
+
     }
     echo "
       </tbody>
@@ -403,7 +405,7 @@ else {
     echo "<small>Only those who have <b>not</b> been active in the past 9 months are shown. <a href='?".($user_start_date ? "&date='".$last_beginning->format('Y-m-d')."'" : "")."'>Click here to see active users</a>.</small>";
   }
 
-  $add_to_foot .= 
+  $add_to_foot .=
     chartjs_js().
     cached_file('js', '/js/lib/tableSort.js').
     cached_file('js', '/js/users.js');

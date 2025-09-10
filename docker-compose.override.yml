@@ -1,0 +1,46 @@
+# Docker Compose override for development environment
+# This file automatically extends docker-compose.yml when running in development
+
+services:
+  php:
+    # Override the build to include development dependencies
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile
+      target: builder # Use builder stage for development to include dev dependencies
+    environment:
+      # Enable Xdebug in development
+      - XDEBUG_MODE=debug
+      - XDEBUG_CLIENT_HOST=host.docker.internal
+      - XDEBUG_CLIENT_PORT=9003
+      - XDEBUG_START_WITH_REQUEST=yes
+      - XDEBUG_LOG_LEVEL=0
+      - APP_ENV=development
+    # No port mapping needed for Xdebug - it connects outward to the IDE
+    volumes:
+      # Additional volume for Xdebug logs
+      - ./logs:/var/log/xdebug:rw
+
+  # Override cron service for development
+  cron:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile
+      target: builder
+    environment:
+      - APP_ENV=development
+      - XDEBUG_MODE=debug
+      - XDEBUG_CLIENT_HOST=host.docker.internal
+      - XDEBUG_CLIENT_PORT=9003
+
+  # Development-specific nginx configuration (optional)
+  nginx:
+    ports:
+      - "${NGINX_HOST_PORT:-8080}:80"
+    environment:
+      - NGINX_HOST_PORT=${NGINX_HOST_PORT:-8080}
+
+# Create logs volume for development
+volumes:
+  xdebug_logs:
+    driver: local
