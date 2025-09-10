@@ -211,17 +211,36 @@ class Site
     );
   }
 
-  public function send_daily_verse_email($to, $subject, $content, $uuid)
+  public function send_daily_verse_email($user, $subject, $content, $schedule_date_id)
   {
     if (getenv('APP_ENV') === 'production') {
+      $this->insert_email_stats(uniqid("", true), $user['id'], $schedule_date_id);
       $this->ms->send_bulk_email(
-        [$to => []],
+        [$user['email'] => []],
         $subject,
         $this->format_email_body($content),
-        [$uuid]
+        [$user['uuid']]
       );
     }
   }
+
+  public function update_email_stats($email_id, $field) {
+    if (in_array($field, ['clicked_done_timestamp', 'opened_timestamp'], true)) {
+      $this->db->update('verse_email_stats', [
+        $field => time()
+      ], "email_id = '".$this->db->esc($email_id)."'");
+    }
+  }
+
+  public function insert_email_stats($email_id, $user_id, $schedule_date_id) {
+    $this->db->insert('verse_email_stats', [
+      'email_id' => $this->db->esc($email_id),
+      'user_id' => (int)$user_id,
+      'schedule_date_id' => (int)$schedule_date_id,
+      'sent_timestamp' => time()
+    ]);
+  }
+
 
   public function get_active_schedule($refresh = false)
   {
@@ -606,6 +625,55 @@ class Site
       }
     }
     return $progress;
+  }
+
+  public function hourly_reading_canvas($for_user_id = 0, $size = 400)
+  {
+    $hourly_freq_data = $this->hourly_reading_data($for_user_id);
+    return "<canvas data-freq='".json_encode($hourly_freq_data)."' size='$size'></canvas>";
+  }
+
+  public function hourly_reading_data($for_user_id = 0)
+  {
+    $data = $this->db->select("
+      -- 1 hour
+      WITH RECURSIVE hours(h) AS (
+        SELECT 0
+        UNION ALL
+        SELECT h + 1 FROM hours WHERE h < 23
+      ),
+      counts AS (
+        SELECT 
+          TRIM(strftime('%l%P', datetime(timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours'))) label,
+          strftime('%H', datetime(timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')) as hour_of_day,
+          COUNT(*) as freq
+        FROM read_dates
+        JOIN users u ON u.id = read_dates.user_id
+        WHERE u.site_id = $this->ID
+        ".($for_user_id ? "AND user_id = ".intval($for_user_id) : "")."
+        GROUP BY hour_of_day
+      )
+      SELECT 
+        counts.label,
+        hours.h AS hour_of_day,
+        COALESCE(counts.freq, 0) AS freq
+      FROM hours
+      LEFT JOIN counts ON hours.h = CAST(counts.hour_of_day AS INTEGER)
+      ORDER BY hours.h;");
+    return array_column($data, 'freq', 'label');
+  }
+
+  public function verse_email_stats_canvas($for_user_id = 0, $size = 400)
+  {
+    $email_stats_data = $this->verse_email_stats_data($for_user_id);
+    return "<canvas data-email-stats='".json_encode($email_stats_data)."' size='$size'></canvas>";
+  }
+
+  public function verse_email_stats_data($for_user_id = 0)
+  {
+    $data = $this->db->select("
+      ");
+    return $data;
   }
 
   public function create_user($email, $name, $password = false, $emoji = false, $verified = false, $uuid = false)

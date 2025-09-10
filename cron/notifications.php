@@ -80,7 +80,6 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 ORDER BY id ASC") as $
       $notification_info = $site->notification_info($user['name'], $corp_scheduled_reading);
 
       // EMAIL
-      $email_id = uniqid();
       $html = $user['streak'] > 1 ? "<p>🔥 Keep up your $user[streak]-day streak</p>" : "";
 
       $html .= "<p>Good morning $notification_info[name], here is the scheduled reading for today:</p>";
@@ -88,8 +87,7 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 ORDER BY id ASC") as $
       $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true, $email_id);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
-      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $user['uuid']);
-      insert_email_stats($email_id, $user['id'], $corp_scheduled_reading['id']);
+      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $corp_scheduled_reading['id']);
       printf(date('Y-m-d H:i:s')." [v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }

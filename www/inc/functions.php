@@ -719,8 +719,8 @@ function clamp($value, $min, $max)
 function chartjs_js()
 {
 	return
-		cached_file('js', '/js/lib/chart.min.js') .
-		cached_file('js', '/js/lib/chartjs-adapter-date-fns.min.js') .
+		"<script src='https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js'></script>
+		 <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js'></script>".
 		cached_file('js', '/js/lib/chart.inc.js');
 }
 
@@ -925,24 +925,4 @@ function health_checks()
 	if (VERSION == '') {
 		missing_git_hash_notification("Git hash failed");
 	}
-}
-
-
-function update_email_stats($email_id, $field) {
-  global $db;
-	if (in_array($field, ['clicked_done_timestamp', 'opened_timestamp'], true)) {
-	  $db->update('verse_email_stats', [
-		  $field => date('Y-m-d H:i:s')
-		], "email_id = '".$db->esc($email_id)."'");
-	}
-}
-
-function insert_email_stats($email_id, $user_id, $schedule_date_id) {
-  global $db;
-  $db->insert('verse_email_stats', [
-	  'email_id' => $db->esc($email_id),
-		'user_id' => (int)$user_id,
-		'schedule_date_id' => (int)$schedule_date_id,
-		'sent_timestamp' => date('Y-m-d H:i:s')
-	]);
 }
