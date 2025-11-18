@@ -31,7 +31,7 @@ if ($user) {
     ?: 'esv';
 }
 
-$feed = new Feed;
+$feed = new Feed();
 $feed->setGenerator("Abe's Bible Reading Challenge", VERSION, "https://github.com/aberamseyer/Bible-Reading-Challenge/blob/master/www/feed.php");
 $feed->setTitle($site->data('short_name')."'s Bible Reading Schedule");
 $feed->setLink($base_url."/today");
@@ -64,7 +64,8 @@ if ($_SERVER['HTTP_IF_MODIFIED_SINCE']) {
   }
 }
 
-foreach($schedule_dates as $schedule_date) {
+for($i = 0; $i < 10 && $i < count($schedule_dates); $i++) {
+  $schedule_date = $schedule_dates[$i];
   $entry = $feed->createEntry();
   $schedule_date_datetime = new DateTime($schedule_date['date']." ".$start_of_day, $site->TZ);
 

@@ -80,11 +80,16 @@ foreach($schedules as $each_schedule) {
         $_SESSION['error'] = "You read ".number_format($words_on_page)." words in ".round($elapsed)." second".xs($elapsed)."! Thats pretty fast.";
       }
     }
+    // personal schedules should not be marked done when clicking from email
+    $is_personal_schedule = $each_schedule->data('user_id') != null;
+    if ($is_personal_schedule && $_REQUEST['email_id']) {
+      $valid = false;
+    }
 
     // handle "Done" click
     if ($valid) {
       if ($_REQUEST['email_id']) {
-        update_email_stats($_REQUEST['email_id'], 'clicked_done_timestamp');
+        $site->update_email_stats($_REQUEST['email_id'], 'clicked_done_timestamp');
       }
       $db->insert("read_dates", [
         'user_id' => $my_id,

@@ -211,10 +211,10 @@ class Site
     );
   }
 
-  public function send_daily_verse_email($user, $subject, $content, $schedule_date_id)
+  public function send_daily_verse_email($user, $subject, $content, $schedule_date_id, $email_id)
   {
     if (getenv('APP_ENV') === 'production') {
-      $this->insert_email_stats(uniqid("", true), $user['id'], $schedule_date_id);
+      $this->insert_email_stats($email_id, $user['id'], $schedule_date_id);
       $this->ms->send_bulk_email(
         [$user['email'] => []],
         $subject,
@@ -392,6 +392,9 @@ class Site
       if ($email) {
         $style = "style='text-align: center; font-size: 1.4rem;'";
       }
+      if (count($scheduled_reading['passages']) > 1) {
+        echo "<h3 class='text-center'>".$scheduled_reading['reference']."</h3>";
+      }
       foreach ($scheduled_reading['passages'] as $passage) {
         $verse_range = "";
         if ($passage['chapter']['verses'] != $passage['range'][1] - $passage['range'][0] + 1) {
@@ -429,7 +432,7 @@ class Site
       $btn_style = "";
       $form_style = "id='done' class='center'";
       if ($email) {
-        $btn_style = "style='color: rgb(249, 249, 249); padding: 2rem; width: 100%; background-color: #404892;'";
+        $btn_style = "style='color: #f9f9f9; padding: 2rem; width: 100%; background-color: ".$this->data('color_fade')."'";
         $form_style = "style='display: flex; justify-content: center; margin: 7px auto; width: 50%;'";
       }
       $copyright_text = json_decode(file_get_contents(DOCUMENT_ROOT . "../extras/copyright.json"), true);

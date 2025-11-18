@@ -84,10 +84,11 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 ORDER BY id ASC") as $
 
       $html .= "<p>Good morning $notification_info[name], here is the scheduled reading for today:</p>";
       /* chapter contents */
+      $email_id = uniqid("", true);
       $html .= $site->html_for_scheduled_reading($corp_scheduled_reading, $user['trans_pref'], $corp_scheduled_reading['complete_key'], $corp_schedule, $today, true, $email_id);
       /* unsubscribe */
       $html .= "<p style='text-align: center;'><small>If you would no longer like to receive these emails, <a href='".SCHEME."://".$site->DOMAIN."/today?change_email_me=0'>click here to unsubscribe</a>.<small></p>";
-      $site->send_daily_verse_email($user['email'], $notification_info['minutes']." Minute Read", $html, $corp_scheduled_reading['id']);
+      $site->send_daily_verse_email($user, $notification_info['minutes']." Minute Read", $html, $corp_scheduled_reading['id'], $email_id);
       printf(date('Y-m-d H:i:s')." [v] Email sent for %s on site: %s|%s\n", $user['email'], $site->ID, $site->data('site_name'));
       usleep(floor(1_000_000 / 3)); // cooldown, just because it's nice to take a moment to rest :^)
     }
