@@ -393,7 +393,7 @@ class Site
         $style = "style='text-align: center; font-size: 1.4rem;'";
       }
       if (count($scheduled_reading['passages']) > 1) {
-        echo "<h3 class='text-center'>".$scheduled_reading['reference']."</h3>";
+        echo "<h3 class='text-center' $style>".$scheduled_reading['reference']."</h3>";
       }
       foreach ($scheduled_reading['passages'] as $passage) {
         $verse_range = "";
@@ -630,13 +630,13 @@ class Site
     return $progress;
   }
 
-  public function hourly_reading_canvas($for_user_id = 0, $size = 400)
+  public function hourly_reading_canvas($schedule_id, $start_date, $end_date, $for_user_id = 0, $size = 400)
   {
-    $hourly_freq_data = $this->hourly_reading_data($for_user_id);
+    $hourly_freq_data = $this->hourly_reading_data($schedule_id, $start_date, $end_date, $for_user_id);
     return "<canvas data-freq='".json_encode($hourly_freq_data)."' size='$size'></canvas>";
   }
 
-  public function hourly_reading_data($for_user_id = 0)
+  public function hourly_reading_data($schedule_id, $start_date, $end_date, $for_user_id = 0)
   {
     $data = $this->db->select("
       -- 1 hour
@@ -651,9 +651,14 @@ class Site
           strftime('%H', datetime(timestamp, 'unixepoch', '".$this->TZ_OFFSET." hours')) as hour_of_day,
           COUNT(*) as freq
         FROM read_dates
+        JOIN schedule_dates s ON s.id = read_dates.schedule_date_id
         JOIN users u ON u.id = read_dates.user_id
-        WHERE u.site_id = $this->ID
-        ".($for_user_id ? "AND user_id = ".intval($for_user_id) : "")."
+        WHERE 
+          u.site_id = $this->ID
+            " . ($for_user_id ? "AND user_id = " . intval($for_user_id) : "") . "
+            " . ($schedule_id ? "AND s.schedule_id < " . $this->db->esc($schedule_id) : "") . "
+            " . ($start_date ? "AND s.date > '" . $this->db->esc($start_date)."'" : "") . "
+            " . ($end_date ? "AND s.date < '" . $this->db->esc($end_date)."'" : "") . "
         GROUP BY hour_of_day
       )
       SELECT 

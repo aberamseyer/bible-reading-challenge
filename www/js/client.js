@@ -3,16 +3,10 @@ let heartbeatInterval = null;
 let initTime = null;
 
 function getRelativeScrollPosition() {
-  const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  const documentHeight = Math.max(
-    document.body.scrollHeight,
-    document.documentElement.scrollHeight,
-  );
-  const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-
-  const scrollPercentage = (scrollTop / (documentHeight - windowHeight)) * 100;
-
-  return scrollPercentage;
+  const { scrollHeight } = document.body;
+  const { innerHeight, scrollY } = window;
+  const scrollArea = scrollHeight - innerHeight;
+  return scrollY / scrollArea * 100;
 }
 
 function createUser(id, position, name, emoji, zIndex) {

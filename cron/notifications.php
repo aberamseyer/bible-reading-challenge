@@ -158,6 +158,9 @@ foreach($db->cols("SELECT id FROM sites WHERE enabled = 1 ORDER BY id ASC") as $
     }
   }
 
+  if (getenv('APP_ENV') !== 'production') {
+    continue;
+  }
   // send all the notifications for this site
   $webPush->flushPooled(function($report) {
     $db = \BibleReadingChallenge\Database::get_instance();

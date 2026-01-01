@@ -13,7 +13,7 @@ echo PHP_EOL;
 
 
 $today = date('Ymd');
-$filename = "brc-".$today."_090501Z.sql.gz";
+$filename = "brc-".$today.".sql.gz";
 $remote_url = "https://files.ramseyer.dev/export/$filename";
 
 $context = stream_context_create([
@@ -30,7 +30,7 @@ if ($data) {
   $fullpath = __DIR__."/".$filename;
   @unlink(__DIR__.'/../brc.db');
   file_put_contents($fullpath, $data);
-  shell_exec("gzip -c -d $fullpath | sqlite3 ".__DIR__."/../brc.db");
+  shell_exec("gzip --to-stdout --decompress $fullpath | sqlite3 ".__DIR__."/../brc.db");
   unlink($fullpath);
   print("Finished");
 }
