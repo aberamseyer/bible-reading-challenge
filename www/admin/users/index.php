@@ -122,11 +122,9 @@ if ($user_id &&
   echo "<p>
   <div class='two-columns'>
     <div>
-      <h6 class='text-center'>Progress</h6>
      ".$site->progress_canvas($stats['progress_graph_data'])."
     </div>
     <div>
-      <h6 class='text-center'>Days read each week ".help("This number includes days read in personal schedules")."</h6>
       ".$site->weekly_progress_canvas($user_id)."
     </div>
   </div>

@@ -80,11 +80,9 @@ echo $site->mountain_for_emojis($emojis, $me['id']);
 echo "
 <div class='two-columns'>
   <div>
-    <h6 class='text-center'>Progress</h6>
     ".$site->progress_canvas($stats['progress_graph_data'])."
   </div>
   <div>
-    <h6 class='text-center'>Days read each week</h6>
     ".$site->weekly_progress_canvas($me['id'])."
   </div>
 </div>

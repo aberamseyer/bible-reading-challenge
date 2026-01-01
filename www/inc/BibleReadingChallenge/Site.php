@@ -633,7 +633,9 @@ class Site
   public function hourly_reading_canvas($schedule_id, $start_date, $end_date, $for_user_id = 0, $size = 400)
   {
     $hourly_freq_data = $this->hourly_reading_data($schedule_id, $start_date, $end_date, $for_user_id);
-    return "<canvas data-freq='".json_encode($hourly_freq_data)."' size='$size'></canvas>";
+    return "
+    <canvas data-freq='".json_encode($hourly_freq_data)."' width='$size'></canvas>
+    ";
   }
 
   public function hourly_reading_data($schedule_id, $start_date, $end_date, $for_user_id = 0)
@@ -656,7 +658,7 @@ class Site
         WHERE 
           u.site_id = $this->ID
             " . ($for_user_id ? "AND user_id = " . intval($for_user_id) : "") . "
-            " . ($schedule_id ? "AND s.schedule_id < " . $this->db->esc($schedule_id) : "") . "
+            " . ($schedule_id ? "AND s.schedule_id = " . intval($schedule_id) : "") . "
             " . ($start_date ? "AND s.date > '" . $this->db->esc($start_date)."'" : "") . "
             " . ($end_date ? "AND s.date < '" . $this->db->esc($end_date)."'" : "") . "
         GROUP BY hour_of_day
@@ -671,16 +673,33 @@ class Site
     return array_column($data, 'freq', 'label');
   }
 
-  public function verse_email_stats_canvas($for_user_id = 0, $size = 400)
+  public function verse_email_stats_canvas($schedule_id, $start_date, $end_date, $for_user_id = 0, $size = 400)
   {
-    $email_stats_data = $this->verse_email_stats_data($for_user_id);
-    return "<canvas data-email-stats='".json_encode($email_stats_data)."' size='$size'></canvas>";
+    $email_stats_data = $this->verse_email_stats_data($schedule_id, $start_date, $end_date, $for_user_id);
+    return "<canvas data-email-stats='".json_encode($email_stats_data)."' width='$size'></canvas>";
   }
 
-  public function verse_email_stats_data($for_user_id = 0)
+  public function verse_email_stats_data($schedule_id, $start_date, $end_date, $for_user_id = 0)
   {
-    $data = $this->db->select("
-      ");
+    $data = $this->db->row("
+      SELECT 
+        COUNT(*) as total_sent,
+        COUNT(opened_timestamp) as total_opened,
+        COUNT(clicked_done_timestamp) as total_clicked,
+        ROUND(COUNT(opened_timestamp) * 100.0 / COUNT(*), 2) as open_rate,
+        ROUND(COUNT(clicked_done_timestamp) * 100.0 / COUNT(*), 2) as click_rate,
+        ROUND(COUNT(clicked_done_timestamp) * 100.0 / COUNT(opened_timestamp), 2) as click_through_rate
+      FROM verse_email_stats ves
+      JOIN schedule_dates sd ON sd.id = ves.schedule_date_id
+      JOIN users u ON u.id = ves.user_id
+      WHERE 
+          u.site_id = $this->ID
+            " . ($for_user_id ? "AND ves.user_id = " . intval($for_user_id) : "") . "
+            " . ($schedule_id ? "AND sd.schedule_id = " . intval($schedule_id) : "") . "
+            " . ($start_date ? "AND sd.date > '" . $this->db->esc($start_date)."'" : "") . "
+            " . ($end_date ? "AND sd.date < '" . $this->db->esc($end_date)."'" : "") . "
+            AND ves.sent_timestamp IS NOT NULL;");
+
     return $data;
   }
 

@@ -29,6 +29,10 @@ function initProgressChart(element, labels, values, small) {
       plugins: {
         legend: {
           display: false
+        },
+        title: {
+          display: true,
+          text: 'Progress'
         }
       },
       scales: {     
@@ -78,6 +82,10 @@ function initWeeklyCountsChart(element, labels, values) {
       plugins: {
         legend: {
           display: false
+        },
+        title: {
+          display: true,
+          text: 'Days read each week'
         }
       },
       scales: {     
@@ -175,48 +183,67 @@ function initializeHourlyFreqChart(element, labels, values) {
     },
     options: {
       responsive: false,
-      animation: false,
       plugins: {
         legend: false,
-        tooltip: false,
-      },
-      scales: {     
-        r: {
-          animate: false,
-          pointLabels: {
-            callback: (label, index) => index % 3 === 0 ? label : ''
-          },
-          ticks: {
-            display: false,
-            count: 5
-          },
-          angleLines: {
-            display: false
-          },
-          grid: {
-            color: '#c9c9c9',
-            circular: true,
-            lineWidth: 1
-          }
+        title: {
+          display: true,
+          text: 'Reading Frequency by Hour'
         }
       }
     }
   });
 }
 
-function initializeEmailStatsChart(element, labels, values) {
+function initializeEmailStatsChart(element, emailData) {
   new Chart(element, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: values,
-        fill: true,
-        tension: 0.6,
-        borderColor: COLORS.primary,
-        backgroundColor: convertToTransparent(COLORS.primary, 0.8),
-        pointStyle: false
-      }]
+    type: 'bar',
+    options: {
+      responsive: false,
+      plugins: {
+        legend: false,
+        title: {
+          display: true,
+          text: 'Email Statistics'
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.parsed.y;
+              let percentage = '';
+              
+              if (context.dataIndex === 1) {
+                percentage = ` (${emailData.open_rate.toFixed(1)}% of sent)`;
+              } else if (context.dataIndex === 2) {
+                percentage = ` (${emailData.click_rate.toFixed(1)}% of sent, ${emailData.click_through_rate.toFixed(1)}% of opened)`;
+              }
+              
+              return `${value.toLocaleString()}${percentage}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return value.toLocaleString();
+            }
+          }
+        }
+      }
     },
+    data: {
+      labels: ['Sent', 'Opened', 'Clicked Done'],
+      datasets: [{
+        data: [emailData.total_sent, emailData.total_opened, emailData.total_clicked],
+        backgroundColor: [
+          COLORS.fade,
+          COLORS.secondary,
+          COLORS.primary
+        ],
+        borderWidth: 2
+      }]
+    }
   });
 }

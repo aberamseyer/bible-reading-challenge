@@ -188,6 +188,7 @@ function admin_navigation()
 	$arr = [
 		['/admin/users', 'Users'],
 		['/admin/progress', 'Progress'],
+		['/admin/statistics', 'Statistics'],
 		['/admin/schedules', 'Schedules'],
 		['/admin/customize', 'Customize']
 	];
@@ -719,7 +720,7 @@ function clamp($value, $min, $max)
 function chartjs_js()
 {
 	return
-		"<script src='https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js'></script>
+		"<script src='https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js'></script>
 		 <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js'></script>".
 		cached_file('js', '/js/lib/chart.inc.js');
 }
