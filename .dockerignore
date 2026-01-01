@@ -1,5 +1,4 @@
 .dockerignore
-.env
 .git
 .idea
 socket/node_modules

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure Xdebug based on environment
-if [ "$APP_ENV" = "development" ] || [ "$XDEBUG_MODE" ]; then
+if [ "$APP_ENV" = "development" ] || [ "$XDEBUG_MODE" = "debug" ] || [ "$XDEBUG_MODE" = "trace" ]; then
     echo "Development mode detected. Configuring Xdebug..."
 
     # Set default values if not provided
