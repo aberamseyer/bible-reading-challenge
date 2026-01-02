@@ -1,14 +1,11 @@
 .dockerignore
 .git
 .idea
-socket/node_modules
+node_modules
 vendor/
-*.db-journal
-*.db-wal
-*.db-shm
+*.db*
+*.rdb
 *.log
 npm-debug.log*
-# macOS specific
 .DS_Store
-# Windows specific
 Thumbs.db

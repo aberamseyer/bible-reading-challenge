@@ -5,23 +5,25 @@ This document explains how to set up and use PHP debugging with Xdebug in the Do
 ## Quick Start
 
 1. **Setup Environment**
-
+   
+   The docker image is built with xdebug installed, but it won't turn on unless certain variables in .env are set:
    ```bash
-   # Copy the debugging environment template
-   cp .env.debug.example .env
-
-   # Edit .env with your specific configuration
-   vim .env
+   # Edit .env variables to turn on debugging
+   XDEBUG_MODE=debug
+   XDEBUG_CLIENT_HOST=host.docker.internal
+   XDEBUG_CLIENT_PORT=9003
+   XDEBUG_START_WITH_REQUEST=yes
+   XDEBUG_LOG_LEVEL=0
    ```
 
-2. **Start Development Environment**
+1. **Start Development Environment**
 
    ```bash
    # Use the development startup script
    ./dev-start.sh
    ```
 
-3. **Start Debugging in VS Code**
+1. **Start Debugging in VS Code**
    - Open VS Code in the project directory
    - Go to Run and Debug (`Ctrl+Shift+D` / `Cmd+Shift+D`)
    - Select "Docker: Listen for Xdebug"
@@ -29,42 +31,14 @@ This document explains how to set up and use PHP debugging with Xdebug in the Do
    - Set breakpoints in your PHP files
    - Visit `http://localhost:8080` to trigger debugging
 
-## Environment Configuration
-
-### Required Environment Variables
-
-Add these to your `.env` file to enable debugging:
-
-```env
-# Enable development mode
-APP_ENV=development
-
-# Xdebug Configuration
-XDEBUG_MODE=debug
-XDEBUG_CLIENT_HOST=host.docker.internal
-XDEBUG_CLIENT_PORT=9003
-XDEBUG_START_WITH_REQUEST=yes
-XDEBUG_LOG_LEVEL=0
-```
-
 ### Xdebug Modes
 
 - `debug` - Step debugging (default for development)
-- `develop` - Development helpers
 - `coverage` - Code coverage
 - `profile` - Performance profiling
 - `trace` - Function trace
 
-You can combine modes: `XDEBUG_MODE=debug,develop`
-
 ## Docker Configuration
-
-### Development vs Production
-
-The project uses Docker Compose overrides for development:
-
-- **Production**: `docker-compose.yml` only
-- **Development**: `docker-compose.yml` + `docker-compose.override.yml`
 
 ### Development Services
 
@@ -259,9 +233,6 @@ docker-compose exec php bash -c 'export XDEBUG_MODE=debug && php your-script.php
 ### Container Management
 
 ```bash
-# Start development environment
-./dev-start.sh
-
 # Stop all services
 docker-compose down
 

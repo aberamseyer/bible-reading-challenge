@@ -16,7 +16,6 @@ test.sql
 brc.db*
 dump.rdb
 sessions.db
-.*litestream
 
 # environment
 .env

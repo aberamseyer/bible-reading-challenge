@@ -148,7 +148,6 @@ function curl_post_form($url, $headers, $arr, $json = false)
 		$error = curl_error($curl);
 		error_log($error);
 	}
-	curl_close($curl);
 
 	if ($debug) {
 		// Dump the cURL data

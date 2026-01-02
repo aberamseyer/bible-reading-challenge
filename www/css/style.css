@@ -346,3 +346,12 @@ th, td {
     filter: brightness(0.738) saturate(0) contrast(2);
   }
 }
+
+#dev-banner {
+  text-align: center;
+  background: red; 
+  color: white; 
+  margin: 7px 0; 
+  padding: 12px; 
+  height: 24px;
+}

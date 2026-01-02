@@ -69,6 +69,7 @@
     </script>
   </head>
   <body>
+    <?= !PROD ? "<div id='dev-banner'>DEV MODE</div>" : "" ?>
     <?php if (($me && !$insecure) || $use_template): ?>
     <div class='navigation-wrap'>
       <?= site_logo() ?>

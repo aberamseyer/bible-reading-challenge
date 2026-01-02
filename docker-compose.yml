@@ -5,11 +5,9 @@ services:
       dockerfile: .docker/php/Dockerfile
     container_name: brc_php
     restart: unless-stopped
+    env_file: ".env"
     volumes:
       - ./:/var/www/html
-      # The brc.db file will be available at /var/www/html/brc.db due to the above mount
-      # Ensure brc.db exists in your project root on the host.
-    env_file: ".env"
     depends_on:
       - redis
     networks:
@@ -18,12 +16,12 @@ services:
   cron:
     build:
       context: .
-      dockerfile: .docker/php/Dockerfile # Uses the same PHP environment
+      dockerfile: .docker/php/Dockerfile
     container_name: brc_cron
     restart: unless-stopped
     volumes:
-      - ./:/var/www/html # Access to application code
-      - ./.docker/cron/crontab:/etc/cron.d/app-cron # Mount your crontab
+      - ./:/var/www/html
+      - ./.docker/cron/crontab:/etc/cron.d/app-cron
     env_file: ".env"
     depends_on:
       - redis
@@ -48,10 +46,11 @@ services:
       dockerfile: Dockerfile
     container_name: brc_nginx
     restart: unless-stopped
-    ports:
-      - "${NGINX_HOST_PORT:-8080}:80" # Host port:Container port for HTTP app
+    env_file: ".env"
     volumes:
-      - ./:/var/www/html # Mount the whole project to access /var/www/html/www
+      - ./:/var/www/html
+    ports:
+      - "${NGINX_HOST_PORT:-8080}:80"
     depends_on:
       - php
     networks:
@@ -66,9 +65,8 @@ services:
     ports:
       - "${SOCKET_HOST_PORT:-8085}:${SOCKET_PORT:-8085}"
     volumes:
-      - ./socket:/usr/src/app # Mount socket server code
-      - /usr/src/app/node_modules # Anonymous volume to "protect" node_modules from image
-      - ./brc.db:/usr/src/app/brc.db:ro # Mount SQLite DB read-only for server
+      - /usr/src/app/node_modules
+      - ./brc.db:/usr/src/app/brc.db:ro
       - ./brc.db-shm:/usr/src/app/brc.db-shm:ro
       - ./brc.db-wal:/usr/src/app/brc.db-wal:ro
     env_file: ".env"
@@ -82,9 +80,6 @@ services:
     container_name: brc_redis
     env_file: ".env"
     restart: unless-stopped
-    # ports:
-    # Expose Redis to host only if needed for external tools/debugging, not for app communication
-    # - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --port ${REDIS_PORT}
@@ -93,6 +88,8 @@ services:
 
 volumes:
   redis_data:
+  xdebug_logs:
+    driver: local
 
 networks:
   brc_network:

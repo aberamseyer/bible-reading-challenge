@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:25.2.1-alpine3.23 AS builder
 
 RUN apk add --no-cache python3 make g++ sqlite-dev
 
@@ -7,6 +7,8 @@ WORKDIR /usr/src/app
 COPY socket/package.json socket/package-lock.json ./
 
 RUN npm ci --production --verbose
+
+RUN apk del python3 make g++ sqlite-dev
 
 # Stage 2: Final Image
 FROM node:24-alpine
@@ -26,7 +28,6 @@ WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json (optional, but good for metadata)
 COPY socket/package.json socket/package-lock.json ./
-
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
