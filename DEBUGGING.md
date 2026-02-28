@@ -18,10 +18,8 @@ This document explains how to set up and use PHP debugging with Xdebug in the Do
 
 1. **Start Development Environment**
 
-   ```bash
-   # Use the development startup script
-   ./dev-start.sh
-   ```
+   - configure `.env`
+   - `docker-compose up`
 
 1. **Start Debugging in VS Code**
    - Open VS Code in the project directory
