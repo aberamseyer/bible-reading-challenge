@@ -1,3 +1,4 @@
+</main>
 <?php global $add_to_foot, $page_title, $me, $insecure, $use_template; ?>
   <?php if (($me && !$insecure) || $use_template): ?>
     <hr>

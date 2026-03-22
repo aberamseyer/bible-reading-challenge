@@ -166,7 +166,7 @@ class Site
               <td align="center" width="600">
                 <div>
                   <a href="https://' . $this->data('domain_www') . '/today">
-                    <img src="https://' . $this->data('domain_www') . '/img/static/logo_' . $this->ID . '_512x512.png" width="200" height="200" style="display: block; max-width: 200px;">
+                    <img alt="logo" src="https://' . $this->data('domain_www') . '/img/static/logo_' . $this->ID . '_512x512.png" width="200" height="200" style="display: block; max-width: 200px;">
                   </a>
                 </div>
                 <br>
@@ -440,6 +440,8 @@ class Site
       if ($email) {
         $copyright_style = "font-size: 75%;";
       }
+      // TODO: allow auto-login by combining user id with complete key:
+      //    e.g., hash('sha256', $user->ID.$complete_key);
       echo "
         <div style='text-align: center; $copyright_style " . ($trans == 'rcv' ? 'display: none;' : '') . "'><small><i>" . $copyright_text[$trans] . "</i></small></div>
         <form action='" . SCHEME . "://" . $this->DOMAIN . "/today' method='get' $form_style>

@@ -175,7 +175,7 @@ th, td {
   text-decoration: underline;
 }
 .active-page {
-  border-bottom: 2px solid var(--color-blossom);
+  border-bottom: 1px solid var(--color-blossom);
 }
 .reading-day {
   width: 102px;
@@ -201,7 +201,7 @@ th, td {
 }
 .reading-day.end {
   border-right: 2px solid var(--color-text);
-  border-bottom: 2px solid var(--color-text);
+  border-bottom: 1px solid var(--color-text);
 }
 
 /* auth pages */
@@ -298,7 +298,7 @@ th, td {
   margin-right: 0.2rem;
   cursor: pointer;
   font-weight: bold;
-  border-bottom: 2px solid var(--color-bg);
+  border-bottom: 1px solid var(--color-bg);
 }
 .tabs .tab {
   order: 9;
@@ -313,7 +313,7 @@ th, td {
   display: none;
 }
 .tabs input[type="radio"]:checked + label {
-  border-bottom: 2px solid var(--color-text);
+  border-bottom: 1px solid var(--color-text);
 }
 .tabs input[type="radio"]:checked + label + .tab {
   display: block;

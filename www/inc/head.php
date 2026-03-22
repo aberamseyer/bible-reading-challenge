@@ -71,12 +71,13 @@
   <body>
     <?= !PROD ? "<div id='dev-banner'>DEV MODE</div>" : "" ?>
     <?php if (($me && !$insecure) || $use_template): ?>
-    <div class='navigation-wrap'>
+    <header class='navigation-wrap'>
       <?= site_logo() ?>
       <?= navigation() ?>
-    </div>
+    </header>
     <hr>
     <?php endif; ?>
+    <main>
     <?php if($show_title): ?>
       <h1 id='title'><?= $page_title ?></h1>
     <?php endif; ?>

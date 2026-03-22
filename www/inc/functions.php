@@ -169,7 +169,7 @@ function active_navigation_class($link)
 function do_nav($links, $buttons, $navigation_class)
 {
 	$nav = "
-			<div class='$navigation_class'>";
+			<nav class='$navigation_class'>";
 
 	$button_class = $buttons ? 'nav-item' : '';
 
@@ -177,7 +177,7 @@ function do_nav($links, $buttons, $navigation_class)
 		list($link, $title) = $entry;
 		$nav .= "<a class='$button_class " . active_navigation_class($link) . "' href='$link'>$title</a>";
 	}
-	return $nav . "</div>";
+	return $nav . "</nav>";
 }
 
 function admin_navigation()
@@ -742,7 +742,7 @@ function back_button($text)
 function site_logo()
 {
 	global $site;
-	return "<img alt='logo' class='logo' src='" . $site->resolve_img_src('logo') . "' onclick='window.location = `/`'>";
+	return "<a class='logo' href='/'><img alt='Site logo - Go Home' src='" . $site->resolve_img_src('logo') . "'></a>";
 }
 
 function down_for_maintenance($msg_html = "")

@@ -85,14 +85,14 @@ hr {
 a {
   text-decoration: none;
   color: var(--color-blossom);
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
 }
 a:visited {
   color: var(--color-blossom);
 }
 a:hover {
   color: var(--color-fade);
-  border-bottom: 2px solid var(--color-fade);
+  border-bottom: 1px solid var(--color-fade);
 }
 
 ul {
