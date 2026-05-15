@@ -1122,4 +1122,45 @@ class Schedule {
 
     return ob_get_clean();
   }
+
+  function user_id_from_valid_email_click()
+  {
+    if ($_REQUEST['schedule_id'] != $this->ID) {
+      return 0;
+    }
+    if ($_REQUEST['done'] != 1) {
+      return 0;
+    }
+    if (strpos($_REQUEST['complete_key'], '-e') === false) {
+      return 0;
+    }
+    if (!$_REQUEST['today']) {
+      return 0;
+    }
+
+    $stmt = $this->db->get_db()->prepare("
+      SELECT user_id 
+      FROM verse_email_stats 
+      WHERE email_id = :email_id");
+    $stmt->bindValue(':email_id', $_REQUEST['email_id']);
+    $email_row = $this->db->get_db()->querySingle($stmt->getSQL(true), true);
+    if (!$email_row) {
+      return 0;
+    }
+    // check if the complete_key corresponds to anything
+    $stmt = $this->db->get_db()->prepare("
+      SELECT 1 FROM schedule_dates 
+      WHERE schedule_id = :schedule_id 
+        AND complete_key = :complete_key
+        AND date = :today");
+    $stmt->bindValue(':schedule_id', $this->ID);
+    $stmt->bindValue(':complete_key', explode('-e', $_REQUEST['complete_key'])[0]);
+    $stmt->bindValue(':today', $_REQUEST['today']);
+
+    if ($this->db->get_db()->querySingle($stmt->getSQL(true), true)) {
+      return $email_row['user_id'];
+    }
+
+    return 0;
+  }
 }

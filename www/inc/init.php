@@ -31,6 +31,12 @@ $staff = $me && $me['staff'];
 $schedule = $site->get_active_schedule();
 
 if (!$insecure && !$me) {
+  // automatically log in via clicked email link
+  $user_id = $schedule->user_id_from_valid_email_click();
+  if ($user_id) {
+    log_user_in($user_id);
+    redirect();
+  }
   $_SESSION['login_redirect'] = $_SERVER['REQUEST_URI'];
   redirect('/auth/login');
 } else if ($my_id) {
