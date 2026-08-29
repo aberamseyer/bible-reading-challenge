@@ -16,7 +16,7 @@ if ($_POST['email']) {
   }
   else {
     $user_row = $db->row("SELECT * FROM users WHERE site_id = ".$site->ID." AND email = '".$db->esc($_POST['email'])."' AND email_verified = 1");
-    if ($redis->get_forgot_password_token($user_row['id'])) {
+    if ($user_row && $redis->get_forgot_password_token($user_row['id'])) {
       $_SESSION['error'] = "Email already sent.";
     }
     else if ($user_row) {
