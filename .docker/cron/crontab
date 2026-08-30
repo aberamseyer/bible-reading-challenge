@@ -10,3 +10,4 @@
 47 3 * * * php /var/www/html/cron/update-last-seen.php >> /var/log/cron.fifo 2>&1
 
 # This file must end with a newline character for cron to process it correctly.
+

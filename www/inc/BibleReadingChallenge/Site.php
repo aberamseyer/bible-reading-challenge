@@ -49,8 +49,6 @@ class Site
   private Database $db;
   private array $env;
 
-  private \Email\MailSender $ms;
-
   private Schedule|null $active_schedule;
 
   /**
@@ -100,28 +98,31 @@ class Site
           $this->env[trim($key)] = trim($val);
         }
       }
+    }
+  }
 
-      $mailgun_api_key = $this->env('MAILGUN_SENDING_API_KEY_' . (PROD ? 'PROD' : 'LOCAL'));
-      $from_addr = $this->data('email_from_address') . '@' . $this->data('domain_www');
-      if ($mailgun_api_key) {
-        $this->ms = new \Email\MailSenderMailgun(
-          $this->data('domain_www'),
-          $mailgun_api_key,
-          $from_addr,
-          $this->data('email_from_name')
-        );
-      } else if ($this->env('SMTP_HOST')) {
-        global $me;
-        $this->ms = new \Email\MailSenderPhpMailer(
-          $from_addr,
-          $this->data('email_from_name'),
-          $this->env('SMTP_HOST'),
-          $this->env('SMTP_USER'),
-          $this->env('SMTP_PASSWORD')
-        );
-      } else {
-        throw new \Exception("Email could not be configured for this site, missing environment variables");
-      }
+  public function ms()
+  {
+    $mailgun_api_key = $this->env('MAILGUN_SENDING_API_KEY_' . (PROD ? 'PROD' : 'LOCAL'));
+    $from_addr = $this->data('email_from_address') . '@' . $this->data('domain_www');
+    if ($mailgun_api_key) {
+      return new \Email\MailSenderMailgun(
+        $this->data('domain_www'),
+        $mailgun_api_key,
+        $from_addr,
+        $this->data('email_from_name')
+      );
+    } else if ($this->env('SMTP_HOST')) {
+      global $me;
+      return new \Email\MailSenderPhpMailer(
+        $from_addr,
+        $this->data('email_from_name'),
+        $this->env('SMTP_HOST'),
+        $this->env('SMTP_USER'),
+        $this->env('SMTP_PASSWORD')
+      );
+    } else {
+      throw new \Exception("Email could not be configured for this site, missing environment variables");
     }
   }
 
@@ -183,7 +184,7 @@ class Site
 
   public function send_register_email($to, $link, $uuid)
   {
-    $this->ms->send_bulk_email(
+    $this->ms()->send_bulk_email(
       [$to => ['link' => $link]],
       "Bible Reading Challenge Registration",
       $this->format_email_body(
@@ -198,7 +199,7 @@ class Site
 
   public function send_forgot_password_email($to, $link, $uuid)
   {
-    $this->ms->send_bulk_email(
+    $this->ms()->send_bulk_email(
       [$to => ['link' => $link]],
       "Bible Reading Challenge Registration",
       $this->format_email_body(
@@ -215,7 +216,7 @@ class Site
   {
     if (getenv('APP_ENV') === 'production') {
       $this->insert_email_stats($email_id, $user['id'], $schedule_date_id);
-      $this->ms->send_bulk_email(
+      $this->ms()->send_bulk_email(
         [$user['email'] => []],
         $subject,
         $this->format_email_body($content),
