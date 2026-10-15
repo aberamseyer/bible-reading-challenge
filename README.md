@@ -62,9 +62,24 @@ The live deployment of my personal site for this [here](https://brc.ramseyer.dev
     - Web Application: `http://localhost:8080` (or the `NGINX_HOST_PORT` you configured in `.env`).
     - WebSocket Server: Listens on port `8085` (or `SOCKET_HOST_PORT` / `SOCKET_PORT` configured).
 
+    The first time (and whenever `composer.lock` changes), install PHP dependencies into `vendor/`:
+
+    ```bash
+    docker compose run --rm php composer install --no-dev
+    ```
+
+## Production Deployment
+
+Production runs the same Docker Compose stack behind the host's nginx, with Cloudflare proxying every domain and terminating TLS.
+
+- **Deploy an update:** on the host, `git pull`. PHP changes are live immediately. If `composer.lock` changed, run `docker compose run --rm php composer install --no-dev`. If anything under `.docker/`, `socket/` or `docker-compose.yml` changed, run `docker compose up -d --build`.
+- **Host nginx:** see `extras/conf/nginx-brc.conf`.
+- **Backups:** `extras/db-backup.sh` from the host's crontab (see the script for the crontab line).
+- **Not in git, copy these when moving hosts:** `.env`, `brc.db` (stop the stack first so the WAL is checkpointed), `extras/keys/*.p8` (Sign in with Apple), `upload/`, `www/img/upload-*`, `www/img/static/logo_*`, and optionally the `bible-reading-challenge_redis_data` docker volume (sessions; without it everyone is logged out).
+
 ## Services Managed by Docker Compose
 
-- **`php`:** Includes necessary extensions, Composer dependencies, and reads from the shared application code.
+- **`php`:** Includes necessary extensions and reads from the shared application code, including `vendor/` on the host.
 - **`nginx`:** Serves the PHP application via PHP-FPM.
 - **`redis`:** Used for session management and caching (e.g., site version). Data is persisted in a Docker volume.
 - **`socket`:** WebSocket server for real-time updates.
@@ -108,7 +123,7 @@ From the root of the project, run `extras/dump-schema.sh` to save the current da
 
 ## Logo Generation
 
-For different logo sizes to be generated for PWA installation, the `magick` command must be avilable somewhere in the `PATH` environment. See `logo_pngs()` in `Site.php` where `set_include_path()` is called
+For different logo sizes to be generated for PWA installation, the `magick` command must be avilable somewhere in the `PATH` environment (it's installed in the php image). See `logo_pngs()` in `Site.php` where `set_include_path()` is called
 
 ## Cron Jobs
 

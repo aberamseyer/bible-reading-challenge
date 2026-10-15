@@ -64,11 +64,12 @@ services:
     restart: unless-stopped
     ports:
       - "${SOCKET_HOST_PORT:-8085}:${SOCKET_PORT:-8085}"
+    # mount the directory, not brc.db/-wal/-shm individually: if any of those files is missing,
+    # docker creates a directory in its place and sqlite breaks. the socket opens the db read-only.
     volumes:
-      - /usr/src/app/node_modules
-      - ./brc.db:/usr/src/app/brc.db:ro
-      - ./brc.db-shm:/usr/src/app/brc.db-shm:ro
-      - ./brc.db-wal:/usr/src/app/brc.db-wal:ro
+      - ./:/srv/brc
+    environment:
+      DB_FILE: /srv/brc/brc.db
     env_file: ".env"
     depends_on:
       - redis
@@ -88,8 +89,6 @@ services:
 
 volumes:
   redis_data:
-  xdebug_logs:
-    driver: local
 
 networks:
   brc_network:

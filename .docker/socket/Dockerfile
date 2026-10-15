@@ -1,4 +1,5 @@
-FROM node:25.2.1-alpine3.23 AS builder
+# builder and final stages must use the same Node version, or the sqlite3 native module won't load
+FROM node:24.12.0-alpine3.23 AS builder
 
 RUN apk add --no-cache python3 make g++ sqlite-dev
 
@@ -11,7 +12,7 @@ RUN npm ci --production --verbose
 RUN apk del python3 make g++ sqlite-dev
 
 # Stage 2: Final Image
-FROM node:24-alpine
+FROM node:24.12.0-alpine3.23
 
 # Set NODE_ENV to production (good practice, might reduce some package sizes)
 ENV NODE_ENV production

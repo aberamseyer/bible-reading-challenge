@@ -1,11 +1,14 @@
 # Base stage with minimal dependencies and extensions
-FROM php:8.5.1-fpm-alpine3.22
+FROM php:8.4.13-fpm-alpine3.22
 
 WORKDIR /var/www/html
 
 # extra extensions
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN install-php-extensions gmp intl xdebug-3.5.0
+
+# `magick` is used to generate site logos
+RUN apk add --no-cache imagemagick imagemagick-svg
 
 # Create FIFO for cron logs
 RUN mkfifo /var/log/cron.fifo && chmod 666 /var/log/cron.fifo
@@ -29,13 +32,9 @@ ENV PHP_MAX_INPUT_VARS=3000
 ENV PHP_MEMORY_LIMIT=256M
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-plugins --no-scripts --no-dev --prefer-dist \
-    && composer clear-cache
-
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --classmap-authoritative
+# vendor/ lives on the host, since docker-compose bind-mounts the project over /var/www/html.
+# install/update it with: docker compose run --rm php composer install --no-dev
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 # Copy entrypoint script
 COPY ./.docker/php/entrypoint.sh /entrypoint.sh

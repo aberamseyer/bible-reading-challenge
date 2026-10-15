@@ -52,7 +52,7 @@ Promise.all([
       .connect();
   }),
   new Promise((res) => {
-    const db = new sqlite3.Database(`${__dirname}/brc.db`, sqlite3.OPEN_READONLY);
+    const db = new sqlite3.Database(process.env.DB_FILE || `${__dirname}/brc.db`, sqlite3.OPEN_READONLY);
     db.on("error", (err) => console.error(`SQLite3 threw:`, err)).on("open", () => {
       console.log("SQLite initialized");
       res(db);
