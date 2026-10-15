@@ -1,6 +1,6 @@
 #!/bin/sh
 # backup for brc sqlite database. run daily from the host's crontab, e.g.
-#   5 4 * * * /home/ubuntu/bible-reading-challenge/extras/db-backup.sh
+#   5 4 * * * /home/ubuntu/source/bible-reading-challenge/extras/db-backup.sh
 # usage: db-backup.sh [backup dir] [days to keep]
 set -eu
 
