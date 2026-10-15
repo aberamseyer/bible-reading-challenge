@@ -22,6 +22,7 @@ RUN echo "date.timezone=\${TZ}" > /usr/local/etc/php/conf.d/app-timezone.ini && 
     echo "log_errors=On" >> /usr/local/etc/php/conf.d/app-errors.ini && \
     echo "error_log=/var/log/php_errors.log" >> /usr/local/etc/php/conf.d/app-errors.ini && \
     echo "error_reporting=E_ALL" >> /usr/local/etc/php/conf.d/app-errors.ini && \
+    echo "sendmail_path=\"/usr/sbin/sendmail -t -i -S \${SMTP_RELAY_HOST}\"" > /usr/local/etc/php/conf.d/app-mail.ini && \
     touch /var/log/php_errors.log && \
     chown www-data:www-data /var/log/php_errors.log && \
     chown www-data:www-data /var/log/cron.fifo
@@ -30,6 +31,8 @@ ENV PHP_UPLOAD_MAX_FILESIZE=10M
 ENV PHP_POST_MAX_SIZE=12M
 ENV PHP_MAX_INPUT_VARS=3000
 ENV PHP_MEMORY_LIMIT=256M
+# busybox sendmail hands system email to this SMTP relay (the host's postfix)
+ENV SMTP_RELAY_HOST=host.docker.internal:25
 
 # Install Composer
 # vendor/ lives on the host, since docker-compose bind-mounts the project over /var/www/html.

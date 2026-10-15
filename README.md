@@ -104,6 +104,7 @@ to export the schema after an update, run `sqlite3 brc.db ".schema --indent" > m
   - Variables `DEPLOYMENT_EMAIL_FROM_ADDRESS` and `DEPLOYMENT_EMAIL_TO_ADDRESS` in `.env` are used.
 
   - For deployment-wide administration emails (not site-specific emails), configure postfix or whatever [PhpMailer's sendmail](https://github.com/PHPMailer/PHPMailer/blob/v6.9.3/examples/sendmail.phps) is going to interface with.
+  - The php and cron containers send through busybox `sendmail` to the SMTP relay at `SMTP_RELAY_HOST` (default `host.docker.internal:25`, the docker host). The host's MTA must accept mail from the docker bridge.
   - I set up mine with OCI Email Delivery following [this guide](https://docs.oracle.com/en-us/iaas/Content/Email/Reference/postfix.htm)
 
 ### Google Sign-in button
