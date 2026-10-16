@@ -242,7 +242,7 @@ else {
     DatePeriod::INCLUDE_END_DATE
   );
 
-  $today = new DateTime(date('Y-m-d'), $site->TZ);
+  $today = new DateTime("today", $site->TZ);
   $is_special_day = $today->format('N') == (int)$site->data('start_of_week');
   $today_for_disabled_check = clone($today);
   if ($is_special_day) {
@@ -297,7 +297,7 @@ else {
   echo "<h5>All-week readers ".($user_start_date ? '' : help("This list does not refer to the current period until ".$WEEK_ARR[ (int)$site->data('start_of_week') + 1 ], 'right'))."</h5>";
   $where = "
     WHERE sd.schedule_id = ".$schedule->ID.                                                                                                                                  // Current Day:     Sun      Mon      Tue      Wed      Thu     *Fri*     Sat
-    " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : date('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
+    " AND '".$last_beginning->format('Y-m-d')."' <= sd.date AND sd.date <= '".($user_start_date || $is_special_day ? $this_week[6][0]->format('Y-m-d') : $today_for_disabled_check->format('Y-m-d'))."'"; // Range:         Fri-Sun, Fri-Mon, Fri-Tue, Fri-Wed, Fri-Thu, Fri-Thu, Fri-Sat
   $schedule_days_this_week = $db->col("
     SELECT COUNT(*)
     FROM schedule_dates sd

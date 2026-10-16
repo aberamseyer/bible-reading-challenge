@@ -867,7 +867,7 @@ class Site
       $on_target_perc = (float) $this->on_target_percent_for_user($user_id);
       $timer->mark('on_target_percent');
       $days_behind =
-        $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = " . $active_schedule->ID . " AND date <= '" . date('Y-m-d') . "'") -
+        $this->db->col("SELECT COUNT(*) FROM schedule_dates WHERE schedule_id = " . $active_schedule->ID . " AND date <= '" . (new \DateTime("now", $this->TZ))->format('Y-m-d') . "'") -
         $this->db->col("SELECT COUNT(*) FROM read_dates rd JOIN schedule_dates sd ON sd.id = rd.schedule_date_id WHERE sd.schedule_id = " . $active_schedule->ID . " AND rd.user_id = $user_id");
       $timer->mark('days_behind');
 

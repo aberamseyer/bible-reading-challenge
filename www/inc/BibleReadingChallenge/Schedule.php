@@ -442,9 +442,15 @@ class Schedule {
       ORDER BY sd.date ASC");
   }
 
+  // Y-m-d in the site's time zone; date() would use the server's
+  private function today()
+  {
+    return (new \DateTime("now", SiteRegistry::get_site($this->data('site_id'))->TZ))->format('Y-m-d');
+  }
+
   public function edit($days)
   {
-    $today = date('Y-m-d');
+    $today = $this->today();
     foreach($days as $date => $day) {
       if ($date <= $today) {
         // today and prior are not editable
@@ -805,7 +811,7 @@ class Schedule {
       FROM (
         SELECT *
         FROM schedule_dates
-        WHERE schedule_id = ".$this->ID." AND date < '".date('Y-m-d')."'
+        WHERE schedule_id = ".$this->ID." AND date < '".$this->today()."'
       ) sd
       WHERE sd.id NOT IN (
         SELECT schedule_date_id
